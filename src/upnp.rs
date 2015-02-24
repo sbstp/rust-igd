@@ -79,21 +79,18 @@ pub fn get_external_ip(url: &str) -> Result<String, RequestError>  {
 
     let mut res = try!(builder.send());
     let text = try!(res.read_to_string());
-    match extract_address(text) {
-        None => Err(RequestError::InvalidResponse),
-        Some(addr) => Ok(addr),
-    }
+    extract_address(text)
 }
 
 // Extract the address from the text.
-fn extract_address(text: String) -> Option<String> {
+fn extract_address(text: String) -> Result<String, RequestError> {
     let re = regex!(r"<NewExternalIPAddress>(\d+\.\d+\.\d+\.\d+)</NewExternalIPAddress>");
     match re.captures(text.as_slice()) {
-        None => None,
+        None => Err(RequestError::InvalidResponse),
         Some(cap) => {
             match cap.at(1) {
-                None => None,
-                Some(ip) => Some(ip.to_string()),
+                None => Err(RequestError::InvalidResponse),
+                Some(ip) => Ok(ip.to_string()),
             }
         },
     }
