@@ -67,13 +67,13 @@ impl Error for RequestError {
 
 // Get the external IP address.
 // TODO return IpAddr instead of String
-pub fn get_external_ip() -> Result<String, RequestError>  {
+pub fn get_external_ip(url: &str) -> Result<String, RequestError>  {
     let mut client = Client::new();
 
     let mut headers = Headers::new();
     headers.set_raw("SOAPAction", vec![String::from_str(SOAP_ACTION).into_bytes()]); // TODO clean-up
 
-    let mut builder = client.post("http://192.168.0.1000:65530/");
+    let mut builder = client.post(url);
     builder = builder.headers(headers);
     builder = builder.body(EXTERNAL_IP_REQUEST);
 
