@@ -1,5 +1,5 @@
 [package]
-name = "rust-external-ip"
+name = "externalip"
 version = "0.0.1"
 authors = ["Simon Bernier St-Pierre <sbernierstpierre@gmail.com>"]
 
