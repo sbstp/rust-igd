@@ -1,5 +1,6 @@
 #![feature(plugin)]
 #![feature(old_io)]
+#![feature(core)]
 #![plugin(regex_macros)]
 
 extern crate hyper;
