@@ -19,6 +19,9 @@ const EXTERNAL_IP_REQUEST: &'static str =
 // Content of the SOAPAction header.
 const SOAP_ACTION: &'static str = "\"urn:schemas-upnp-org:service:WANIPConnection:1#GetExternalIPAddress\"";
 
+// RequestError::InvalidResponse text.
+const ERR_INVALID_RESPONSE: &'static str = "Invalid response received from router";
+
 // Errors
 pub enum RequestError {
     HttpError(HttpError),
@@ -30,7 +33,7 @@ impl Display for RequestError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match *self {
             RequestError::HttpError(ref err) => err.fmt(f),
-            RequestError::InvalidResponse => write!(f, "Invalid response received from router."), // TODO const
+            RequestError::InvalidResponse => write!(f, ERR_INVALID_RESPONSE),
             RequestError::IoError(ref err) => err.fmt(f),
         }
     }
@@ -52,7 +55,7 @@ impl Error for RequestError {
     fn description(&self) -> &str {
         match *self {
             RequestError::HttpError(ref err) => err.description(),
-            RequestError::InvalidResponse => "Invalid response received from router.", // TODO const
+            RequestError::InvalidResponse => ERR_INVALID_RESPONSE,
             RequestError::IoError(ref err) => err.description(),
         }
     }
@@ -67,7 +70,6 @@ impl Error for RequestError {
 }
 
 // Get the external IP address.
-// TODO return IpAddr instead of String
 pub fn get_external_ip(url: &str) -> Result<IpAddr, RequestError>  {
     let mut client = Client::new();
 
