@@ -1,8 +1,7 @@
 use std::error::{Error, FromError};
 use std::fmt::{self, Display, Formatter};
 use std::old_io::IoError;
-use std::old_io::net::ip::{IpAddr, Ipv4Addr, ParseError};
-use std::str::FromStr;
+use std::old_io::net::ip::IpAddr;
 
 use hyper::client::Client;
 use hyper::header::Headers;
@@ -92,10 +91,7 @@ fn extract_address(text: String) -> Result<IpAddr, RequestError> {
         Some(cap) => {
             match cap.at(1) {
                 None => Err(RequestError::InvalidResponse),
-                Some(ip) => {
-                    let res: Result<IpAddr, ParseError> = FromStr::from_str(ip);
-                    Ok(res.unwrap())
-                },
+                Some(ip) => Ok(ip.parse::<IpAddr>().unwrap()),
             }
         },
     }
