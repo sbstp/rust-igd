@@ -1,6 +1,8 @@
 use std::error::{Error, FromError};
 use std::fmt::{self, Display, Formatter};
 use std::old_io::IoError;
+use std::old_io::net::ip::{IpAddr, Ipv4Addr, ParseError};
+use std::str::FromStr;
 
 use hyper::client::Client;
 use hyper::header::Headers;
@@ -67,7 +69,7 @@ impl Error for RequestError {
 
 // Get the external IP address.
 // TODO return IpAddr instead of String
-pub fn get_external_ip(url: &str) -> Result<String, RequestError>  {
+pub fn get_external_ip(url: &str) -> Result<IpAddr, RequestError>  {
     let mut client = Client::new();
 
     let mut headers = Headers::new();
@@ -83,14 +85,17 @@ pub fn get_external_ip(url: &str) -> Result<String, RequestError>  {
 }
 
 // Extract the address from the text.
-fn extract_address(text: String) -> Result<String, RequestError> {
+fn extract_address(text: String) -> Result<IpAddr, RequestError> {
     let re = regex!(r"<NewExternalIPAddress>(\d+\.\d+\.\d+\.\d+)</NewExternalIPAddress>");
     match re.captures(text.as_slice()) {
         None => Err(RequestError::InvalidResponse),
         Some(cap) => {
             match cap.at(1) {
                 None => Err(RequestError::InvalidResponse),
-                Some(ip) => Ok(ip.to_string()),
+                Some(ip) => {
+                    let res: Result<IpAddr, ParseError> = FromStr::from_str(ip);
+                    Ok(res.unwrap())
+                },
             }
         },
     }
