@@ -1,6 +1,7 @@
 use std::error::{self, Error};
 use std::fmt;
-use std::old_io::net::ip::IpAddr;
+use std::old_io::IoError;
+use std::old_io::net::ip::{IpAddr, ToSocketAddr};
 use std::str;
 
 use curl::ErrCode;
@@ -23,6 +24,7 @@ const SOAP_ACTION: &'static str = "\"urn:schemas-upnp-org:service:WANIPConnectio
 pub enum RequestError {
     ErrCode(ErrCode),
     InvalidResponse,
+    IoError(IoError),
 }
 
 impl fmt::Display for RequestError {
@@ -30,6 +32,7 @@ impl fmt::Display for RequestError {
         match *self {
             RequestError::ErrCode(ref err) => err.fmt(f),
             RequestError::InvalidResponse => write!(f, "{}", self.description()),
+            RequestError::IoError(ref err) => err.fmt(f),
         }
     }
 }
@@ -40,11 +43,18 @@ impl error::FromError<ErrCode> for RequestError {
     }
 }
 
+impl error::FromError<IoError> for RequestError {
+    fn from_error(err: IoError) -> RequestError {
+        RequestError::IoError(err)
+    }
+}
+
 impl Error for RequestError {
     fn description(&self) -> &str {
         match *self {
             RequestError::ErrCode(ref err) => err.description(),
             RequestError::InvalidResponse => "Invalid response received from router",
+            RequestError::IoError(ref err) => err.description(),
         }
     }
 
@@ -52,12 +62,15 @@ impl Error for RequestError {
         match *self {
             RequestError::ErrCode(ref err) => err.cause(),
             RequestError::InvalidResponse => None,
+            RequestError::IoError(ref err) => err.cause(),
         }
     }
 }
 
 // Get the external IP address.
-pub fn get_external_ip(url: &str) -> Result<IpAddr, RequestError>  {
+pub fn get_external_ip<A: ToSocketAddr>(to_addr: A) -> Result<IpAddr, RequestError>  {
+    let addr = try!(to_addr.to_socket_addr());
+    let url = format!("http://{}:{}/", addr.ip, addr.port);
     let resp = try!(http::handle()
         .post(url, EXTERNAL_IP_REQUEST)
         .header("SOAPAction", SOAP_ACTION)
