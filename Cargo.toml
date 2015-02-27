@@ -2,6 +2,12 @@
 name = "igd"
 version = "0.0.1"
 authors = ["Simon Bernier St-Pierre <sbernierstpierre@gmail.com>"]
+description = "Internet Gateway Protocol client"
+homepage = "https://github.com/SBSTP/rust-igd"
+repository = "https://github.com/SBSTP/rust-igd"
+readme = "README.md"
+keywords = ["igd", "upnp"]
+license = "MIT"
 
 [dependencies]
 curl = "0.2.0"
