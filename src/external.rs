@@ -1,5 +1,5 @@
-use std::error::{Error, FromError};
-use std::fmt::{self, Display, Formatter};
+use std::error::{self, Error};
+use std::fmt;
 use std::old_io::net::ip::IpAddr;
 use std::str;
 
@@ -18,25 +18,23 @@ const EXTERNAL_IP_REQUEST: &'static str =
 // Content of the SOAPAction header.
 const SOAP_ACTION: &'static str = "\"urn:schemas-upnp-org:service:WANIPConnection:1#GetExternalIPAddress\"";
 
-// RequestError::InvalidResponse text.
-const ERR_INVALID_RESPONSE: &'static str = "Invalid response received from router";
-
 // Errors
+#[derive(Debug)]
 pub enum RequestError {
     ErrCode(ErrCode),
     InvalidResponse,
 }
 
-impl Display for RequestError {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+impl fmt::Display for RequestError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             RequestError::ErrCode(ref err) => err.fmt(f),
-            RequestError::InvalidResponse => write!(f, "{}", ERR_INVALID_RESPONSE),
+            RequestError::InvalidResponse => write!(f, "{}", self.description()),
         }
     }
 }
 
-impl FromError<ErrCode> for RequestError {
+impl error::FromError<ErrCode> for RequestError {
     fn from_error(err: ErrCode) -> RequestError {
         RequestError::ErrCode(err)
     }
@@ -46,7 +44,7 @@ impl Error for RequestError {
     fn description(&self) -> &str {
         match *self {
             RequestError::ErrCode(ref err) => err.description(),
-            RequestError::InvalidResponse => ERR_INVALID_RESPONSE,
+            RequestError::InvalidResponse => "Invalid response received from router",
         }
     }
 
