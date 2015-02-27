@@ -3,7 +3,7 @@
 #![feature(core)]
 #![plugin(regex_macros)]
 
-extern crate hyper;
+extern crate curl;
 extern crate regex;
 
 pub use self::external::get_external_ip;
