@@ -1,5 +1,5 @@
 [package]
-name = "externalip"
+name = "igd"
 version = "0.0.1"
 authors = ["Simon Bernier St-Pierre <sbernierstpierre@gmail.com>"]
 

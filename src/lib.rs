@@ -6,4 +6,6 @@
 extern crate hyper;
 extern crate regex;
 
-pub mod upnp;
+pub use self::external::get_external_ip;
+
+mod external;

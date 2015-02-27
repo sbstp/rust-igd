@@ -33,7 +33,7 @@ impl Display for RequestError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match *self {
             RequestError::HttpError(ref err) => err.fmt(f),
-            RequestError::InvalidResponse => write!(f, ERR_INVALID_RESPONSE),
+            RequestError::InvalidResponse => write!(f, "{}", ERR_INVALID_RESPONSE),
             RequestError::IoError(ref err) => err.fmt(f),
         }
     }
