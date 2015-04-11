@@ -1,7 +1,5 @@
 #![feature(plugin)]
-#![feature(old_io)]
-#![feature(io)]
-#![feature(core)]
+#![feature(ip_addr)]
 #![plugin(regex_macros)]
 
 extern crate curl;
