@@ -1,5 +1,5 @@
 use std::io;
-use std::net::{IpAddr, ToSocketAddrs};
+use std::net::{Ipv4Addr, ToSocketAddrs};
 use std::str;
 
 use curl::ErrCode;
@@ -38,7 +38,7 @@ impl From<io::Error> for RequestError {
 }
 
 // Get the external IP address.
-pub fn get_external_ip<A: ToSocketAddrs>(to_addr: A) -> Result<IpAddr, RequestError>  {
+pub fn get_external_ip<A: ToSocketAddrs>(to_addr: A) -> Result<Ipv4Addr, RequestError>  {
     let addr = try!(to_addr.to_socket_addrs()).next().unwrap();
     let url = format!("http://{}:{}/", addr.ip(), addr.port());
     let resp = try!(http::handle()
@@ -50,14 +50,14 @@ pub fn get_external_ip<A: ToSocketAddrs>(to_addr: A) -> Result<IpAddr, RequestEr
 }
 
 // Extract the address from the text.
-fn extract_address(text: &str) -> Result<IpAddr, RequestError> {
+fn extract_address(text: &str) -> Result<Ipv4Addr, RequestError> {
     let re = regex!(r"<NewExternalIPAddress>(\d+\.\d+\.\d+\.\d+)</NewExternalIPAddress>");
     match re.captures(text) {
         None => Err(RequestError::InvalidResponse),
         Some(cap) => {
             match cap.at(1) {
                 None => Err(RequestError::InvalidResponse),
-                Some(ip) => Ok(ip.parse::<IpAddr>().unwrap()),
+                Some(ip) => Ok(ip.parse::<Ipv4Addr>().unwrap()),
             }
         },
     }
