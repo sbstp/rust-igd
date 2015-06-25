@@ -24,10 +24,7 @@ impl From<io::Error> for SearchError {
     }
 }
 
-// Try to find the gateway on the local network.
-pub fn search_gateway() -> Result<SocketAddrV4, SearchError> {
-    let local_ip = try!(get_local_ip());
-    let local_addr = (local_ip, 1900);
+pub fn search_gateway_from(local_addr: SocketAddrV4) -> Result<SocketAddrV4, SearchError> {
     let socket = try!(UdpSocket::bind(local_addr));
 
     // send the request on the broadcast address
@@ -40,6 +37,12 @@ pub fn search_gateway() -> Result<SocketAddrV4, SearchError> {
         None => Err(SearchError::InvalidResponse),
         Some(socketaddr) => Ok(socketaddr),
     }
+}
+
+// Try to find the gateway on the local network.
+pub fn search_gateway() -> Result<SocketAddrV4, SearchError> {
+    let local_ip = try!(get_local_ip());
+    search_gateway_from(SocketAddrV4::new(local_ip, 1900))
 }
 
 // This is a hacky way of getting this computer's address
