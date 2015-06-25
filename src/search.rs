@@ -1,6 +1,6 @@
 use std::io;
-use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
-use std::net::{UdpSocket, TcpStream};
+use std::net::{Ipv4Addr, SocketAddrV4};
+use std::net::UdpSocket;
 use std::str;
 
 // Content of the request.
@@ -24,6 +24,8 @@ impl From<io::Error> for SearchError {
     }
 }
 
+// Try to find the gateway on the local network.
+// Bind to the given interface.
 pub fn search_gateway_from(local_addr: SocketAddrV4) -> Result<SocketAddrV4, SearchError> {
     let socket = try!(UdpSocket::bind(local_addr));
 
@@ -40,21 +42,9 @@ pub fn search_gateway_from(local_addr: SocketAddrV4) -> Result<SocketAddrV4, Sea
 }
 
 // Try to find the gateway on the local network.
+// Bind to all interfaces.
 pub fn search_gateway() -> Result<SocketAddrV4, SearchError> {
-    let local_ip = try!(get_local_ip());
-    search_gateway_from(SocketAddrV4::new(local_ip, 1900))
-}
-
-// This is a hacky way of getting this computer's address
-// on the local network. There doesn't seem to be another
-// way of doing this at the moment.
-fn get_local_ip() -> io::Result<Ipv4Addr> {
-    let sock = try!(TcpStream::connect("google.ca:80"));
-    let sockaddr = try!(sock.local_addr());
-    match sockaddr {
-        SocketAddr::V4(ref v4) => Ok(v4.ip().clone()),
-        _ => panic!("unsupported"),
-    }
+    search_gateway_from(SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), 1900))
 }
 
 // Parse the result.
