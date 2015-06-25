@@ -1,6 +1,6 @@
 [package]
 name = "igd"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Simon Bernier St-Pierre <sbernierstpierre@gmail.com>"]
 description = "Internet Gateway Protocol client"
 homepage = "https://github.com/SBSTP/rust-igd"
