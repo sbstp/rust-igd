@@ -7,7 +7,7 @@ fn main() {
             match igd::get_external_ip(local_soaddr) {
                 Err(ref err) => println!("{:?}", err),
                 Ok(ext_addr) => {
-                    println!("Local gateway: {}, Extern gateway: {}", local_soaddr, ext_addr);
+                    println!("Local gateway: {}, External ip address: {}", local_soaddr, ext_addr);
                 },
             }
         },
