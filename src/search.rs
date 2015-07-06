@@ -32,7 +32,6 @@ pub fn search_gateway_from(ip: Ipv4Addr) -> Result<SocketAddrV4, SearchError> {
 
     // send the request on the broadcast address
     try!(socket.send_to(SEARCH_REQUEST.as_bytes(), "239.255.255.250:1900"));
-
     let mut buf = [0u8; 1024];
     let (read, _) = try!(socket.recv_from(&mut buf));
     let text = str::from_utf8(&buf[..read]).unwrap();
@@ -50,7 +49,7 @@ pub fn search_gateway() -> Result<SocketAddrV4, SearchError> {
 
 // Parse the result.
 fn parse_result(text: &str) -> Option<SocketAddrV4> {
-    let re = regex!(r"(?i:Location):\s*http://(\d+\.\d+\.\d+\.\d+):(\d+)/.+");
+    let re = regex!(r"(?i:Location):\s*http://(\d+\.\d+\.\d+\.\d+):(\d+).*");
     for line in text.lines() {
         match re.captures(line) {
             None => continue,
@@ -66,4 +65,10 @@ fn parse_result(text: &str) -> Option<SocketAddrV4> {
         }
     }
     None
+}
+
+#[test]
+fn test_parse_result_case_insensitivity() {
+    assert!(parse_result("location:http://0.0.0.0:0").is_some());
+    assert!(parse_result("LOCATION:http://0.0.0.0:0").is_some());
 }
