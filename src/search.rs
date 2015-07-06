@@ -50,7 +50,7 @@ pub fn search_gateway() -> Result<SocketAddrV4, SearchError> {
 
 // Parse the result.
 fn parse_result(text: &str) -> Option<SocketAddrV4> {
-    let re = regex!(r"LOCATION:\s*http://(\d+\.\d+\.\d+\.\d+):(\d+)/.+");
+    let re = regex!(r"(?i:Location):\s*http://(\d+\.\d+\.\d+\.\d+):(\d+)/.+");
     for line in text.lines() {
         match re.captures(line) {
             None => continue,
