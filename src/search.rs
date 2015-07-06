@@ -27,7 +27,7 @@ impl From<io::Error> for SearchError {
 // Try to find the gateway on the local network.
 // Bind to the given interface.
 pub fn search_gateway_from(ip: Ipv4Addr) -> Result<SocketAddrV4, SearchError> {
-    let addr = SocketAddrV4::new(ip, 1900);
+    let addr = SocketAddrV4::new(ip, 0);
     let socket = try!(UdpSocket::bind(addr));
 
     // send the request on the broadcast address
