@@ -1,6 +1,7 @@
 use std::io;
-use std::net::Ipv4Addr;
+use std::net::{Ipv4Addr, SocketAddr};
 use std::str;
+use std::fmt;
 
 use curl::ErrCode;
 use curl::http;
@@ -9,7 +10,7 @@ use regex::Regex;
 
 use gateway::Gateway;
 
-// Content of the request.
+// Content of the external ip request.
 const EXTERNAL_IP_REQUEST: &'static str =
 "<SOAP-ENV:Envelope SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">
     <SOAP-ENV:Body>
@@ -18,8 +19,11 @@ const EXTERNAL_IP_REQUEST: &'static str =
     </SOAP-ENV:Body>
 </SOAP-ENV:Envelope>";
 
-// Content of the SOAPAction header.
+// Content of the external ip SOAPAction request header.
 const SOAP_ACTION: &'static str = "\"urn:schemas-upnp-org:service:WANIPConnection:1#GetExternalIPAddress\"";
+
+// Content of the add port mapping SOAPAction request header.
+const ADD_PORT_SOAP_ACTION: &'static str = "\"urn:schemas-upnp-org:service:WANIPConnection:1#AddPortMapping\"";
 
 // Errors
 #[derive(Debug)]
@@ -27,6 +31,21 @@ pub enum RequestError {
     ErrCode(ErrCode),
     InvalidResponse,
     IoError(io::Error),
+}
+
+#[derive(Debug,Clone,Copy,PartialEq)]
+pub enum PortMappingProtocol {
+    TCP,
+    UDP,
+}
+
+impl fmt::Display for PortMappingProtocol {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            PortMappingProtocol::TCP => "TCP",
+            PortMappingProtocol::UDP => "UDP",
+        })
+    }
 }
 
 impl From<ErrCode> for RequestError {
@@ -65,5 +84,45 @@ fn extract_address(text: &str) -> Result<Ipv4Addr, RequestError> {
                 Some(ip) => Ok(ip.parse::<Ipv4Addr>().unwrap()),
             }
         },
+    }
+}
+
+pub fn add_port(gateway: &Gateway, protocol: PortMappingProtocol,
+                external_port: u16, local_addr: SocketAddr, lease_duration: u32,
+                description: &str) -> Result<(), RequestError> {
+    let url = format!("{}", gateway);
+    let body = format!("<?xml version=\"1.0\"?>
+<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">
+<s:Body>
+    <u:AddPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">
+        <NewProtocol>{}</NewProtocol>
+        <NewExternalPort>{}</NewExternalPort>
+        <NewInternalClient>{}</NewInternalClient>
+        <NewInternalPort>{}</NewInternalPort>
+        <NewLeaseDuration>{}</NewLeaseDuration>
+        <NewPortMappingDescription>{}</NewPortMappingDescription>
+        <NewEnabled>1</NewEnabled>
+        <NewRemoteHost></NewRemoteHost>
+    </u:AddPortMapping>
+</s:Body>
+</s:Envelope>
+",
+                       protocol, external_port, local_addr.ip(),
+                       local_addr.port(), lease_duration, description);
+    let resp = try!(http::handle()
+                    .post(url, &body)
+                    .header("Content-Type", "text/xml; charset=\"utf-8\"")
+                    .header("SOAPAction", ADD_PORT_SOAP_ACTION)
+                    .exec());
+    let text = try!(str::from_utf8(resp.get_body())
+                    .map_err(|_| RequestError::InvalidResponse));
+
+    {
+        let re = regex!("u:AddPortMappingResponse");
+        if re.is_match(text) {
+            Ok(())
+        } else {
+            Err(RequestError::InvalidResponse)
+        }
     }
 }
