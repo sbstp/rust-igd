@@ -3,6 +3,12 @@ use std::net::{Ipv4Addr, SocketAddrV4};
 use std::net::UdpSocket;
 use std::str;
 
+use curl::http;
+
+use xml;
+
+use gateway::Gateway;
+
 // Content of the request.
 const SEARCH_REQUEST: &'static str =
 "M-SEARCH * HTTP/1.1\r
@@ -26,7 +32,7 @@ impl From<io::Error> for SearchError {
 
 // Try to find the gateway on the local network.
 // Bind to the given interface.
-pub fn search_gateway_from(ip: Ipv4Addr) -> Result<SocketAddrV4, SearchError> {
+pub fn search_gateway_from(ip: Ipv4Addr) -> Result<Gateway, SearchError> {
     let addr = SocketAddrV4::new(ip, 0);
     let socket = try!(UdpSocket::bind(addr));
 
@@ -37,19 +43,24 @@ pub fn search_gateway_from(ip: Ipv4Addr) -> Result<SocketAddrV4, SearchError> {
     let text = str::from_utf8(&buf[..read]).unwrap();
     match parse_result(text) {
         None => Err(SearchError::InvalidResponse),
-        Some(socketaddr) => Ok(socketaddr),
+        Some(location) => {
+            Ok(Gateway::new(location.0, match get_control_url(&location) {
+                Some(u) => u,
+                None => return Err(SearchError::InvalidResponse),
+            }))
+        },
     }
 }
 
 // Try to find the gateway on the local network.
 // Bind to all interfaces.
-pub fn search_gateway() -> Result<SocketAddrV4, SearchError> {
+pub fn search_gateway() -> Result<Gateway, SearchError> {
     search_gateway_from(Ipv4Addr::new(0, 0, 0, 0))
 }
 
 // Parse the result.
-fn parse_result(text: &str) -> Option<SocketAddrV4> {
-    let re = regex!(r"(?i:Location):\s*http://(\d+\.\d+\.\d+\.\d+):(\d+).*");
+fn parse_result(text: &str) -> Option<(SocketAddrV4, String)> {
+    let re = regex!(r"(?i:Location):\s*http://(\d+\.\d+\.\d+\.\d+):(\d+)(/.*)\r");
     for line in text.lines() {
         match re.captures(line) {
             None => continue,
@@ -57,11 +68,95 @@ fn parse_result(text: &str) -> Option<SocketAddrV4> {
                 // these shouldn't fail if the regex matched.
                 let addr = cap.at(1).unwrap();
                 let port = cap.at(2).unwrap();
-                return Some(SocketAddrV4::new(
-                    addr.parse::<Ipv4Addr>().unwrap(),
-                    port.parse::<u16>().unwrap()
-                ));
+                return Some(
+                    (SocketAddrV4::new(
+                        addr.parse::<Ipv4Addr>().unwrap(),
+                        port.parse::<u16>().unwrap()),
+                     cap.at(3).unwrap().to_string()));
             },
+        }
+    }
+    None
+}
+
+fn get_control_url(location: &(SocketAddrV4, String))
+                   -> Option<String> {
+    let resp = match http::handle()
+        .get(format!("http://{}{}", location.0, location.1))
+        .exec() {
+            Ok(r) => r,
+            Err(_) => return None,
+        };
+    let text = match str::from_utf8(resp.get_body()) {
+        Ok(t) => t,
+        Err(_) => return None,
+    };
+    let text = io::Cursor::new(text.as_bytes());
+    let mut parser = xml::EventReader::new(text);
+    let mut chain = Vec::<String>::with_capacity(4);
+
+    struct Service {
+        service_type: String,
+        control_url: String,
+    }
+
+    let mut service = Service{
+        service_type: "".to_string(),
+        control_url: "".to_string(),
+    };
+
+    for e in parser.events() {
+        match e {
+            xml::reader::events::XmlEvent::StartElement { name, .. } => {
+                chain.push(name.to_repr());
+                let tail = if chain.len() >= 3 {
+                    chain.iter().skip(chain.len() - 3)
+                } else {
+                    continue
+                };
+
+                if vec!["device", "serviceList", "service"].iter().zip(tail)
+                    .all(|(l, r)| l == r) {
+                    service.service_type.clear();
+                    service.control_url.clear();
+                }
+            },
+            xml::reader::events::XmlEvent::EndElement { .. } => {
+                let top = chain.pop();
+                let tail = if top == Some("service".to_string())
+                    && chain.len() >= 2 {
+                    chain.iter().skip(chain.len() - 2)
+                } else {
+                    continue
+                };
+
+                if vec!["device", "serviceList"].iter().zip(tail)
+                    .all(|(l, r)| l == r) {
+                    if "urn:schemas-upnp-org:service:WANIPConnection:1"
+                        == service.service_type
+                        && service.control_url.len() != 0 {
+                        return Some(service.control_url);
+                    }
+                }
+            },
+            xml::reader::events::XmlEvent::Characters(text) => {
+                let tail = if chain.len() >= 4 {
+                    chain.iter().skip(chain.len() - 4)
+                } else {
+                    continue
+                };
+
+                if vec!["device", "serviceList", "service", "serviceType"]
+                    .iter().zip(tail.clone()).all(|(l, r)| l == r) {
+                    service.service_type.push_str(&text);
+                }
+                if vec!["device", "serviceList", "service", "controlURL"]
+                    .iter().zip(tail).all(|(l, r)| l == r) {
+                    service.control_url.push_str(&text);
+                }
+            },
+            xml::reader::events::XmlEvent::Error(_) =>  return None,
+            _ => (),
         }
     }
     None
@@ -69,6 +164,6 @@ fn parse_result(text: &str) -> Option<SocketAddrV4> {
 
 #[test]
 fn test_parse_result_case_insensitivity() {
-    assert!(parse_result("location:http://0.0.0.0:0").is_some());
-    assert!(parse_result("LOCATION:http://0.0.0.0:0").is_some());
+    assert!(parse_result("location:http://0.0.0.0:0/").is_some());
+    assert!(parse_result("LOCATION:http://0.0.0.0:0/").is_some());
 }

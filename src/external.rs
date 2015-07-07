@@ -1,9 +1,11 @@
 use std::io;
-use std::net::{Ipv4Addr, ToSocketAddrs};
+use std::net::Ipv4Addr;
 use std::str;
 
 use curl::ErrCode;
 use curl::http;
+
+use gateway::Gateway;
 
 // Content of the request.
 const EXTERNAL_IP_REQUEST: &'static str =
@@ -38,9 +40,10 @@ impl From<io::Error> for RequestError {
 }
 
 // Get the external IP address.
-pub fn get_external_ip<A: ToSocketAddrs>(to_addr: A) -> Result<Ipv4Addr, RequestError>  {
-    let addr = try!(to_addr.to_socket_addrs()).next().unwrap();
-    let url = format!("http://{}:{}/", addr.ip(), addr.port());
+pub fn get_external_ip(gateway: &Gateway) -> Result<Ipv4Addr, RequestError>  {
+    let addr = gateway.addr.clone();
+    let url = format!("http://{}:{}{}", addr.ip(), addr.port(),
+                      gateway.control_url);
     let resp = try!(http::handle()
         .post(url, EXTERNAL_IP_REQUEST)
         .header("SOAPAction", SOAP_ACTION)

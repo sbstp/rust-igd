@@ -9,11 +9,11 @@ Contributions are welcome! This is pretty delicate to test, please submit an iss
 
 ```rust
 /// Query the device for it's external ip address.
-fn get_external_ip<A: ToSocketAddr>(addr: A) -> Result<IpAddr, RequestError>
+fn get_external_ip(addr: &Gateway) -> Result<IpAddr, RequestError>
 /// Bind the UDP socket to all interfaces
-fn search_gateway() -> Result<SocketAddr, SearchError>
+fn search_gateway() -> Result<Gateway, SearchError>
 /// Bind the UDP socket to this ip address
-fn search_gateway_from(ip: Ipv4Addr) -> Result<SocketAddr, SearchError>
+fn search_gateway_from(ip: Ipv4Addr) -> Result<Gateway, SearchError>
 ```
 
 ## License
