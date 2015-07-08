@@ -121,7 +121,7 @@ pub fn add_port(gateway: &Gateway, protocol: PortMappingProtocol,
                     .map_err(|_| RequestError::InvalidResponse));
 
     {
-        let re = regex!("u:AddPortMappingResponse");
+        let re = Regex::new("u:AddPortMappingResponse").unwrap();
         if re.is_match(text) {
             Ok(())
         } else {
@@ -154,7 +154,7 @@ pub fn remove_port(gateway: &Gateway, protocol: PortMappingProtocol,
                     .map_err(|_| RequestError::InvalidResponse));
 
     {
-        let re = regex!("u:DeletePortMappingResponse");
+        let re = Regex::new("u:DeletePortMappingResponse").unwrap();
         if re.is_match(text) {
             Ok(())
         } else {
