@@ -15,6 +15,7 @@ pub use self::external::RequestError;
 // request port mapping
 pub use self::external::PortMappingProtocol;
 pub use self::external::add_port;
+pub use self::external::remove_port;
 
 // search of gateway
 pub use self::search::search_gateway;

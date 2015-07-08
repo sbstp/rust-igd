@@ -25,6 +25,9 @@ const SOAP_ACTION: &'static str = "\"urn:schemas-upnp-org:service:WANIPConnectio
 // Content of the add port mapping SOAPAction request header.
 const ADD_PORT_SOAP_ACTION: &'static str = "\"urn:schemas-upnp-org:service:WANIPConnection:1#AddPortMapping\"";
 
+// Content of the delete port mapping SOAPAction request header.
+const DELETE_PORT_SOAP_ACTION: &'static str = "\"urn:schemas-upnp-org:service:WANIPConnection:1#DeletePortMapping\"";
+
 // Errors
 #[derive(Debug)]
 pub enum RequestError {
@@ -119,6 +122,39 @@ pub fn add_port(gateway: &Gateway, protocol: PortMappingProtocol,
 
     {
         let re = regex!("u:AddPortMappingResponse");
+        if re.is_match(text) {
+            Ok(())
+        } else {
+            Err(RequestError::InvalidResponse)
+        }
+    }
+}
+
+pub fn remove_port(gateway: &Gateway, protocol: PortMappingProtocol,
+                   external_port: u16) -> Result<(), RequestError> {
+    let url = format!("{}", gateway);
+    let body = format!("<?xml version=\"1.0\"?>
+<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">
+  <s:Body>
+    <u:DeletePortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">
+      <NewProtocol>{}</NewProtocol>
+      <NewExternalPort>{}</NewExternalPort>
+      <NewRemoteHost>
+      </NewRemoteHost>
+    </u:DeletePortMapping>
+  </s:Body>
+</s:Envelope>
+", protocol, external_port);
+    let resp = try!(http::handle()
+                    .post(url, &body)
+                    .header("Content-Type", "text/xml; charset=\"utf-8\"")
+                    .header("SOAPAction", DELETE_PORT_SOAP_ACTION)
+                    .exec());
+    let text = try!(str::from_utf8(resp.get_body())
+                    .map_err(|_| RequestError::InvalidResponse));
+
+    {
+        let re = regex!("u:DeletePortMappingResponse");
         if re.is_match(text) {
             Ok(())
         } else {
