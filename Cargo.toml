@@ -12,5 +12,4 @@ license = "MIT"
 [dependencies]
 curl = "*"
 regex = "*"
-regex_macros = "*"
 xml-rs = "*"

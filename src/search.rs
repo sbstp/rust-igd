@@ -5,6 +5,8 @@ use std::str;
 
 use curl::http;
 
+use regex::Regex;
+
 use xml::EventReader;
 use xml::reader::events::XmlEvent;
 
@@ -61,7 +63,7 @@ pub fn search_gateway() -> Result<Gateway, SearchError> {
 
 // Parse the result.
 fn parse_result(text: &str) -> Option<(SocketAddrV4, String)> {
-    let re = regex!(r"(?i:Location):\s*http://(\d+\.\d+\.\d+\.\d+):(\d+)(/[^\r]*)");
+    let re = Regex::new(r"(?i:Location):\s*http://(\d+\.\d+\.\d+\.\d+):(\d+)(/[^\r]*)").unwrap();
     for line in text.lines() {
         match re.captures(line) {
             None => continue,

@@ -5,6 +5,8 @@ use std::str;
 use curl::ErrCode;
 use curl::http;
 
+use regex::Regex;
+
 use gateway::Gateway;
 
 // Content of the request.
@@ -54,7 +56,7 @@ pub fn get_external_ip(gateway: &Gateway) -> Result<Ipv4Addr, RequestError>  {
 
 // Extract the address from the text.
 fn extract_address(text: &str) -> Result<Ipv4Addr, RequestError> {
-    let re = regex!(r"<NewExternalIPAddress>(\d+\.\d+\.\d+\.\d+)</NewExternalIPAddress>");
+    let re = Regex::new(r"<NewExternalIPAddress>(\d+\.\d+\.\d+\.\d+)</NewExternalIPAddress>").unwrap();
     match re.captures(text) {
         None => Err(RequestError::InvalidResponse),
         Some(cap) => {
