@@ -1,7 +1,7 @@
 #![feature(plugin)]
 #![feature(ip_addr)]
 
-extern crate curl;
+extern crate hyper;
 extern crate regex;
 extern crate xml;
 
@@ -21,6 +21,11 @@ pub use self::external::remove_port;
 pub use self::search::search_gateway;
 pub use self::search::SearchError;
 
+// re-export error types
+pub use hyper::Error as HttpError;
+pub use xml::common::Error as XmlError;
+
 mod gateway;
 mod external;
 mod search;
+mod soap;

@@ -3,11 +3,10 @@ use std::net::{Ipv4Addr, SocketAddrV4};
 use std::net::UdpSocket;
 use std::str;
 
-use curl::http;
-
+use hyper;
 use regex::Regex;
-
 use xml::EventReader;
+use xml::common::Error as XmlError;
 use xml::reader::events::XmlEvent;
 
 use gateway::Gateway;
@@ -23,13 +22,27 @@ MX:3\r\n\r\n";
 // Error type this module emits.
 #[derive(Debug)]
 pub enum SearchError {
+    HttpError(hyper::Error),
     IoError(io::Error),
     InvalidResponse,
+    XmlError(XmlError),
+}
+
+impl From<hyper::Error> for SearchError {
+    fn from(err: hyper::Error) -> SearchError {
+        SearchError::HttpError(err)
+    }
 }
 
 impl From<io::Error> for SearchError {
     fn from(err: io::Error) -> SearchError {
         SearchError::IoError(err)
+    }
+}
+
+impl From<XmlError> for SearchError {
+    fn from(err: XmlError) -> SearchError {
+        SearchError::XmlError(err)
     }
 }
 
@@ -47,10 +60,8 @@ pub fn search_gateway_from(ip: Ipv4Addr) -> Result<Gateway, SearchError> {
     match parse_result(text) {
         None => Err(SearchError::InvalidResponse),
         Some(location) => {
-            Ok(Gateway::new(location.0, match get_control_url(&location) {
-                Some(u) => u,
-                None => return Err(SearchError::InvalidResponse),
-            }))
+            let control_url = try!(get_control_url(&location));
+            Ok(Gateway::new(location.0, control_url))
         },
     }
 }
@@ -82,21 +93,11 @@ fn parse_result(text: &str) -> Option<(SocketAddrV4, String)> {
     None
 }
 
-fn get_control_url(location: &(SocketAddrV4, String))
-                   -> Option<String> {
-    let resp = match http::handle()
-        .get(format!("http://{}{}", location.0, location.1))
-        .exec() {
-            Ok(r) => r,
-            Err(_) => return None,
-        };
-    let text = match str::from_utf8(resp.get_body()) {
-        Ok(t) => t,
-        Err(_) => return None,
-    };
+fn get_control_url(location: &(SocketAddrV4, String)) -> Result<String, SearchError> {
+    let client = hyper::Client::new();
+    let resp = try!(client.get(&format!("http://{}{}", location.0, location.1)).send());
 
-    let text = io::Cursor::new(text.as_bytes());
-    let mut parser = EventReader::new(text);
+    let mut parser = EventReader::new(resp);
     let mut chain = Vec::<String>::with_capacity(4);
 
     struct Service {
@@ -141,9 +142,9 @@ fn get_control_url(location: &(SocketAddrV4, String))
                         .zip(tail)
                         .all(|(l, r)| l == r) {
                     if "urn:schemas-upnp-org:service:WANIPConnection:1"
-                        == service.service_type
-                        && service.control_url.len() != 0 {
-                        return Some(service.control_url);
+                            == service.service_type
+                            && service.control_url.len() != 0 {
+                        return Ok(service.control_url);
                     }
                 }
             },
@@ -163,11 +164,11 @@ fn get_control_url(location: &(SocketAddrV4, String))
                     service.control_url.push_str(&text);
                 }
             },
-            XmlEvent::Error(_) =>  return None,
+            XmlEvent::Error(e) =>  return Err(e.into()),
             _ => (),
         }
     }
-    None
+    Err(SearchError::InvalidResponse)
 }
 
 #[test]
