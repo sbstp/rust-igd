@@ -75,7 +75,7 @@ impl Gateway {
     }
 
     // Get the external IP address.
-    pub fn get_external_ip(&self) -> Result<Ipv4Addr, RequestError>  {
+    pub fn get_external_ip(&self) -> Result<Ipv4Addr, RequestError> {
         //let addr = gateway.addr.clone();
         let url = format!("{}", self);
         let body = "<?xml version=\"1.0\"?>
