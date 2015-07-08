@@ -5,7 +5,8 @@ use std::str;
 
 use curl::http;
 
-use xml;
+use xml::EventReader;
+use xml::reader::events::XmlEvent;
 
 use gateway::Gateway;
 
@@ -91,8 +92,9 @@ fn get_control_url(location: &(SocketAddrV4, String))
         Ok(t) => t,
         Err(_) => return None,
     };
+
     let text = io::Cursor::new(text.as_bytes());
-    let mut parser = xml::EventReader::new(text);
+    let mut parser = EventReader::new(text);
     let mut chain = Vec::<String>::with_capacity(4);
 
     struct Service {
@@ -107,7 +109,7 @@ fn get_control_url(location: &(SocketAddrV4, String))
 
     for e in parser.events() {
         match e {
-            xml::reader::events::XmlEvent::StartElement { name, .. } => {
+            XmlEvent::StartElement { name, .. } => {
                 chain.push(name.to_repr());
                 let tail = if chain.len() >= 3 {
                     chain.iter().skip(chain.len() - 3)
@@ -115,23 +117,27 @@ fn get_control_url(location: &(SocketAddrV4, String))
                     continue
                 };
 
-                if vec!["device", "serviceList", "service"].iter().zip(tail)
-                    .all(|(l, r)| l == r) {
+                if vec!["device", "serviceList", "service"]
+                        .iter()
+                        .zip(tail)
+                        .all(|(l, r)| l == r) {
                     service.service_type.clear();
                     service.control_url.clear();
                 }
             },
-            xml::reader::events::XmlEvent::EndElement { .. } => {
+            XmlEvent::EndElement { .. } => {
                 let top = chain.pop();
                 let tail = if top == Some("service".to_string())
-                    && chain.len() >= 2 {
+                        && chain.len() >= 2 {
                     chain.iter().skip(chain.len() - 2)
                 } else {
                     continue
                 };
 
-                if vec!["device", "serviceList"].iter().zip(tail)
-                    .all(|(l, r)| l == r) {
+                if vec!["device", "serviceList"]
+                        .iter()
+                        .zip(tail)
+                        .all(|(l, r)| l == r) {
                     if "urn:schemas-upnp-org:service:WANIPConnection:1"
                         == service.service_type
                         && service.control_url.len() != 0 {
@@ -139,7 +145,7 @@ fn get_control_url(location: &(SocketAddrV4, String))
                     }
                 }
             },
-            xml::reader::events::XmlEvent::Characters(text) => {
+            XmlEvent::Characters(text) => {
                 let tail = if chain.len() >= 4 {
                     chain.iter().skip(chain.len() - 4)
                 } else {
@@ -155,7 +161,7 @@ fn get_control_url(location: &(SocketAddrV4, String))
                     service.control_url.push_str(&text);
                 }
             },
-            xml::reader::events::XmlEvent::Error(_) =>  return None,
+            XmlEvent::Error(_) =>  return None,
             _ => (),
         }
     }
