@@ -60,7 +60,7 @@ pub fn search_gateway() -> Result<Gateway, SearchError> {
 
 // Parse the result.
 fn parse_result(text: &str) -> Option<(SocketAddrV4, String)> {
-    let re = regex!(r"(?i:Location):\s*http://(\d+\.\d+\.\d+\.\d+):(\d+)(/.*)\r");
+    let re = regex!(r"(?i:Location):\s*http://(\d+\.\d+\.\d+\.\d+):(\d+)(/[^\r]*)");
     for line in text.lines() {
         match re.captures(line) {
             None => continue,
@@ -164,6 +164,14 @@ fn get_control_url(location: &(SocketAddrV4, String))
 
 #[test]
 fn test_parse_result_case_insensitivity() {
-    assert!(parse_result("location:http://0.0.0.0:0/").is_some());
-    assert!(parse_result("LOCATION:http://0.0.0.0:0/").is_some());
+    assert!(parse_result("location:http://0.0.0.0:0/control_url").is_some());
+    assert!(parse_result("LOCATION:http://0.0.0.0:0/control_url").is_some());
+}
+
+#[test]
+fn test_parse_result() {
+    let result = parse_result("location:http://0.0.0.0:0/control_url").unwrap();
+    assert_eq!(result.0.ip(), &Ipv4Addr::new(0,0,0,0));
+    assert_eq!(result.0.port(), 0);
+    assert_eq!(&result.1[..], "/control_url");
 }
