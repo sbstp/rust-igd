@@ -7,7 +7,7 @@ fn main() {
             _ => println!("{:?}", err),
         },
         Ok(gateway) => {
-            match igd::remove_port(&gateway, igd::PortMappingProtocol::TCP,
+            match gateway.remove_port(igd::PortMappingProtocol::TCP,
                                    80) {
                 Err(ref err) => match *err {
                     igd::RequestError::IoError(ref ioe) => {
