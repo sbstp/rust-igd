@@ -23,15 +23,10 @@ impl Header for Action {
         "SOAPAction"
     }
 
+    #[allow(unused_variables)]
     fn parse_header(raw: &[Vec<u8>]) -> hyper::Result<Action> {
-        // Can SOAPAction appear more than once?
-        if raw.len() == 1 {
-            match String::from_utf8(raw[0].clone()) {
-                Ok(action) => return Ok(Action(action)),
-                Err(_) => return Err(HyperError::Header),
-            }
-        }
-        Err(HyperError::Header)
+        // Leave unimplemented as we shouldn't need it.
+        unimplemented!();
     }
 
 }
