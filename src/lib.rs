@@ -1,6 +1,3 @@
-#![feature(plugin)]
-#![feature(ip_addr)]
-
 extern crate hyper;
 extern crate regex;
 extern crate xml;
