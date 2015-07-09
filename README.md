@@ -30,7 +30,7 @@ impl Gateway {
     // Remove a port mapping
     pub fn remove_port(&self, protocol: PortMappingProtocol,
                        external_port: u16)
-                       -> Result<(), RequestError> {
+                       -> Result<(), RequestError>;
 }
 ```
 
