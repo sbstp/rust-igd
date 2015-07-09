@@ -9,6 +9,7 @@ pub use self::gateway::RequestError;
 
 // search of gateway
 pub use self::search::search_gateway;
+pub use self::search::search_gateway_from;
 pub use self::search::SearchError;
 
 // re-export error types
