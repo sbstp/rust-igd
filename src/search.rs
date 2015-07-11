@@ -25,6 +25,7 @@ pub enum SearchError {
     HttpError(hyper::Error),
     IoError(io::Error),
     InvalidResponse,
+    Utf8Error(str::Utf8Error),
     XmlError(XmlError),
 }
 
@@ -37,6 +38,12 @@ impl From<hyper::Error> for SearchError {
 impl From<io::Error> for SearchError {
     fn from(err: io::Error) -> SearchError {
         SearchError::IoError(err)
+    }
+}
+
+impl From<str::Utf8Error> for SearchError {
+    fn from(err: str::Utf8Error) -> SearchError {
+        SearchError::Utf8Error(err)
     }
 }
 
@@ -56,7 +63,7 @@ pub fn search_gateway_from(ip: Ipv4Addr) -> Result<Gateway, SearchError> {
     try!(socket.send_to(SEARCH_REQUEST.as_bytes(), "239.255.255.250:1900"));
     let mut buf = [0u8; 1024];
     let (read, _) = try!(socket.recv_from(&mut buf));
-    let text = str::from_utf8(&buf[..read]).unwrap();
+    let text = try!(str::from_utf8(&buf[..read]));
     match parse_result(text) {
         None => Err(SearchError::InvalidResponse),
         Some(location) => {
