@@ -2,6 +2,7 @@ use std::io;
 use std::net::{Ipv4Addr, SocketAddrV4};
 use std::net::UdpSocket;
 use std::str;
+use std::time::Duration;
 
 use hyper;
 use regex::Regex;
@@ -58,6 +59,9 @@ impl From<XmlError> for SearchError {
 pub fn search_gateway_from(ip: Ipv4Addr) -> Result<Gateway, SearchError> {
     let addr = SocketAddrV4::new(ip, 0);
     let socket = try!(UdpSocket::bind(addr));
+
+    // wait one second for a response
+    try!(socket.set_read_timeout(Some(Duration::from_secs(1))));
 
     // send the request on the broadcast address
     try!(socket.send_to(SEARCH_REQUEST.as_bytes(), "239.255.255.250:1900"));
