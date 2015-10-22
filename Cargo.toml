@@ -1,6 +1,6 @@
 [package]
 name = "igd"
-version = "0.1.4"
+version = "0.2.0"
 authors = ["Simon Bernier St-Pierre <sbernierstpierre@gmail.com>"]
 description = "Internet Gateway Protocol client"
 homepage = "https://github.com/SBSTP/rust-igd"
@@ -21,4 +21,3 @@ default-features = false
 # Use unstable features of libstd. This enables the search_gateway_timeout and
 # search_gateway_from_timeout functions.
 unstable = []
-
