@@ -2,6 +2,8 @@ use std::io;
 use std::net::{Ipv4Addr, SocketAddrV4};
 use std::net::UdpSocket;
 use std::str;
+
+#[cfg(feature = "unstable")]
 use std::time::Duration;
 
 use hyper;
@@ -54,15 +56,7 @@ impl From<XmlError> for SearchError {
     }
 }
 
-// Try to find the gateway on the local network.
-// Bind to the given interface.
-pub fn search_gateway_from(ip: Ipv4Addr) -> Result<Gateway, SearchError> {
-    let addr = SocketAddrV4::new(ip, 0);
-    let socket = try!(UdpSocket::bind(addr));
-
-    // wait one second for a response
-    try!(socket.set_read_timeout(Some(Duration::from_secs(1))));
-
+fn search_gateway_common(socket: UdpSocket) -> Result<Gateway, SearchError> {
     // send the request on the broadcast address
     try!(socket.send_to(SEARCH_REQUEST.as_bytes(), "239.255.255.250:1900"));
     let mut buf = [0u8; 1024];
@@ -78,7 +72,33 @@ pub fn search_gateway_from(ip: Ipv4Addr) -> Result<Gateway, SearchError> {
 }
 
 // Try to find the gateway on the local network.
-// Bind to all interfaces.
+// Bind to the given interface. Block for the given duration waiting for a response from the
+// gateway.
+#[cfg(feature = "unstable")]
+pub fn search_gateway_from_timeout(ip: Ipv4Addr, timeout: Duration) -> Result<Gateway, SearchError> {
+    let addr = SocketAddrV4::new(ip, 0);
+    let socket = try!(UdpSocket::bind(addr));
+    try!(socket.set_read_timeout(Some(timeout)));
+    search_gateway_common(socket)
+}
+
+// Try to find the gateway on the local network.
+// Bind to the given interface. Block indefinitely waiting for a response from the gateway.
+pub fn search_gateway_from(ip: Ipv4Addr) -> Result<Gateway, SearchError> {
+    let addr = SocketAddrV4::new(ip, 0);
+    let socket = try!(UdpSocket::bind(addr));
+    search_gateway_common(socket)
+}
+
+// Try to find the gateway on the local network.
+// Bind to all interfaces. Block for the given duration waiting for a response from the gateway.
+#[cfg(feature = "unstable")]
+pub fn search_gateway_timeout(timeout: Duration) -> Result<Gateway, SearchError> {
+    search_gateway_from_timeout(Ipv4Addr::new(0, 0, 0, 0), timeout)
+}
+
+// Try to find the gateway on the local network.
+// Bind to all interfaces. Block indefinitely waiting for a response from the gateway.
 pub fn search_gateway() -> Result<Gateway, SearchError> {
     search_gateway_from(Ipv4Addr::new(0, 0, 0, 0))
 }
