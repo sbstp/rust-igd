@@ -12,6 +12,10 @@ Contributions are welcome! This is pretty delicate to test, please submit an iss
 fn search_gateway() -> Result<Gateway, SearchError>
 // Bind the UDP socket to the given ip address
 fn search_gateway_from(ip: Ipv4Addr) -> Result<Gateway, SearchError>
+// Bind the UDP socket to all interfaces. Search with timeout.
+fn search_gateway_timeout(timeout: Duration) -> Result<Gateway, SearchError>
+// Bind the UDP socket to the given ip address. Search with timeout.
+fn search_gateway_from_timeout(ip: Ipv4Addr, timeout: Duration) -> Result<Gateway, SearchError>
 
 // Gateway struct
 pub struct Gateway {
