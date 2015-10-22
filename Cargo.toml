@@ -10,7 +10,7 @@ keywords = ["igd", "upnp"]
 license = "MIT"
 
 [dependencies]
-regex = "*"
+regex = "0.1.41"
 xml-rs = "0.1.25"
 
 [dependencies.hyper]
