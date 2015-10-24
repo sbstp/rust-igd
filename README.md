@@ -12,6 +12,11 @@ Contributions are welcome! This is pretty delicate to test, please submit an iss
 fn search_gateway() -> Result<Gateway, SearchError>
 // Bind the UDP socket to the given ip address
 fn search_gateway_from(ip: Ipv4Addr) -> Result<Gateway, SearchError>
+
+
+// The functions below are only available under the unstable feature.
+// The feature uses newer APIs that are only available on beta and nightly.
+
 // Bind the UDP socket to all interfaces. Search with timeout.
 fn search_gateway_timeout(timeout: Duration) -> Result<Gateway, SearchError>
 // Bind the UDP socket to the given ip address. Search with timeout.
