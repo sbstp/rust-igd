@@ -16,8 +16,3 @@ xml-rs = "0.1.25"
 [dependencies.hyper]
 version = "0.6.*"
 default-features = false
-
-[features]
-# Use unstable features of libstd. This enables the search_gateway_timeout and
-# search_gateway_from_timeout functions.
-unstable = []

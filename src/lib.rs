@@ -9,13 +9,10 @@ pub use self::gateway::RequestError;
 
 // search of gateway
 pub use self::search::search_gateway;
-pub use self::search::search_gateway_from;
-pub use self::search::SearchError;
-
-#[cfg(feature = "unstable")]
 pub use self::search::search_gateway_timeout;
-#[cfg(feature = "unstable")]
+pub use self::search::search_gateway_from;
 pub use self::search::search_gateway_from_timeout;
+pub use self::search::SearchError;
 
 // re-export error types
 pub use hyper::Error as HttpError;
