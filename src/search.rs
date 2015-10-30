@@ -20,13 +20,18 @@ ST:urn:schemas-upnp-org:device:InternetGatewayDevice:1\r
 Man:\"ssdp:discover\"\r
 MX:3\r\n\r\n";
 
-// Error type this module emits.
+/// Errors than can occur while trying to find the gateway.
 #[derive(Debug)]
 pub enum SearchError {
+    /// Http/Hyper error
     HttpError(hyper::Error),
-    IoError(io::Error),
+    /// Unable to process the response
     InvalidResponse,
+    /// IO Error
+    IoError(io::Error),
+    /// UTF-8 decoding error
     Utf8Error(str::Utf8Error),
+    /// XML processing error
     XmlError(XmlError),
 }
 
@@ -54,7 +59,7 @@ impl From<XmlError> for SearchError {
     }
 }
 
-/// Try to find the gateway on the local network.
+/// Try to find a gateway on the local network.
 ///
 /// Bind to all interfaces.
 /// The request will timeout after 3 seconds.
@@ -62,7 +67,7 @@ pub fn search_gateway() -> Result<Gateway, SearchError> {
     search_gateway_timeout(Duration::from_secs(3))
 }
 
-/// Try to find the gateway on the local network.
+/// Try to find a gateway on the local network.
 ///
 /// Bind to all interfaces.
 /// The request will timeout after the given duration.
@@ -70,7 +75,7 @@ pub fn search_gateway_timeout(timeout: Duration) -> Result<Gateway, SearchError>
     search_gateway_from_timeout(Ipv4Addr::new(0, 0, 0, 0), timeout)
 }
 
-/// Try to find the gateway on the local network.
+/// Try to find a gateway on the local network.
 ///
 /// Bind to the given interface.
 /// The request will timeout after 3 seconds.
@@ -78,7 +83,7 @@ pub fn search_gateway_from(ip: Ipv4Addr) -> Result<Gateway, SearchError> {
     search_gateway_from_timeout(ip, Duration::from_secs(3))
 }
 
-/// Try to find the gateway on the local network.
+/// Try to find a gateway on the local network.
 ///
 /// Bind to the given interface.
 /// The request will timeout after the given duration.
@@ -96,7 +101,10 @@ pub fn search_gateway_from_timeout(ip: Ipv4Addr, timeout: Duration) -> Result<Ga
         None => Err(SearchError::InvalidResponse),
         Some(location) => {
             let control_url = try!(get_control_url(&location));
-            Ok(Gateway::new(location.0, control_url))
+            Ok(Gateway{
+                addr: location.0,
+                control_url: control_url
+            })
         },
     }
 }

@@ -7,10 +7,14 @@ use regex::Regex;
 
 use soap;
 
+/// Errors that can occur when sending the request to the gateway.
 #[derive(Debug)]
 pub enum RequestError {
+    /// Http/Hyper error
     HttpError(hyper::Error),
+    /// Unable to process the response
     InvalidResponse,
+    /// IO Error
     IoError(io::Error),
 }
 
@@ -30,9 +34,12 @@ impl From<soap::Error> for RequestError {
     }
 }
 
+/// Represents the protocols available for port mapping.
 #[derive(Debug,Clone,Copy,PartialEq)]
 pub enum PortMappingProtocol {
+    /// TCP protocol
     TCP,
+    /// UDP protocol
     UDP,
 }
 
@@ -59,22 +66,18 @@ fn extract_address(text: &str) -> Result<Ipv4Addr, RequestError> {
     }
 }
 
+/// This structure represents a gateway found by the search functions.
 #[derive(Debug)]
 pub struct Gateway {
+    /// Socket address of the gateway
     pub addr: SocketAddrV4,
+    /// Control url of the device
     pub control_url: String,
 }
 
 impl Gateway {
 
-    pub fn new(addr: SocketAddrV4, control_url: String) -> Gateway {
-        Gateway{
-            addr: addr,
-            control_url: control_url
-        }
-    }
-
-    // Get the external IP address.
+    /// Get the external IP address of the gateway.
     pub fn get_external_ip(&self) -> Result<Ipv4Addr, RequestError> {
         //let addr = gateway.addr.clone();
         let url = format!("{}", self);
@@ -90,6 +93,7 @@ impl Gateway {
         extract_address(&text)
     }
 
+    /// Add a port mapping.
     pub fn add_port(&self, protocol: PortMappingProtocol,
                     external_port: u16, local_addr: SocketAddrV4, lease_duration: u32,
                     description: &str) -> Result<(), RequestError> {
@@ -122,6 +126,7 @@ impl Gateway {
         }
     }
 
+    /// Remove a port mapping.
     pub fn remove_port(&self, protocol: PortMappingProtocol,
                        external_port: u16) -> Result<(), RequestError> {
         let url = format!("{}", self);
