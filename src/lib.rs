@@ -1,3 +1,7 @@
+//! This library allows you to communicate with an IGD enabled device.
+
+#![deny(missing_docs)]
+
 extern crate hyper;
 extern crate regex;
 extern crate xml;
