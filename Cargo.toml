@@ -5,6 +5,7 @@ authors = ["Simon Bernier St-Pierre <sbernierstpierre@gmail.com>"]
 description = "Internet Gateway Protocol client"
 homepage = "https://github.com/SBSTP/rust-igd"
 repository = "https://github.com/SBSTP/rust-igd"
+documentation = "https://sbstp.github.io/rust-igd/igd/"
 readme = "README.md"
 keywords = ["igd", "upnp"]
 license = "MIT"

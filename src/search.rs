@@ -59,7 +59,7 @@ impl From<XmlError> for SearchError {
     }
 }
 
-/// Try to find a gateway on the local network.
+/// Search gateway, bind to all interfaces and use a timeout of 3 seconds.
 ///
 /// Bind to all interfaces.
 /// The request will timeout after 3 seconds.
@@ -67,7 +67,7 @@ pub fn search_gateway() -> Result<Gateway, SearchError> {
     search_gateway_timeout(Duration::from_secs(3))
 }
 
-/// Try to find a gateway on the local network.
+/// Search gateway, bind to all interfaces and use the given duration for the timeout.
 ///
 /// Bind to all interfaces.
 /// The request will timeout after the given duration.
@@ -75,7 +75,7 @@ pub fn search_gateway_timeout(timeout: Duration) -> Result<Gateway, SearchError>
     search_gateway_from_timeout(Ipv4Addr::new(0, 0, 0, 0), timeout)
 }
 
-/// Try to find a gateway on the local network.
+/// Search gateway, bind to the given interface and use a time of 3 seconds.
 ///
 /// Bind to the given interface.
 /// The request will timeout after 3 seconds.
@@ -83,7 +83,7 @@ pub fn search_gateway_from(ip: Ipv4Addr) -> Result<Gateway, SearchError> {
     search_gateway_from_timeout(ip, Duration::from_secs(3))
 }
 
-/// Try to find a gateway on the local network.
+/// Search gateway, bind to the given interface and use the given duration for the timeout.
 ///
 /// Bind to the given interface.
 /// The request will timeout after the given duration.

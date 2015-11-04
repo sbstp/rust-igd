@@ -94,6 +94,9 @@ impl Gateway {
     }
 
     /// Add a port mapping.
+    ///
+    /// The local_addr is the address where the traffic is sent to.
+    /// The lease_duration parameter is in seconds. A value of 0 is infinite.
     pub fn add_port(&self, protocol: PortMappingProtocol,
                     external_port: u16, local_addr: SocketAddrV4, lease_duration: u32,
                     description: &str) -> Result<(), RequestError> {
