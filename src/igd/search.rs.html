@@ -325,7 +325,7 @@ MX:3\r\n\r\n&quot;</span>;
     }
 }
 
-<span class='doccomment'>/// Try to find a gateway on the local network.</span>
+<span class='doccomment'>/// Search gateway, bind to all interfaces and use a timeout of 3 seconds.</span>
 <span class='doccomment'>///</span>
 <span class='doccomment'>/// Bind to all interfaces.</span>
 <span class='doccomment'>/// The request will timeout after 3 seconds.</span>
@@ -333,7 +333,7 @@ MX:3\r\n\r\n&quot;</span>;
     <span class='ident'>search_gateway_timeout</span>(<span class='ident'>Duration</span>::<span class='ident'>from_secs</span>(<span class='number'>3</span>))
 }
 
-<span class='doccomment'>/// Try to find a gateway on the local network.</span>
+<span class='doccomment'>/// Search gateway, bind to all interfaces and use the given duration for the timeout.</span>
 <span class='doccomment'>///</span>
 <span class='doccomment'>/// Bind to all interfaces.</span>
 <span class='doccomment'>/// The request will timeout after the given duration.</span>
@@ -341,7 +341,7 @@ MX:3\r\n\r\n&quot;</span>;
     <span class='ident'>search_gateway_from_timeout</span>(<span class='ident'>Ipv4Addr</span>::<span class='ident'>new</span>(<span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>, <span class='number'>0</span>), <span class='ident'>timeout</span>)
 }
 
-<span class='doccomment'>/// Try to find a gateway on the local network.</span>
+<span class='doccomment'>/// Search gateway, bind to the given interface and use a time of 3 seconds.</span>
 <span class='doccomment'>///</span>
 <span class='doccomment'>/// Bind to the given interface.</span>
 <span class='doccomment'>/// The request will timeout after 3 seconds.</span>
@@ -349,7 +349,7 @@ MX:3\r\n\r\n&quot;</span>;
     <span class='ident'>search_gateway_from_timeout</span>(<span class='ident'>ip</span>, <span class='ident'>Duration</span>::<span class='ident'>from_secs</span>(<span class='number'>3</span>))
 }
 
-<span class='doccomment'>/// Try to find a gateway on the local network.</span>
+<span class='doccomment'>/// Search gateway, bind to the given interface and use the given duration for the timeout.</span>
 <span class='doccomment'>///</span>
 <span class='doccomment'>/// Bind to the given interface.</span>
 <span class='doccomment'>/// The request will timeout after the given duration.</span>

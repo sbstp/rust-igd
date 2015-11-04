@@ -45,8 +45,10 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-0' class='srclink' href='../src/igd/lib.rs.html#1-27' title='goto source code'>[src]</a></span></h1>
-<div class='docblock'><p>This library allows you to communicate with an IGD enabled device.</p>
+        </span><a id='src-0' class='srclink' href='../src/igd/lib.rs.html#1-29' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>This library allows you to communicate with an IGD enabled device.
+Use one of the <code>search_gateway</code> functions to obtain a <code>Gateway</code> object.
+You can then communicate with the device via this object.</p>
 </div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
                     <tr class=' module-item'>
@@ -109,7 +111,7 @@
                         <td><a class='fn' href='fn.search_gateway.html'
                                title='igd::search_gateway'>search_gateway</a></td>
                         <td class='docblock short'>
-                             <p>Try to find a gateway on the local network.</p>
+                             <p>Search gateway, bind to all interfaces and use a timeout of 3 seconds.</p>
 
                         </td>
                     </tr>
@@ -118,7 +120,7 @@
                         <td><a class='fn' href='fn.search_gateway_from.html'
                                title='igd::search_gateway_from'>search_gateway_from</a></td>
                         <td class='docblock short'>
-                             <p>Try to find a gateway on the local network.</p>
+                             <p>Search gateway, bind to the given interface and use a time of 3 seconds.</p>
 
                         </td>
                     </tr>
@@ -127,7 +129,7 @@
                         <td><a class='fn' href='fn.search_gateway_from_timeout.html'
                                title='igd::search_gateway_from_timeout'>search_gateway_from_timeout</a></td>
                         <td class='docblock short'>
-                             <p>Try to find a gateway on the local network.</p>
+                             <p>Search gateway, bind to the given interface and use the given duration for the timeout.</p>
 
                         </td>
                     </tr>
@@ -136,7 +138,7 @@
                         <td><a class='fn' href='fn.search_gateway_timeout.html'
                                title='igd::search_gateway_timeout'>search_gateway_timeout</a></td>
                         <td class='docblock short'>
-                             <p>Try to find a gateway on the local network.</p>
+                             <p>Search gateway, bind to all interfaces and use the given duration for the timeout.</p>
 
                         </td>
                     </tr>

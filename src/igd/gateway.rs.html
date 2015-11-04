@@ -213,6 +213,9 @@
 <span id="171">171</span>
 <span id="172">172</span>
 <span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
 </pre><pre class='rust '>
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>net</span>::{<span class='ident'>Ipv4Addr</span>, <span class='ident'>SocketAddrV4</span>};
@@ -310,6 +313,9 @@
     }
 
     <span class='doccomment'>/// Add a port mapping.</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// The local_addr is the address where the traffic is sent to.</span>
+    <span class='doccomment'>/// The lease_duration parameter is in seconds. A value of 0 is infinite.</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>add_port</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>protocol</span>: <span class='ident'>PortMappingProtocol</span>,
                     <span class='ident'>external_port</span>: <span class='ident'>u16</span>, <span class='ident'>local_addr</span>: <span class='ident'>SocketAddrV4</span>, <span class='ident'>lease_duration</span>: <span class='ident'>u32</span>,
                     <span class='ident'>description</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span>(), <span class='ident'>RequestError</span><span class='op'>&gt;</span> {
