@@ -13,7 +13,9 @@ license = "MIT"
 [dependencies]
 regex = "0.1.41"
 xml-rs = "0.1.25"
+xmltree = "*"
 
 [dependencies.hyper]
 version = "0.6.*"
 default-features = false
+
