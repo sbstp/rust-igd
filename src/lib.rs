@@ -8,6 +8,7 @@ extern crate hyper;
 extern crate regex;
 extern crate xml;
 extern crate xmltree;
+extern crate rand;
 
 // data structures
 pub use self::gateway::Gateway;
