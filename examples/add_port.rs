@@ -13,12 +13,9 @@ fn main() {
             let local_addr = SocketAddrV4::new(local_addr, 8080u16);
 
             match gateway.add_port(igd::PortMappingProtocol::TCP, 80,
-                                local_addr, 0, "crust") {
-                Err(ref err) => match *err {
-                    igd::RequestError::IoError(ref ioe) => {
-                        println!("IoError: {}", ioe)
-                    },
-                    _ => println!("{:?}", err),
+                                   local_addr, 0, "crust") {
+                Err(ref err) => {
+                    println!("There was an error! {}", err);
                 },
                 Ok(()) => {
                     println!("It worked");

@@ -7,13 +7,9 @@ fn main() {
             _ => println!("{:?}", err),
         },
         Ok(gateway) => {
-            match gateway.remove_port(igd::PortMappingProtocol::TCP,
-                                   80) {
-                Err(ref err) => match *err {
-                    igd::RequestError::IoError(ref ioe) => {
-                        println!("IoError: {}", ioe)
-                    },
-                    _ => println!("{:?}", err),
+            match gateway.remove_port(igd::PortMappingProtocol::TCP, 80) {
+                Err(ref err) => {
+                    println!("There was an error! {}", err);
                 },
                 Ok(()) => {
                     println!("It worked");
