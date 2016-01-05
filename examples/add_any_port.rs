@@ -4,10 +4,7 @@ extern crate igd;
 
 fn main() {
     match igd::search_gateway() {
-        Err(ref err) => match *err {
-            igd::SearchError::IoError(ref ioe) => println!("IoError: {}", ioe),
-            _ => println!("Error: {}", err),
-        },
+        Err(ref err) => println!("Error: {}", err),
         Ok(gateway) => {
             let local_addr = match std::env::args().nth(1) {
                 Some(local_addr) => local_addr,
