@@ -325,8 +325,8 @@ impl Gateway {
             return Ok((text, ok))
         }
         let upnp_error = match body.get_child("Fault")
-                              .and_then(|e| e.get_child("UPnPError"))
                               .and_then(|e| e.get_child("detail"))
+                              .and_then(|e| e.get_child("UPnPError"))
         {
             Some(upnp_error) => upnp_error,
             None => return Err(RequestError::InvalidResponse(text)),
@@ -522,8 +522,7 @@ impl Gateway {
             <u:DeletePortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">
                 <NewProtocol>{}</NewProtocol>
                 <NewExternalPort>{}</NewExternalPort>
-                <NewRemoteHost>
-                </NewRemoteHost>
+                <NewRemoteHost></NewRemoteHost>
             </u:DeletePortMapping>
         </s:Body>
         </s:Envelope>

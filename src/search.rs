@@ -2,6 +2,8 @@ use std::io;
 use std::net::{Ipv4Addr, SocketAddrV4};
 use std::net::UdpSocket;
 use std::str;
+use std::fmt;
+use std::error;
 use std::time::Duration;
 
 use hyper;
@@ -56,6 +58,40 @@ impl From<str::Utf8Error> for SearchError {
 impl From<XmlError> for SearchError {
     fn from(err: XmlError) -> SearchError {
         SearchError::XmlError(err)
+    }
+}
+
+impl fmt::Display for SearchError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            SearchError::HttpError(ref e) => write!(f, "HTTP error: {}", e),
+            SearchError::InvalidResponse  => write!(f, "Invalid response"),
+            SearchError::IoError(ref e)   => write!(f, "IO error: {}", e),
+            SearchError::Utf8Error(ref e) => write!(f, "UTF-8 error: {}", e),
+            SearchError::XmlError(ref e)  => write!(f, "XML error: {}", e),
+        }
+    }
+}
+
+impl error::Error for SearchError {
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            SearchError::HttpError(ref e) => Some(e),
+            SearchError::InvalidResponse  => None,
+            SearchError::IoError(ref e)   => Some(e),
+            SearchError::Utf8Error(ref e) => Some(e),
+            SearchError::XmlError(ref e)  => Some(e),
+        }
+    }
+
+    fn description(&self) -> &str {
+        match *self {
+            SearchError::HttpError(..)   => "HTTP error",
+            SearchError::InvalidResponse => "Invalid response",
+            SearchError::IoError(..)     => "IO error",
+            SearchError::Utf8Error(..)   => "UTF-8 error",
+            SearchError::XmlError(..)    => "XML error",
+        }
     }
 }
 
