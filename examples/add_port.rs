@@ -14,7 +14,7 @@ fn main() {
             let local_addr = SocketAddrV4::new(local_addr, 8080u16);
 
             match gateway.add_port(igd::PortMappingProtocol::TCP, 80,
-                                   local_addr, 0, "add_port example") {
+                                   local_addr, 60, "add_port example") {
                 Err(ref err) => {
                     println!("There was an error! {}", err);
                 },
