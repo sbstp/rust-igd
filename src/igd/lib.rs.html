@@ -69,6 +69,12 @@
 <span id="27">27</span>
 <span id="28">28</span>
 <span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! This library allows you to communicate with an IGD enabled device.</span>
 <span class='doccomment'>//! Use one of the `search_gateway` functions to obtain a `Gateway` object.</span>
@@ -79,11 +85,17 @@
 <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>hyper</span>;
 <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>regex</span>;
 <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>xml</span>;
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>xmltree</span>;
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>rand</span>;
 
 <span class='comment'>// data structures</span>
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>gateway</span>::<span class='ident'>Gateway</span>;
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>gateway</span>::<span class='ident'>PortMappingProtocol</span>;
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>gateway</span>::<span class='ident'>RequestError</span>;
+<span class='kw'>pub</span> <span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>gateway</span>::<span class='ident'>GetExternalIpError</span>;
+<span class='kw'>pub</span> <span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>gateway</span>::<span class='ident'>RemovePortError</span>;
+<span class='kw'>pub</span> <span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>gateway</span>::<span class='ident'>AddPortError</span>;
+<span class='kw'>pub</span> <span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>gateway</span>::<span class='ident'>AddAnyPortError</span>;
 
 <span class='comment'>// search of gateway</span>
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>search</span>::<span class='ident'>search_gateway</span>;

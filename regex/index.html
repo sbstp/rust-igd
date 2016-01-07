@@ -11,7 +11,7 @@
 
     <link rel="stylesheet" type="text/css" href="../main.css">
 
-    <link rel="shortcut icon" href="http://www.rust-lang.org/favicon.ico">
+    <link rel="shortcut icon" href="https://www.rust-lang.org/favicon.ico">
     
 </head>
 <body class="rustdoc">
@@ -25,7 +25,7 @@
     
 
     <nav class="sidebar">
-        <a href='../regex/index.html'><img src='http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='' width='100'></a>
+        <a href='../regex/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='' width='100'></a>
         <p class='location'></p><script>window.sidebarCurrent = {name: 'regex', ty: 'mod', relpath: '../'};</script>
     </nav>
 
@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-0' class='srclink' href='../src/regex/lib.rs.html#11-429' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-0' class='srclink' href='../src/regex/lib.rs.html#11-438' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>This crate provides a native implementation of regular expressions that is
 heavily based on RE2 both in syntax and in implementation. Notably,
 backreferences and arbitrary lookahead/lookbehind assertions are not
@@ -63,7 +63,7 @@ details on the API, please see the documentation for the <code>Regex</code> type
 used by adding <code>regex</code> to your dependencies in your project&#39;s <code>Cargo.toml</code>.</p>
 
 <pre><code class="language-toml">[dependencies]
-regex = &quot;0.1.8&quot;
+regex = &quot;0.1&quot;
 </code></pre>
 
 <p>and this to your crate root:</p>
@@ -86,7 +86,7 @@ it to match anywhere in the text. Anchors can be used to ensure that the
 full text matches an expression.</p>
 
 <p>This example also demonstrates the utility of
-<a href="http://doc.rust-lang.org/stable/reference.html#raw-byte-string-literals">raw strings</a>
+<a href="https://doc.rust-lang.org/stable/reference.html#raw-string-literals">raw strings</a>
 in Rust, which
 are just like regular strings except they are prefixed with an <code>r</code> and do
 not process any escape sequences. For example, <code>&quot;\\d&quot;</code> is the same
@@ -101,11 +101,19 @@ expressions in your program, then your program cannot compile with an
 invalid regular expression. Moreover, the <code>regex!</code> macro compiles the
 given expression to native Rust code, which ideally makes it faster.
 Unfortunately (or fortunately), the dynamic implementation has had a lot
-more optimization work put it into it currently, so it is faster than
+more optimization work put into it currently, so it is faster than
 the <code>regex!</code> macro in most cases.</p>
 
-<p>To use the <code>regex!</code> macro, you must enable the <code>plugin</code> feature and import
-the <code>regex_macros</code> crate as a syntax extension:</p>
+<p>To use the <code>regex!</code> macro, you must add <code>regex_macros</code> to your dependencies
+in your project&#39;s <code>Cargo.toml</code>:</p>
+
+<pre><code class="language-toml">[dependencies]
+regex = &quot;0.1.8&quot;
+regex_macros = &quot;0.1.8&quot;
+</code></pre>
+
+<p>and then enable the <code>plugin</code> feature and import the <code>regex_macros</code> crate as
+a syntax extension:</p>
 <pre class='rust rust-example-rendered'>
 <span class='attribute'>#<span class='op'>!</span>[<span class='ident'>feature</span>(<span class='ident'>plugin</span>)]</span>
 <span class='attribute'>#<span class='op'>!</span>[<span class='ident'>plugin</span>(<span class='ident'>regex_macros</span>)]</span>
@@ -389,7 +397,7 @@ like <code>a{100}{100}{100}</code>.</p>
 <p>Untrusted search text is allowed because the matching engine(s) in this
 crate have time complexity <code>O(mn)</code> (with <code>m ~ regex</code> and <code>n ~ search text</code>), which means there&#39;s no way to cause exponential blow-up like with
 some other regular expression engines. (We pay for this by disallowing
-features like arbitrary look-ahead and back-references.)</p>
+features like arbitrary look-ahead and backreferences.)</p>
 </div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
                     <tr class=' module-item'>
@@ -478,6 +486,17 @@ regular expression.</p>
                     </tr>
                 </table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
 <table>
+                    <tr class=' module-item'>
+                        <td><a class='enum' href='enum.CaptureNames.html'
+                               title='regex::CaptureNames'>CaptureNames</a></td>
+                        <td class='docblock short'>
+                             <p>Yields the names of all possible captures.
+<code>None</code> indicates an unnamed capture; the first element
+(capture 0, the whole matched region) is always unnamed.</p>
+
+                        </td>
+                    </tr>
+                
                     <tr class=' module-item'>
                         <td><a class='enum' href='enum.Error.html'
                                title='regex::Error'>Error</a></td>

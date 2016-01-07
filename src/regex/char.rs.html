@@ -4,14 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/home/simon/.multirust/toolchains/stable/cargo/registry/src/github.com-0a35038f75765ae4/regex-0.1.41/src/char.rs`.">
+    <meta name="description" content="Source to the Rust file `/home/simon/.cargo/registry/src/github.com-0a35038f75765ae4/regex-0.1.46/src/char.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>char.rs.html -- source</title>
 
     <link rel="stylesheet" type="text/css" href="../../main.css">
 
-    <link rel="shortcut icon" href="http://www.rust-lang.org/favicon.ico">
+    <link rel="shortcut icon" href="https://www.rust-lang.org/favicon.ico">
     
 </head>
 <body class="rustdoc">
@@ -25,7 +25,7 @@
     
 
     <nav class="sidebar">
-        <a href='../../regex/index.html'><img src='http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='' width='100'></a>
+        <a href='../../regex/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='' width='100'></a>
         
     </nav>
 
@@ -188,14 +188,14 @@
     <span class='doccomment'>/// If the character is absent, then `0` is returned.</span>
     <span class='attribute'>#[<span class='ident'>inline</span>]</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>len_utf8</span>(<span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>usize</span> {
-        <span class='ident'>char</span>::<span class='ident'>from_u32</span>(<span class='self'>self</span>.<span class='number'>0</span>).<span class='ident'>map</span>(<span class='op'>|</span><span class='ident'>c</span><span class='op'>|</span> <span class='ident'>c</span>.<span class='ident'>len_utf8</span>()).<span class='ident'>unwrap_or</span>(<span class='number'>0</span>)
+        <span class='ident'>char</span>::<span class='ident'>from_u32</span>(<span class='self'>self</span>.<span class='number'>0</span>).<span class='ident'>map_or</span>(<span class='number'>0</span>, <span class='op'>|</span><span class='ident'>c</span><span class='op'>|</span> <span class='ident'>c</span>.<span class='ident'>len_utf8</span>())
     }
 
     <span class='doccomment'>/// Returns true iff the character is a word character.</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// If the character is absent, then false is returned.</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>is_word_char</span>(<span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>bool</span> {
-        <span class='ident'>char</span>::<span class='ident'>from_u32</span>(<span class='self'>self</span>.<span class='number'>0</span>).<span class='ident'>map</span>(<span class='ident'>syntax</span>::<span class='ident'>is_word_char</span>).<span class='ident'>unwrap_or</span>(<span class='boolval'>false</span>)
+        <span class='ident'>char</span>::<span class='ident'>from_u32</span>(<span class='self'>self</span>.<span class='number'>0</span>).<span class='ident'>map_or</span>(<span class='boolval'>false</span>, <span class='ident'>syntax</span>::<span class='ident'>is_word_char</span>)
     }
 
     <span class='doccomment'>/// Converts the character to a real primitive `char`.</span>
@@ -214,7 +214,7 @@
 
 <span class='kw'>impl</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>char</span><span class='op'>&gt;&gt;</span> <span class='kw'>for</span> <span class='ident'>Char</span> {
     <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>c</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>char</span><span class='op'>&gt;</span>) <span class='op'>-&gt;</span> <span class='ident'>Char</span> {
-        <span class='ident'>c</span>.<span class='ident'>map</span>(<span class='op'>|</span><span class='ident'>c</span><span class='op'>|</span> <span class='ident'>c</span>.<span class='ident'>into</span>()).<span class='ident'>unwrap_or</span>(<span class='ident'>Char</span>(<span class='ident'>u32</span>::<span class='ident'>MAX</span>))
+        <span class='ident'>c</span>.<span class='ident'>map_or</span>(<span class='ident'>Char</span>(<span class='ident'>u32</span>::<span class='ident'>MAX</span>), <span class='op'>|</span><span class='ident'>c</span><span class='op'>|</span> <span class='ident'>c</span>.<span class='ident'>into</span>())
     }
 }
 
