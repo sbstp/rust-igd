@@ -14,6 +14,10 @@ extern crate rand;
 pub use self::gateway::Gateway;
 pub use self::gateway::PortMappingProtocol;
 pub use self::gateway::RequestError;
+pub use self::gateway::GetExternalIpError;
+pub use self::gateway::RemovePortError;
+pub use self::gateway::AddPortError;
+pub use self::gateway::AddAnyPortError;
 
 // search of gateway
 pub use self::search::search_gateway;
