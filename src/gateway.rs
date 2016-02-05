@@ -42,7 +42,7 @@ pub enum RemovePortError {
     RequestError(RequestError),
 }
 
-/// Errors returned by `Gateway::add_any_port`
+/// Errors returned by `Gateway::add_any_port` and `Gateway::get_any_address`
 #[derive(Debug)]
 pub enum AddAnyPortError {
     /// The client is not authorized to perform the operation.
@@ -371,6 +371,37 @@ impl Gateway {
         }
     }
 
+    /// Get an external socket address with our external ip and any port. This is a convenience
+    /// function that calls `get_external_ip` followed by `add_any_port`
+    ///
+    /// The local_addr is the address where the traffic is sent to.
+    /// The lease_duration parameter is in seconds. A value of 0 is infinite.
+    ///
+    /// # Returns
+    ///
+    /// The external address that was mapped on success. Otherwise an error.
+    pub fn get_any_address(&self,
+                           protocol: PortMappingProtocol,
+                           local_addr: SocketAddrV4,
+                           lease_duration: u32,
+                           description: &str)
+            -> Result<SocketAddrV4, AddAnyPortError>
+    {
+        let external_ip = match self.get_external_ip() {
+            Ok(ip) => ip,
+            Err(GetExternalIpError::ActionNotAuthorized)
+                => return Err(AddAnyPortError::ActionNotAuthorized),
+            Err(GetExternalIpError::RequestError(e))
+                => return Err(AddAnyPortError::RequestError(e)),
+        };
+        let external_port = try!(self.add_any_port(protocol,
+                                                   local_addr,
+                                                   lease_duration,
+                                                   description));
+        Ok(SocketAddrV4::new(external_ip, external_port))
+    }
+                        
+
     /// Add a port mapping.with any external port.
     ///
     /// The local_addr is the address where the traffic is sent to.
@@ -437,7 +468,9 @@ impl Gateway {
                         Ok(()) => return Ok(external_port),
                         Err(RequestError::ErrorCode(605, _)) => return Err(AddAnyPortError::DescriptionTooLong),
                         Err(RequestError::ErrorCode(606, _)) => return Err(AddAnyPortError::ActionNotAuthorized),
+                        // That port is in use. Try another.
                         Err(RequestError::ErrorCode(718, _)) => continue,
+                        // The router requires that internal and external ports are the same.
                         Err(RequestError::ErrorCode(724, _)) => {
                             return match self.add_port_mapping(protocol, local_addr.port(), local_addr, lease_duration, description) {
                                 Ok(()) => Ok(local_addr.port()),
