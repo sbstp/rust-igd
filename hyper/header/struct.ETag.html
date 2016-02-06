@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-15715' class='srclink' href='../../src/hyper/header/common/mod.rs.html#255' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-2525' class='srclink' href='../../src/hyper/header/common/mod.rs.html#255' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct ETag(pub <a class='struct' href='../../hyper/header/struct.EntityTag.html' title='hyper::header::EntityTag'>EntityTag</a>);</pre><div class='docblock'><p><code>ETag</code> header, defined in <a href="http://tools.ietf.org/html/rfc7232#section-2.3">RFC7232</a></p>
 
 <p>The <code>ETag</code> header field in a response provides the current entity-tag
@@ -58,21 +58,18 @@ resulting in multiple representations being valid at the same time,
 or both.  An entity-tag consists of an opaque quoted string, possibly
 prefixed by a weakness indicator.</p>
 
-<h1 id="abnf" class='section-header'><a
-                           href="#abnf">ABNF</a></h1>
+<h1 id='abnf' class='section-header'><a href='#abnf'>ABNF</a></h1>
 <pre><code class="language-plain">ETag       = entity-tag
 </code></pre>
 
-<h1 id="example-values" class='section-header'><a
-                           href="#example-values">Example values</a></h1>
+<h1 id='example-values' class='section-header'><a href='#example-values'>Example values</a></h1>
 <ul>
 <li><code>&quot;xyzzy&quot;</code></li>
 <li><code>W/&quot;xyzzy&quot;</code></li>
 <li><code>&quot;&quot;</code></li>
 </ul>
 
-<h1 id="examples" class='section-header'><a
-                           href="#examples">Examples</a></h1><pre class='rust rust-example-rendered'>
+<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1><pre class='rust rust-example-rendered'>
 <span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>header</span>::{<span class='ident'>Headers</span>, <span class='ident'>ETag</span>, <span class='ident'>EntityTag</span>};
 
 <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>headers</span> <span class='op'>=</span> <span class='ident'>Headers</span>::<span class='ident'>new</span>();
@@ -87,8 +84,7 @@ prefixed by a weakness indicator.</p>
 </div><h4 id='method.set_tag' class='method'><code>fn <a href='#method.set_tag' class='fnname'>set_tag</a>(&amp;mut self, tag: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>)</code></h4>
 <div class='docblock'><p>Set the tag.</p>
 
-<h1 id="panics" class='section-header'><a
-                           href="#panics">Panics</a></h1>
+<h1 id='panics' class='section-header'><a href='#panics'>Panics</a></h1>
 <p>If the tag contains invalid characters.</p>
 </div><h4 id='method.strong_eq' class='method'><code>fn <a href='#method.strong_eq' class='fnname'>strong_eq</a>(&amp;self, other: &amp;<a class='struct' href='../../hyper/header/struct.EntityTag.html' title='hyper::header::EntityTag'>EntityTag</a>) -&gt; <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
 <div class='docblock'><p>For strong comparison two entity-tags are equivalent if both are not weak and their

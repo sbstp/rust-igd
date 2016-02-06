@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-4022' class='srclink' href='../../../src/solicit/http/frame/mod.rs.html#118-148' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-534' class='srclink' href='../../../src/solicit/http/frame/mod.rs.html#118-148' title='goto source code'>[src]</a></span></h1>
 <pre class='rust trait'>pub trait Frame: <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a> {
     type FlagType: <a class='trait' href='../../../solicit/http/frame/trait.Flag.html' title='solicit::http::frame::Flag'>Flag</a>;
     fn <a href='#tymethod.from_raw' class='fnname'>from_raw</a>(raw_frame: <a class='struct' href='../../../solicit/http/frame/struct.RawFrame.html' title='solicit::http::frame::RawFrame'>RawFrame</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;Self&gt;;
@@ -66,8 +66,7 @@ This makes sure that only valid <code>Flag</code>s are used with each <code>Fram
         <h3 id='tymethod.from_raw' class='method stab '><code>fn <a href='#tymethod.from_raw' class='fnname'>from_raw</a>(raw_frame: <a class='struct' href='../../../solicit/http/frame/struct.RawFrame.html' title='solicit::http::frame::RawFrame'>RawFrame</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;Self&gt;</code></h3><div class='docblock'><p>Creates a new <code>Frame</code> from the given <code>RawFrame</code> (i.e. header and
 payload), if possible.</p>
 
-<h1 id="returns" class='section-header'><a
-                           href="#returns">Returns</a></h1>
+<h1 id='returns' class='section-header'><a href='#returns'>Returns</a></h1>
 <p><code>None</code> if a valid <code>Frame</code> cannot be constructed from the given
 <code>RawFrame</code>. Some reasons why this may happen is a wrong frame type in
 the header, a body that cannot be decoded according to the particular

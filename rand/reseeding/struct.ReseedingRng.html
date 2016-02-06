@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-11098' class='srclink' href='../../src/rand/reseeding.rs.html#24-30' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-910' class='srclink' href='../../src/rand/reseeding.rs.html#24-30' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct ReseedingRng&lt;R, Rsdr&gt; {
     pub reseeder: Rsdr,
     // some fields omitted
@@ -57,8 +57,7 @@ has generated a certain number of random bytes.</p>
 </div></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl&lt;R: <a class='trait' href='../../rand/trait.Rng.html' title='rand::Rng'>Rng</a>, Rsdr: <a class='trait' href='../../rand/reseeding/trait.Reseeder.html' title='rand::reseeding::Reseeder'>Reseeder</a>&lt;R&gt;&gt; <a class='struct' href='../../rand/reseeding/struct.ReseedingRng.html' title='rand::reseeding::ReseedingRng'>ReseedingRng</a>&lt;R, Rsdr&gt;</code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(rng: R, generation_threshold: <a href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>, reseeder: Rsdr) -&gt; <a class='struct' href='../../rand/reseeding/struct.ReseedingRng.html' title='rand::reseeding::ReseedingRng'>ReseedingRng</a>&lt;R, Rsdr&gt;</code></h4>
 <div class='docblock'><p>Create a new <code>ReseedingRng</code> with the given parameters.</p>
 
-<h1 id="arguments" class='section-header'><a
-                           href="#arguments">Arguments</a></h1>
+<h1 id='arguments' class='section-header'><a href='#arguments'>Arguments</a></h1>
 <ul>
 <li><code>rng</code>: the random number generator to use.</li>
 <li><code>generation_threshold</code>: the number of bytes of entropy at which to reseed the RNG.</li>

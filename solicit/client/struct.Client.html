@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-13515' class='srclink' href='../../src/solicit/client/async.rs.html#569-573' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-1875' class='srclink' href='../../src/solicit/client/async.rs.html#569-573' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct Client {
     // some fields omitted
 }</pre><div class='docblock'><p>A struct representing an HTTP/2 client that receives responses to its
@@ -53,8 +53,7 @@ requests asynchronously. Additionally, this client can be cloned and all
 clones can issue (concurrently) requests to the server, using the same
 underlying HTTP/2 connection.</p>
 
-<h1 id="example" class='section-header'><a
-                           href="#example">Example</a></h1><pre class='rust rust-example-rendered'>
+<h1 id='example' class='section-header'><a href='#example'>Example</a></h1><pre class='rust rust-example-rendered'>
 <span class='kw'>use</span> <span class='ident'>solicit</span>::<span class='ident'>client</span>::<span class='ident'>Client</span>;
 <span class='kw'>use</span> <span class='ident'>solicit</span>::<span class='ident'>http</span>::<span class='ident'>client</span>::<span class='ident'>CleartextConnector</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>thread</span>;
@@ -88,8 +87,7 @@ connection will be established behind the scenes. A thread is spawned
 to handle the connection in the background, so that the thread that
 creates the client can use it asynchronously.</p>
 
-<h1 id="returns" class='section-header'><a
-                           href="#returns">Returns</a></h1>
+<h1 id='returns' class='section-header'><a href='#returns'>Returns</a></h1>
 <p>A <code>Client</code> instance that allows access to the underlying HTTP/2
 connection on the application level. Only full requests and responses
 are exposed to users.</p>
@@ -107,8 +105,7 @@ the thread to exit.</p>
 <p>The request&#39;s method, path, and extra headers are provided as parameters.
 The headers should <em>never</em> include any meta-headers (such as <code>:method</code>).</p>
 
-<h1 id="returns" class='section-header'><a
-                           href="#returns">Returns</a></h1>
+<h1 id='returns' class='section-header'><a href='#returns'>Returns</a></h1>
 <p>The method itself returns immediately upon queuing the request. It does
 not wait for the request to be transmitted nor for the response to
 arrive. Once the caller is interested in the final response, they can

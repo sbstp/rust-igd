@@ -72,8 +72,7 @@ features = [&quot;query_encoding&quot;]
 
 <p>… or by passing <code>--cfg &#39;feature=&quot;query_encoding&quot;&#39;</code> to rustc.</p>
 
-<h1 id="url-parsing-and-data-structures" class='section-header'><a
-                           href="#url-parsing-and-data-structures">URL parsing and data structures</a></h1>
+<h1 id='url-parsing-and-data-structures' class='section-header'><a href='#url-parsing-and-data-structures'>URL parsing and data structures</a></h1>
 <p>First, URL parsing may fail for various reasons and therefore returns a <code>Result</code>.</p>
 <pre class='rust rust-example-rendered'>
 <span class='kw'>use</span> <span class='ident'>url</span>::{<span class='ident'>Url</span>, <span class='ident'>ParseError</span>};
@@ -117,8 +116,7 @@ Every other components has accessors because they only apply to URLs said to be
 <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>data_url</span>.<span class='ident'>query</span> <span class='op'>==</span> <span class='prelude-val'>None</span>);
 <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>data_url</span>.<span class='ident'>fragment</span> <span class='op'>==</span> <span class='prelude-val'>Some</span>(<span class='string'>&quot;&quot;</span>.<span class='ident'>to_string</span>()));</pre>
 
-<h1 id="base-url" class='section-header'><a
-                           href="#base-url">Base URL</a></h1>
+<h1 id='base-url' class='section-header'><a href='#base-url'>Base URL</a></h1>
 <p>Many contexts allow URL <em>references</em> that can be relative to a <em>base URL</em>:</p>
 
 <pre><code class="language-html">&lt;link rel=&quot;stylesheet&quot; href=&quot;../main.css&quot;&gt;

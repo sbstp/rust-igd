@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-11624' class='srclink' href='../../src/solicit/client/simple.rs.html#94-102' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-1617' class='srclink' href='../../src/solicit/client/simple.rs.html#94-102' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct SimpleClient&lt;S&gt; <span class='where'>where S: <a class='trait' href='../../solicit/http/transport/trait.TransportStream.html' title='solicit::http::transport::TransportStream'>TransportStream</a></span> {
     // some fields omitted
 }</pre><div class='docblock'><p>A struct implementing a simple HTTP/2 client.</p>
@@ -68,8 +68,7 @@ queuing up a sequence of requests and then &quot;joining&quot; over them by call
 <p>The responses that are returned by the client are very raw representations
 of the response.</p>
 
-<h1 id="examples" class='section-header'><a
-                           href="#examples">Examples</a></h1>
+<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1>
 <p>Issue a simple GET request using the helper <code>get</code> method. Premade connection
 passed to the client.</p>
 <pre class='rust rust-example-rendered'>
@@ -140,8 +139,7 @@ client preface.</p>
 connection by using the given connector instance (an implementation of
 the <code>HttpConnect</code> trait).</p>
 
-<h1 id="panics" class='section-header'><a
-                           href="#panics">Panics</a></h1>
+<h1 id='panics' class='section-header'><a href='#panics'>Panics</a></h1>
 <p>Currently, it panics if the connector returns an error.</p>
 </div><h4 id='method.request' class='method'><code>fn <a href='#method.request' class='fnname'>request</a>(&amp;mut self, method: <a href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, path: <a href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, extras: <a href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='type' href='../../solicit/http/type.Header.html' title='solicit::http::Header'>Header</a><a href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, body: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;&gt;) -&gt; <a class='type' href='../../solicit/http/type.HttpResult.html' title='solicit::http::HttpResult'>HttpResult</a>&lt;<a class='type' href='../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>&gt;</code></h4>
 <div class='docblock'><p>Send a request to the server. Blocks until the entire request has been
@@ -152,8 +150,7 @@ invoked and the &quot;real&quot; headers that should be included. Clients should
 never put pseudo-headers in the <code>headers</code> parameter, as those are
 automatically included based on metadata.</p>
 
-<h1 id="returns" class='section-header'><a
-                           href="#returns">Returns</a></h1>
+<h1 id='returns' class='section-header'><a href='#returns'>Returns</a></h1>
 <p>If the full request is successfully sent, returns the ID of the stream
 on which the request was sent. Clients can use this ID to refer to the
 response.</p>
@@ -163,8 +160,7 @@ response.</p>
 <div class='docblock'><p>Gets the response for the stream with the given ID. If a valid stream ID
 is given, it blocks until a response is received.</p>
 
-<h1 id="returns" class='section-header'><a
-                           href="#returns">Returns</a></h1>
+<h1 id='returns' class='section-header'><a href='#returns'>Returns</a></h1>
 <p>A <code>Response</code> if the response can be successfully read.</p>
 
 <p>Any underlying IO errors are propagated. Errors in the HTTP/2 protocol

@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-5303' class='srclink' href='../../../src/solicit/http/connection.rs.html#109-120' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-719' class='srclink' href='../../../src/solicit/http/connection.rs.html#109-120' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct HttpConnection&lt;S, R&gt; <span class='where'>where S: <a class='trait' href='../../../solicit/http/connection/trait.SendFrame.html' title='solicit::http::connection::SendFrame'>SendFrame</a>, R: <a class='trait' href='../../../solicit/http/connection/trait.ReceiveFrame.html' title='solicit::http::connection::ReceiveFrame'>ReceiveFrame</a></span> {
     pub receiver: R,
     pub sender: S,
@@ -87,8 +87,7 @@ HTTP/2 connection should be based on the <code>TransportStream</code> interface.
 <p>The <code>HttpConnection</code> performs the HPACK encoding of the header block using an internal
 encoder.</p>
 
-<h1 id="parameters" class='section-header'><a
-                           href="#parameters">Parameters</a></h1>
+<h1 id='parameters' class='section-header'><a href='#parameters'>Parameters</a></h1>
 <ul>
 <li><code>headers</code> - a headers list that should be sent.</li>
 <li><code>stream_id</code> - the ID of the stream on which the headers will be sent. The connection
@@ -103,8 +102,7 @@ stream.</p>
 <p>The <code>HttpConnection</code> itself does not track the flow control window and will happily send
 data that exceeds a particular stream&#39;s or the connection&#39;s flow control window size.</p>
 
-<h1 id="parameters" class='section-header'><a
-                           href="#parameters">Parameters</a></h1>
+<h1 id='parameters' class='section-header'><a href='#parameters'>Parameters</a></h1>
 <ul>
 <li><code>data</code> - the data that should be sent on the connection</li>
 <li><code>stream_id</code> - the ID of the stream on which the data will be sent</li>
@@ -114,8 +112,7 @@ sending the data (i.e. the last data frame closes the stream).</li>
 </div><h4 id='method.send_next_data' class='method'><code>fn <a href='#method.send_next_data' class='fnname'>send_next_data</a>&lt;P: <a class='trait' href='../../../solicit/http/priority/trait.DataPrioritizer.html' title='solicit::http::priority::DataPrioritizer'>DataPrioritizer</a>&gt;(&amp;mut self, prioritizer: &amp;mut P) -&gt; <a class='type' href='../../../solicit/http/type.HttpResult.html' title='solicit::http::HttpResult'>HttpResult</a>&lt;<a class='enum' href='../../../solicit/http/connection/enum.SendStatus.html' title='solicit::http::connection::SendStatus'>SendStatus</a>&gt;</code></h4>
 <div class='docblock'><p>Sends the chunk of data provided by the given <code>DataPrioritizer</code>.</p>
 
-<h1 id="returns" class='section-header'><a
-                           href="#returns">Returns</a></h1>
+<h1 id='returns' class='section-header'><a href='#returns'>Returns</a></h1>
 <p>Returns the status of the operation. If the provider does not currently have any data that
 could be sent, returns <code>SendStatus::Nothing</code>. If any data is sent, returns
 <code>SendStatus::Sent</code>.</p>

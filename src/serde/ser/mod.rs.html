@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/home/simon/.cargo/registry/src/github.com-0a35038f75765ae4/serde-0.6.7/src/ser/mod.rs`.">
+    <meta name="description" content="Source to the Rust file `/home/simon/.cargo/registry/src/github.com-88ac128001ac3a9a/serde-0.6.11/src/ser/mod.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>mod.rs.html -- source</title>
@@ -394,6 +394,8 @@
 <span id="352">352</span>
 <span id="353">353</span>
 <span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Generic serialization framework.</span>
 
@@ -719,6 +721,7 @@
 }
 
 <span class='doccomment'>/// A trait that is used by a `Serialize` to iterate through a sequence.</span>
+<span class='attribute'>#[<span class='ident'>cfg_attr</span>(<span class='ident'>feature</span> <span class='op'>=</span> <span class='string'>&quot;nightly&quot;</span>, <span class='ident'>allow</span>(<span class='ident'>len_without_is_empty</span>))]</span>
 <span class='kw'>pub</span> <span class='kw'>trait</span> <span class='ident'>SeqVisitor</span> {
     <span class='doccomment'>/// Serializes a sequence item in the serializer.</span>
     <span class='doccomment'>///</span>
@@ -735,6 +738,7 @@
 }
 
 <span class='doccomment'>/// A trait that is used by a `Serialize` to iterate through a map.</span>
+<span class='attribute'>#[<span class='ident'>cfg_attr</span>(<span class='ident'>feature</span> <span class='op'>=</span> <span class='string'>&quot;nightly&quot;</span>, <span class='ident'>allow</span>(<span class='ident'>len_without_is_empty</span>))]</span>
 <span class='kw'>pub</span> <span class='kw'>trait</span> <span class='ident'>MapVisitor</span> {
     <span class='doccomment'>/// Serializes a map item in the serializer.</span>
     <span class='doccomment'>///</span>

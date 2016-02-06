@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-26633' class='srclink' href='../../src/hyper/header/shared/entity.rs.html#43-48' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-4182' class='srclink' href='../../src/hyper/header/shared/entity.rs.html#43-48' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct EntityTag {
     pub weak: <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
     // some fields omitted
@@ -55,8 +55,7 @@
 Preceding the first double quote is an optional weakness indicator,
 which always looks like <code>W/</code>. Examples for valid tags are <code>&quot;xyzzy&quot;</code> and <code>W/&quot;xyzzy&quot;</code>.</p>
 
-<h1 id="abnf" class='section-header'><a
-                           href="#abnf">ABNF</a></h1>
+<h1 id='abnf' class='section-header'><a href='#abnf'>ABNF</a></h1>
 <pre><code class="language-plain">entity-tag = [ weak ] opaque-tag
 weak       = %x57.2F ; &quot;W/&quot;, case-sensitive
 opaque-tag = DQUOTE *etagc DQUOTE
@@ -64,8 +63,7 @@ etagc      = %x21 / %x23-7E / obs-text
            ; VCHAR except double quotes, plus obs-text
 </code></pre>
 
-<h1 id="comparison" class='section-header'><a
-                           href="#comparison">Comparison</a></h1>
+<h1 id='comparison' class='section-header'><a href='#comparison'>Comparison</a></h1>
 <p>To check if two entity tags are equivalent in an application always use the <code>strong_eq</code> or
 <code>weak_eq</code> methods based on the context of the Tag. Only use <code>==</code> to check if two tags are
 identical.</p>
@@ -116,28 +114,24 @@ both the weak and strong comparison function results:</p>
 </div></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl <a class='struct' href='../../hyper/header/struct.EntityTag.html' title='hyper::header::EntityTag'>EntityTag</a></code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(weak: <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>, tag: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='struct' href='../../hyper/header/struct.EntityTag.html' title='hyper::header::EntityTag'>EntityTag</a></code></h4>
 <div class='docblock'><p>Constructs a new EntityTag.</p>
 
-<h1 id="panics" class='section-header'><a
-                           href="#panics">Panics</a></h1>
+<h1 id='panics' class='section-header'><a href='#panics'>Panics</a></h1>
 <p>If the tag contains invalid characters.</p>
 </div><h4 id='method.weak' class='method'><code>fn <a href='#method.weak' class='fnname'>weak</a>(tag: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='struct' href='../../hyper/header/struct.EntityTag.html' title='hyper::header::EntityTag'>EntityTag</a></code></h4>
 <div class='docblock'><p>Constructs a new weak EntityTag.</p>
 
-<h1 id="panics" class='section-header'><a
-                           href="#panics">Panics</a></h1>
+<h1 id='panics' class='section-header'><a href='#panics'>Panics</a></h1>
 <p>If the tag contains invalid characters.</p>
 </div><h4 id='method.strong' class='method'><code>fn <a href='#method.strong' class='fnname'>strong</a>(tag: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='struct' href='../../hyper/header/struct.EntityTag.html' title='hyper::header::EntityTag'>EntityTag</a></code></h4>
 <div class='docblock'><p>Constructs a new strong EntityTag.</p>
 
-<h1 id="panics" class='section-header'><a
-                           href="#panics">Panics</a></h1>
+<h1 id='panics' class='section-header'><a href='#panics'>Panics</a></h1>
 <p>If the tag contains invalid characters.</p>
 </div><h4 id='method.tag' class='method'><code>fn <a href='#method.tag' class='fnname'>tag</a>(&amp;self) -&gt; &amp;<a href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a></code></h4>
 <div class='docblock'><p>Get the tag.</p>
 </div><h4 id='method.set_tag' class='method'><code>fn <a href='#method.set_tag' class='fnname'>set_tag</a>(&amp;mut self, tag: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>)</code></h4>
 <div class='docblock'><p>Set the tag.</p>
 
-<h1 id="panics" class='section-header'><a
-                           href="#panics">Panics</a></h1>
+<h1 id='panics' class='section-header'><a href='#panics'>Panics</a></h1>
 <p>If the tag contains invalid characters.</p>
 </div><h4 id='method.strong_eq' class='method'><code>fn <a href='#method.strong_eq' class='fnname'>strong_eq</a>(&amp;self, other: &amp;<a class='struct' href='../../hyper/header/struct.EntityTag.html' title='hyper::header::EntityTag'>EntityTag</a>) -&gt; <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
 <div class='docblock'><p>For strong comparison two entity-tags are equivalent if both are not weak and their
