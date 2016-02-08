@@ -300,7 +300,7 @@ impl fmt::Display for PortMappingProtocol {
 }
 
 /// This structure represents a gateway found by the search functions.
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Gateway {
     /// Socket address of the gateway
     pub addr: SocketAddrV4,
