@@ -921,7 +921,7 @@
 }
 
 <span class='doccomment'>/// This structure represents a gateway found by the search functions.</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Debug</span>, <span class='ident'>PartialEq</span>, <span class='ident'>Eq</span>, <span class='ident'>Hash</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Debug</span>, <span class='ident'>PartialEq</span>, <span class='ident'>Eq</span>, <span class='ident'>Hash</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Gateway</span> {
     <span class='doccomment'>/// Socket address of the gateway</span>
     <span class='kw'>pub</span> <span class='ident'>addr</span>: <span class='ident'>SocketAddrV4</span>,
