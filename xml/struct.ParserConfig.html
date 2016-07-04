@@ -9,7 +9,9 @@
 
     <title>xml::ParserConfig - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
+    
 
     
     
@@ -42,23 +44,23 @@
 
     <section id='main' class="content struct">
 <h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>xml</a>::<wbr><a class='struct' href=''>ParserConfig</a></span><span class='out-of-band'><span id='render-detail'>
-            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
-                [<span class='inner'>&#x2212;</span>]
-            </a>
-        </span><a id='src-1633' class='srclink' href='../src/xml/reader/config.rs.html#11-57' title='goto source code'>[src]</a></span></h1>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1629' class='srclink' href='../src/xml/reader/config.rs.html#11-57' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct ParserConfig {
-    pub trim_whitespace: <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
-    pub whitespace_to_characters: <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
-    pub cdata_to_characters: <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
-    pub ignore_comments: <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
-    pub coalesce_characters: <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
+    pub trim_whitespace: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
+    pub whitespace_to_characters: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
+    pub cdata_to_characters: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
+    pub ignore_comments: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
+    pub coalesce_characters: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
 }</pre><div class='docblock'><p>Parser configuration structure.</p>
 
 <p>This structure contains various configuration options which affect
 behavior of the parser.</p>
 </div><h2 class='fields'>Fields</h2>
 <table><tr class='stab '>
-                                  <td id='structfield.trim_whitespace'><code>trim_whitespace</code></td><td><div class='docblock'><p>Whether or not should whitespace in textual events be removed. Default is false.</p>
+                             <td id='structfield.trim_whitespace'><code>trim_whitespace</code></td><td><div class='docblock'><p>Whether or not should whitespace in textual events be removed. Default is false.</p>
 
 <p>When true, all standalone whitespace will be removed (this means no
 <code>Whitespace</code> events will ve emitted), and leading and trailing whitespace
@@ -70,14 +72,14 @@ possible, however, only if <code>whitespace_to_characters</code> or
 <p>This option does not affect CDATA events, unless <code>cdata_to_characters</code>
 option is also set. In that case CDATA content will also be trimmed.</p>
 </div></td></tr><tr class='stab '>
-                                  <td id='structfield.whitespace_to_characters'><code>whitespace_to_characters</code></td><td><div class='docblock'><p>Whether or not should whitespace be converted to characters.
+                             <td id='structfield.whitespace_to_characters'><code>whitespace_to_characters</code></td><td><div class='docblock'><p>Whether or not should whitespace be converted to characters.
 Default is false.</p>
 
 <p>If true, instead of <code>Whitespace</code> events <code>Characters</code> events with the
 same content will be emitted. If <code>trim_whitespace</code> is also true, these
 events will be trimmed to nothing and, consequently, not emitted.</p>
 </div></td></tr><tr class='stab '>
-                                  <td id='structfield.cdata_to_characters'><code>cdata_to_characters</code></td><td><div class='docblock'><p>Whether or not should CDATA be converted to characters.
+                             <td id='structfield.cdata_to_characters'><code>cdata_to_characters</code></td><td><div class='docblock'><p>Whether or not should CDATA be converted to characters.
 Default is false.</p>
 
 <p>If true, instead of <code>CData</code> events <code>Characters</code> events with the same
@@ -85,11 +87,11 @@ content will be emitted. If <code>trim_whitespace</code> is also true, these eve
 will be trimmed. If corresponding CDATA contained nothing but whitespace,
 this event will be omitted from the stream.</p>
 </div></td></tr><tr class='stab '>
-                                  <td id='structfield.ignore_comments'><code>ignore_comments</code></td><td><div class='docblock'><p>Whether or not should comments be omitted. Default is true.</p>
+                             <td id='structfield.ignore_comments'><code>ignore_comments</code></td><td><div class='docblock'><p>Whether or not should comments be omitted. Default is true.</p>
 
 <p>If true, <code>Comment</code> events will not be emitted at all.</p>
 </div></td></tr><tr class='stab '>
-                                  <td id='structfield.coalesce_characters'><code>coalesce_characters</code></td><td><div class='docblock'><p>Whether or not should sequential <code>Characters</code> events be merged.
+                             <td id='structfield.coalesce_characters'><code>coalesce_characters</code></td><td><div class='docblock'><p>Whether or not should sequential <code>Characters</code> events be merged.
 Default is true.</p>
 
 <p>If true, multiple sequential <code>Characters</code> events will be merged into
@@ -102,6 +104,7 @@ events will always be separated by other events.</p>
 <div class='docblock'><p>Returns a new config with default values.</p>
 
 <p>You can tweak default values using builder-like pattern:</p>
+
 <pre class='rust rust-example-rendered'>
 <span class='kw'>use</span> <span class='ident'>xml</span>::<span class='ident'>reader</span>::<span class='ident'>ParserConfig</span>;
 
@@ -113,6 +116,7 @@ events will always be separated by other events.</p>
 <div class='docblock'><p>Creates an XML reader with this configuration.</p>
 
 <p>This is a convenience method for configuring and creating a reader at the same time:</p>
+
 <pre class='rust rust-example-rendered'>
 <span class='kw'>use</span> <span class='ident'>xml</span>::<span class='ident'>reader</span>::<span class='ident'>ParserConfig</span>;
 
@@ -126,22 +130,22 @@ events will always be separated by other events.</p>
 
 <p>This method is exactly equivalent to calling <code>EventReader::new_with_config()</code> with
 this configuration object.</p>
-</div></div><h3 class='impl'><code>impl <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.trim_whitespace' class='method'><code>fn <a href='#method.trim_whitespace' class='fnname'>trim_whitespace</a>(self, value: <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h4>
+</div></div><h3 class='impl'><code>impl <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.trim_whitespace' class='method'><code>fn <a href='#method.trim_whitespace' class='fnname'>trim_whitespace</a>(self, value: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h4>
 <div class='docblock'><p>Sets the field to the provided value and returns updated config object.</p>
-</div></div><h3 class='impl'><code>impl <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.whitespace_to_characters' class='method'><code>fn <a href='#method.whitespace_to_characters' class='fnname'>whitespace_to_characters</a>(self, value: <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h4>
+</div></div><h3 class='impl'><code>impl <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.whitespace_to_characters' class='method'><code>fn <a href='#method.whitespace_to_characters' class='fnname'>whitespace_to_characters</a>(self, value: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h4>
 <div class='docblock'><p>Sets the field to the provided value and returns updated config object.</p>
-</div></div><h3 class='impl'><code>impl <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.cdata_to_characters' class='method'><code>fn <a href='#method.cdata_to_characters' class='fnname'>cdata_to_characters</a>(self, value: <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h4>
+</div></div><h3 class='impl'><code>impl <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.cdata_to_characters' class='method'><code>fn <a href='#method.cdata_to_characters' class='fnname'>cdata_to_characters</a>(self, value: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h4>
 <div class='docblock'><p>Sets the field to the provided value and returns updated config object.</p>
-</div></div><h3 class='impl'><code>impl <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.ignore_comments' class='method'><code>fn <a href='#method.ignore_comments' class='fnname'>ignore_comments</a>(self, value: <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h4>
+</div></div><h3 class='impl'><code>impl <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.ignore_comments' class='method'><code>fn <a href='#method.ignore_comments' class='fnname'>ignore_comments</a>(self, value: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h4>
 <div class='docblock'><p>Sets the field to the provided value and returns updated config object.</p>
-</div></div><h3 class='impl'><code>impl <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.coalesce_characters' class='method'><code>fn <a href='#method.coalesce_characters' class='fnname'>coalesce_characters</a>(self, value: <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h4>
+</div></div><h3 class='impl'><code>impl <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.coalesce_characters' class='method'><code>fn <a href='#method.coalesce_characters' class='fnname'>coalesce_characters</a>(self, value: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h4>
 <div class='docblock'><p>Sets the field to the provided value and returns updated config object.</p>
-</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html' title='core::default::Default'>Default</a> for <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.default' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html#method.default' class='fnname'>default</a>() -&gt; <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h4>
-</div><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
-</div><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> for <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'></div><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.eq' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a>) -&gt; <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
-<h4 id='method.ne' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne' class='fnname'>ne</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a>) -&gt; <a href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
-</div><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h4>
-<h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html' title='core::default::Default'>Default</a> for <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.default' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default' class='fnname'>default</a>() -&gt; <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h4>
+</div><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> for <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'></div><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.eq' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.ne' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne' class='fnname'>ne</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h3><div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../xml/struct.ParserConfig.html' title='xml::ParserConfig'>ParserConfig</a></code></h4>
+<h4 id='method.clone_from' class='method'><span class="since">1.0.0</span><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
 </div></section>
     <section id='search' class="content hidden"></section>
 
@@ -185,7 +189,7 @@ this configuration object.</p>
 
                 <p>
                     Search functions by type signature (e.g.
-                    <code>vec -> usize</code>)
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
                 </p>
             </div>
         </div>
@@ -201,6 +205,6 @@ this configuration object.</p>
     <script src="../jquery.js"></script>
     <script src="../main.js"></script>
     
-    <script async src="../search-index.js"></script>
+    <script defer src="../search-index.js"></script>
 </body>
 </html>

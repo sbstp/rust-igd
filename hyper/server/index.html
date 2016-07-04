@@ -9,7 +9,9 @@
 
     <title>hyper::server - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../main.css">
+    
 
     
     
@@ -42,10 +44,10 @@
 
     <section id='main' class="content mod">
 <h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>hyper</a>::<wbr><a class='mod' href=''>server</a></span><span class='out-of-band'><span id='render-detail'>
-            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
-                [<span class='inner'>&#x2212;</span>]
-            </a>
-        </span><a id='src-6174' class='srclink' href='../../src/hyper/server/mod.rs.html#1-508' title='goto source code'>[src]</a></span></h1>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-6885' class='srclink' href='../../src/hyper/server/mod.rs.html#1-510' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>HTTP Server</p>
 
 <h1 id='server' class='section-header'><a href='#server'>Server</a></h1>
@@ -57,6 +59,7 @@ threads, but that can be configured to a single thread if preferred.</p>
 <p>You must pass a <code>Handler</code> to the Server that will handle requests. There is
 a default implementation for <code>fn</code>s and closures, allowing you pass one of
 those easily.</p>
+
 <pre class='rust rust-example-rendered'>
 <span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>server</span>::{<span class='ident'>Server</span>, <span class='ident'>Request</span>, <span class='ident'>Response</span>};
 
@@ -68,6 +71,7 @@ those easily.</p>
 
 <p>As with any trait, you can also define a struct and implement <code>Handler</code>
 directly on your own type, and pass that to the <code>Server</code> instead.</p>
+
 <pre class='rust rust-example-rendered'>
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>sync</span>::<span class='ident'>Mutex</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>sync</span>::<span class='ident'>mpsc</span>::{<span class='ident'>channel</span>, <span class='ident'>Sender</span>};
@@ -91,6 +95,7 @@ directly on your own type, and pass that to the <code>Server</code> instead.</p>
 
 <p>Since the <code>Server</code> will be listening on multiple threads, the <code>Handler</code>
 must implement <code>Sync</code>: any mutable state must be synchronized.</p>
+
 <pre class='rust rust-example-rendered'>
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>sync</span>::<span class='ident'>atomic</span>::{<span class='ident'>AtomicUsize</span>, <span class='ident'>Ordering</span>};
 <span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>server</span>::{<span class='ident'>Server</span>, <span class='ident'>Request</span>, <span class='ident'>Response</span>};
@@ -108,6 +113,7 @@ read any body, such as with <code>POST</code> or <code>PUT</code> messages.</p>
 
 <p>Likewise, the <code>Response</code> includes ways to set the <code>status</code> and <code>headers</code>,
 and implements <code>std::io::Write</code> to allow writing the response body.</p>
+
 <pre class='rust rust-example-rendered'>
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>;
 <span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>server</span>::{<span class='ident'>Server</span>, <span class='ident'>Request</span>, <span class='ident'>Response</span>};
@@ -141,61 +147,51 @@ and only once. But this has 2 downsides:</p>
 <code>Response&lt;Fresh&gt;</code> includes a <code>headers_mut()</code> method, allowing you add more
 headers. It also does not implement <code>Write</code>, so you can&#39;t accidentally
 write early. Once the &quot;head&quot; of the response is correct, you can &quot;send&quot; it
-out by calling <code>start</code> on the <code>Request&lt;Fresh&gt;</code>. This will return a new
-<code>Request&lt;Streaming&gt;</code> object, that no longer has <code>headers_mut()</code>, but does
+out by calling <code>start</code> on the <code>Response&lt;Fresh&gt;</code>. This will return a new
+<code>Response&lt;Streaming&gt;</code> object, that no longer has <code>headers_mut()</code>, but does
 implement <code>Write</code>.</p>
 </div><h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
 <table><tr><td><code>pub use self::<a class='mod'
-                                            href='./request/index.html'>request</a>::<a class='struct' href='../../hyper/server/request/struct.Request.html' title='hyper::server::request::Request'>Request</a>;</code></td></tr><tr><td><code>pub use self::<a class='mod'
-                                            href='./response/index.html'>response</a>::<a class='struct' href='../../hyper/server/response/struct.Response.html' title='hyper::server::response::Response'>Response</a>;</code></td></tr><tr><td><code>pub use net::{<a class='enum' href='../../hyper/net/enum.Fresh.html' title='hyper::net::Fresh'>Fresh</a>, <a class='enum' href='../../hyper/net/enum.Streaming.html' title='hyper::net::Streaming'>Streaming</a>};</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+                                       href='./request/index.html'>request</a>::<a class='struct' href='../../hyper/server/request/struct.Request.html' title='hyper::server::request::Request'>Request</a>;</code></td></tr><tr><td><code>pub use self::<a class='mod'
+                                       href='./response/index.html'>response</a>::<a class='struct' href='../../hyper/server/response/struct.Response.html' title='hyper::server::response::Response'>Response</a>;</code></td></tr><tr><td><code>pub use net::{<a class='enum' href='../../hyper/net/enum.Fresh.html' title='hyper::net::Fresh'>Fresh</a>, <a class='enum' href='../../hyper/net/enum.Streaming.html' title='hyper::net::Streaming'>Streaming</a>};</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
 <table>
-                    <tr class=' module-item'>
-                        <td><a class='mod' href='request/index.html'
-                               title='hyper::server::request'>request</a></td>
-                        <td class='docblock short'>
-                             <p>Server Requests</p>
-
-                        </td>
-                    </tr>
-                
-                    <tr class=' module-item'>
-                        <td><a class='mod' href='response/index.html'
-                               title='hyper::server::response'>response</a></td>
-                        <td class='docblock short'>
-                             <p>Server Responses</p>
-
-                        </td>
-                    </tr>
-                </table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='request/index.html'
+                                  title='hyper::server::request'>request</a></td>
+                           <td class='docblock short'>
+                                <p>Server Requests</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='response/index.html'
+                                  title='hyper::server::response'>response</a></td>
+                           <td class='docblock short'>
+                                <p>Server Responses</p>
+                           </td>
+                       </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
-                    <tr class=' module-item'>
-                        <td><a class='struct' href='struct.Listening.html'
-                               title='hyper::server::Listening'>Listening</a></td>
-                        <td class='docblock short'>
-                             <p>A listening server, which can later be closed.</p>
-
-                        </td>
-                    </tr>
-                
-                    <tr class=' module-item'>
-                        <td><a class='struct' href='struct.Server.html'
-                               title='hyper::server::Server'>Server</a></td>
-                        <td class='docblock short'>
-                             <p>A server can listen on a TCP socket.</p>
-
-                        </td>
-                    </tr>
-                </table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Listening.html'
+                                  title='hyper::server::Listening'>Listening</a></td>
+                           <td class='docblock short'>
+                                <p>A listening server, which can later be closed.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Server.html'
+                                  title='hyper::server::Server'>Server</a></td>
+                           <td class='docblock short'>
+                                <p>A server can listen on a TCP socket.</p>
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
 <table>
-                    <tr class=' module-item'>
-                        <td><a class='trait' href='trait.Handler.html'
-                               title='hyper::server::Handler'>Handler</a></td>
-                        <td class='docblock short'>
-                             <p>A handler that can handle incoming requests for a server.</p>
-
-                        </td>
-                    </tr>
-                </table></section>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.Handler.html'
+                                  title='hyper::server::Handler'>Handler</a></td>
+                           <td class='docblock short'>
+                                <p>A handler that can handle incoming requests for a server.</p>
+                           </td>
+                       </tr></table></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
@@ -238,7 +234,7 @@ implement <code>Write</code>.</p>
 
                 <p>
                     Search functions by type signature (e.g.
-                    <code>vec -> usize</code>)
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
                 </p>
             </div>
         </div>
@@ -254,6 +250,6 @@ implement <code>Write</code>.</p>
     <script src="../../jquery.js"></script>
     <script src="../../main.js"></script>
     
-    <script async src="../../search-index.js"></script>
+    <script defer src="../../search-index.js"></script>
 </body>
 </html>

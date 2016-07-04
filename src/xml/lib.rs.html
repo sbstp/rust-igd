@@ -4,12 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/home/simon/.cargo/registry/src/github.com-88ac128001ac3a9a/xml-rs-0.2.2/src/lib.rs`.">
+    <meta name="description" content="Source to the Rust file `/home/simon/.cargo/registry/src/github.com-88ac128001ac3a9a/xml-rs-0.1.26/src/lib.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>lib.rs.html -- source</title>
 
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../main.css">
+    
 
     
     
@@ -61,9 +63,6 @@
 <span id="19">19</span>
 <span id="20">20</span>
 <span id="21">21</span>
-<span id="22">22</span>
-<span id="23">23</span>
-<span id="24">24</span>
 </pre><pre class='rust '>
 <span class='comment'>//#![warn(missing_doc)]</span>
 <span class='attribute'>#<span class='op'>!</span>[<span class='ident'>allow</span>(<span class='ident'>dead_code</span>)]</span>
@@ -76,9 +75,6 @@
 <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>bitflags</span>;
 
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>reader</span>::<span class='ident'>EventReader</span>;
-<span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>reader</span>::<span class='ident'>ParserConfig</span>;
-<span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>writer</span>::<span class='ident'>EventWriter</span>;
-<span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>writer</span>::<span class='ident'>EmitterConfig</span>;
 
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>macros</span>;
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>name</span>;
@@ -88,7 +84,7 @@
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>namespace</span>;
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>reader</span>;
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>writer</span>;
-<span class='kw'>mod</span> <span class='ident'>util</span>;
+<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>util</span>;
 </pre>
 </section>
     <section id='search' class="content hidden"></section>
@@ -133,7 +129,7 @@
 
                 <p>
                     Search functions by type signature (e.g.
-                    <code>vec -> usize</code>)
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
                 </p>
             </div>
         </div>
@@ -149,6 +145,6 @@
     <script src="../../jquery.js"></script>
     <script src="../../main.js"></script>
     
-    <script async src="../../search-index.js"></script>
+    <script defer src="../../search-index.js"></script>
 </body>
 </html>

@@ -9,7 +9,9 @@
 
     <title>matches::_tt_as_expr_hack! - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
+    
 
     
     
@@ -42,14 +44,14 @@
 
     <section id='main' class="content macro">
 <h1 class='fqn'><span class='in-band'><a href='index.html'>matches</a>::<wbr><a class='macro' href=''>_tt_as_expr_hack!</a></span><span class='out-of-band'><span id='render-detail'>
-            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
-                [<span class='inner'>&#x2212;</span>]
-            </a>
-        </span><a id='src-5' class='srclink' href='../src/matches/lib.rs.html#16-18' title='goto source code'>[src]</a></span></h1>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-5' class='srclink' href='../src/matches/lib.rs.html#16-18' title='goto source code'>[src]</a></span></h1>
 <pre class='rust macro'>
-<span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>_tt_as_expr_hack</span>(
-    (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>value</span>:<span class='ident'>expr</span>) <span class='op'>=&gt;</span> (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>value</span>)
-);</pre>
+<span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>_tt_as_expr_hack</span> {
+    (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>value</span>:<span class='ident'>expr</span>) <span class='op'>=&gt;</span> { ... };
+}</pre>
 <div class='docblock'><p>Work around &quot;error: unexpected token: <code>an interpolated tt</code>&quot;, whatever that means.</p>
 </div></section>
     <section id='search' class="content hidden"></section>
@@ -94,7 +96,7 @@
 
                 <p>
                     Search functions by type signature (e.g.
-                    <code>vec -> usize</code>)
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
                 </p>
             </div>
         </div>
@@ -110,6 +112,6 @@
     <script src="../jquery.js"></script>
     <script src="../main.js"></script>
     
-    <script async src="../search-index.js"></script>
+    <script defer src="../search-index.js"></script>
 </body>
 </html>

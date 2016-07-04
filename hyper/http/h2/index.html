@@ -9,7 +9,9 @@
 
     <title>hyper::http::h2 - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
 
     
     
@@ -42,52 +44,44 @@
 
     <section id='main' class="content mod">
 <h1 class='fqn'><span class='in-band'>Module <a href='../../index.html'>hyper</a>::<wbr><a href='../index.html'>http</a>::<wbr><a class='mod' href=''>h2</a></span><span class='out-of-band'><span id='render-detail'>
-            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
-                [<span class='inner'>&#x2212;</span>]
-            </a>
-        </span><a id='src-5465' class='srclink' href='../../../src/hyper/http/h2.rs.html#1-823' title='goto source code'>[src]</a></span></h1>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-6104' class='srclink' href='../../../src/hyper/http/h2.rs.html#1-820' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>Adapts the <code>solicit</code>-provided HTTP/2 implementation into the <code>HttpMessage</code> API.</p>
 </div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
-                    <tr class=' module-item'>
-                        <td><a class='struct' href='struct.Http2Message.html'
-                               title='hyper::http::h2::Http2Message'>Http2Message</a></td>
-                        <td class='docblock short'>
-                             <p>An implementation of the <code>HttpMessage</code> trait for HTTP/2.</p>
-
-                        </td>
-                    </tr>
-                
-                    <tr class=' module-item'>
-                        <td><a class='struct' href='struct.Http2Protocol.html'
-                               title='hyper::http::h2::Http2Protocol'>Http2Protocol</a></td>
-                        <td class='docblock short'>
-                             <p>The <code>Protocol</code> implementation that provides HTTP/2 messages (i.e. <code>Http2Message</code>).</p>
-
-                        </td>
-                    </tr>
-                </table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Http2Message.html'
+                                  title='hyper::http::h2::Http2Message'>Http2Message</a></td>
+                           <td class='docblock short'>
+                                <p>An implementation of the <code>HttpMessage</code> trait for HTTP/2.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Http2Protocol.html'
+                                  title='hyper::http::h2::Http2Protocol'>Http2Protocol</a></td>
+                           <td class='docblock short'>
+                                <p>The <code>Protocol</code> implementation that provides HTTP/2 messages (i.e. <code>Http2Message</code>).</p>
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
 <table>
-                    <tr class=' module-item'>
-                        <td><a class='trait' href='trait.CloneableStream.html'
-                               title='hyper::http::h2::CloneableStream'>CloneableStream</a></td>
-                        <td class='docblock short'>
-                             <p>A trait alias representing all types that are both <code>NetworkStream</code> and <code>Clone</code>.</p>
-
-                        </td>
-                    </tr>
-                </table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.CloneableStream.html'
+                                  title='hyper::http::h2::CloneableStream'>CloneableStream</a></td>
+                           <td class='docblock short'>
+                                <p>A trait alias representing all types that are both <code>NetworkStream</code> and <code>Clone</code>.</p>
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
 <table>
-                    <tr class=' module-item'>
-                        <td><a class='fn' href='fn.new_protocol.html'
-                               title='hyper::http::h2::new_protocol'>new_protocol</a></td>
-                        <td class='docblock short'>
-                             <p>A convenience method that creates a default <code>Http2Protocol</code> that uses a <code>net::HttpConnector</code>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.new_protocol.html'
+                                  title='hyper::http::h2::new_protocol'>new_protocol</a></td>
+                           <td class='docblock short'>
+                                <p>A convenience method that creates a default <code>Http2Protocol</code> that uses a <code>net::HttpConnector</code>
 (which produces an <code>HttpStream</code> for the underlying transport layer).</p>
-
-                        </td>
-                    </tr>
-                </table></section>
+                           </td>
+                       </tr></table></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
@@ -130,7 +124,7 @@
 
                 <p>
                     Search functions by type signature (e.g.
-                    <code>vec -> usize</code>)
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
                 </p>
             </div>
         </div>
@@ -146,6 +140,6 @@
     <script src="../../../jquery.js"></script>
     <script src="../../../main.js"></script>
     
-    <script async src="../../../search-index.js"></script>
+    <script defer src="../../../search-index.js"></script>
 </body>
 </html>

@@ -9,7 +9,9 @@
 
     <title>url::format - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../main.css">
+    
 
     
     
@@ -42,10 +44,10 @@
 
     <section id='main' class="content mod">
 <h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>url</a>::<wbr><a class='mod' href=''>format</a></span><span class='out-of-band'><span id='render-detail'>
-            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
-                [<span class='inner'>&#x2212;</span>]
-            </a>
-        </span><a id='src-1055' class='srclink' href='../../src/url/format.rs.html#9-141' title='goto source code'>[src]</a></span></h1>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1056' class='srclink' href='../../src/url/format.rs.html#9-81' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>Formatting utilities for URLs.</p>
 
 <p>These formatters can be used to coerce various URL parts into strings.</p>
@@ -53,33 +55,27 @@
 <p>You can use <code>&lt;formatter&gt;.to_string()</code>, as the formatters implement <code>fmt::Display</code>.</p>
 </div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
-                    <tr class=' module-item'>
-                        <td><a class='struct' href='struct.PathFormatter.html'
-                               title='url::format::PathFormatter'>PathFormatter</a></td>
-                        <td class='docblock short'>
-                             <p>Formatter and serializer for URL path data.</p>
-
-                        </td>
-                    </tr>
-                
-                    <tr class=' module-item'>
-                        <td><a class='struct' href='struct.UrlNoFragmentFormatter.html'
-                               title='url::format::UrlNoFragmentFormatter'>UrlNoFragmentFormatter</a></td>
-                        <td class='docblock short'>
-                             <p>Formatter for URLs which ignores the fragment field.</p>
-
-                        </td>
-                    </tr>
-                
-                    <tr class=' module-item'>
-                        <td><a class='struct' href='struct.UserInfoFormatter.html'
-                               title='url::format::UserInfoFormatter'>UserInfoFormatter</a></td>
-                        <td class='docblock short'>
-                             <p>Formatter and serializer for URL username and password data.</p>
-
-                        </td>
-                    </tr>
-                </table></section>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.PathFormatter.html'
+                                  title='url::format::PathFormatter'>PathFormatter</a></td>
+                           <td class='docblock short'>
+                                <p>Formatter and serializer for URL path data.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.UrlNoFragmentFormatter.html'
+                                  title='url::format::UrlNoFragmentFormatter'>UrlNoFragmentFormatter</a></td>
+                           <td class='docblock short'>
+                                <p>Formatter for URLs which ignores the fragment field.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.UserInfoFormatter.html'
+                                  title='url::format::UserInfoFormatter'>UserInfoFormatter</a></td>
+                           <td class='docblock short'>
+                                <p>Formatter and serializer for URL username and password data.</p>
+                           </td>
+                       </tr></table></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
@@ -122,7 +118,7 @@
 
                 <p>
                     Search functions by type signature (e.g.
-                    <code>vec -> usize</code>)
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
                 </p>
             </div>
         </div>
@@ -138,6 +134,6 @@
     <script src="../../jquery.js"></script>
     <script src="../../main.js"></script>
     
-    <script async src="../../search-index.js"></script>
+    <script defer src="../../search-index.js"></script>
 </body>
 </html>
