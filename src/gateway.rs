@@ -442,7 +442,7 @@ impl Gateway {
                 <NewPortMappingDescription>{}</NewPortMappingDescription>
                 <NewEnabled>1</NewEnabled>
                 <NewRemoteHost></NewRemoteHost>
-            </u:AddPortMapping>
+            </u:AddAnyPortMapping>
         </s:Body>
         </s:Envelope>
         ", protocol, external_port, local_addr.ip(),
