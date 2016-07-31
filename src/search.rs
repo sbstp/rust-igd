@@ -9,8 +9,8 @@ use std::time::Duration;
 use hyper;
 use regex::Regex;
 use xml::EventReader;
-use xml::common::Error as XmlError;
-use xml::reader::events::XmlEvent;
+use xml::reader::Error as XmlError;
+use xml::reader::XmlEvent;
 
 use gateway::Gateway;
 
@@ -170,7 +170,7 @@ fn get_control_url(location: &(SocketAddrV4, String)) -> Result<String, SearchEr
     let client = hyper::Client::new();
     let resp = try!(client.get(&format!("http://{}{}", location.0, location.1)).send());
 
-    let mut parser = EventReader::new(resp);
+    let parser = EventReader::new(resp);
     let mut chain = Vec::<String>::with_capacity(4);
 
     struct Service {
@@ -183,10 +183,10 @@ fn get_control_url(location: &(SocketAddrV4, String)) -> Result<String, SearchEr
         control_url: "".to_string(),
     };
 
-    for e in parser.events() {
-        match e {
+    for e in parser.into_iter() {
+        match try!(e) {
             XmlEvent::StartElement { name, .. } => {
-                chain.push(name.to_repr());
+                chain.push(name.borrow().to_repr());
                 let tail = if chain.len() >= 3 {
                     chain.iter().skip(chain.len() - 3)
                 } else {
@@ -237,7 +237,6 @@ fn get_control_url(location: &(SocketAddrV4, String)) -> Result<String, SearchEr
                     service.control_url.push_str(&text);
                 }
             },
-            XmlEvent::Error(e) =>  return Err(e.into()),
             _ => (),
         }
     }

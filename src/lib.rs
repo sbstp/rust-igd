@@ -28,7 +28,7 @@ pub use self::search::SearchError;
 
 // re-export error types
 pub use hyper::Error as HttpError;
-pub use xml::common::Error as XmlError;
+pub use xml::reader::Error as XmlError;
 
 mod gateway;
 mod search;
