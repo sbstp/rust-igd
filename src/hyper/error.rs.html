@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/home/simon/.cargo/registry/src/github.com-88ac128001ac3a9a/hyper-0.8.1/src/error.rs`.">
+    <meta name="description" content="Source to the Rust file `/home/simon/.cargo/registry/src/github.com-1ecc6299db9ec823/hyper-0.9.10/src/error.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>error.rs.html -- source</title>
@@ -267,6 +267,12 @@
 <span id="223">223</span>
 <span id="224">224</span>
 <span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Error and Result module.</span>
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>error</span>::<span class='ident'>Error</span> <span class='kw'>as</span> <span class='ident'>StdError</span>;
@@ -338,7 +344,13 @@
 
 <span class='kw'>impl</span> <span class='ident'>fmt</span>::<span class='ident'>Display</span> <span class='kw'>for</span> <span class='ident'>Error</span> {
     <span class='kw'>fn</span> <span class='ident'>fmt</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>f</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>fmt</span>::<span class='ident'>Formatter</span>) <span class='op'>-&gt;</span> <span class='ident'>fmt</span>::<span class='prelude-ty'>Result</span> {
-        <span class='ident'>f</span>.<span class='ident'>write_str</span>(<span class='self'>self</span>.<span class='ident'>description</span>())
+        <span class='kw'>match</span> <span class='op'>*</span><span class='self'>self</span> {
+            <span class='ident'>Uri</span>(<span class='kw-2'>ref</span> <span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='ident'>fmt</span>::<span class='ident'>Display</span>::<span class='ident'>fmt</span>(<span class='ident'>e</span>, <span class='ident'>f</span>),
+            <span class='ident'>Io</span>(<span class='kw-2'>ref</span> <span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='ident'>fmt</span>::<span class='ident'>Display</span>::<span class='ident'>fmt</span>(<span class='ident'>e</span>, <span class='ident'>f</span>),
+            <span class='ident'>Ssl</span>(<span class='kw-2'>ref</span> <span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='ident'>fmt</span>::<span class='ident'>Display</span>::<span class='ident'>fmt</span>(<span class='ident'>e</span>, <span class='ident'>f</span>),
+            <span class='ident'>Utf8</span>(<span class='kw-2'>ref</span> <span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='ident'>fmt</span>::<span class='ident'>Display</span>::<span class='ident'>fmt</span>(<span class='ident'>e</span>, <span class='ident'>f</span>),
+            <span class='kw-2'>ref</span> <span class='ident'>e</span> <span class='op'>=&gt;</span> <span class='ident'>f</span>.<span class='ident'>write_str</span>(<span class='ident'>e</span>.<span class='ident'>description</span>()),
+        }
     }
 }
 
@@ -431,8 +443,8 @@
     <span class='kw'>use</span> <span class='ident'>httparse</span>;
     <span class='kw'>use</span> <span class='ident'>solicit</span>::<span class='ident'>http</span>::<span class='ident'>HttpError</span> <span class='kw'>as</span> <span class='ident'>Http2Error</span>;
     <span class='kw'>use</span> <span class='ident'>url</span>;
-    <span class='kw'>use</span> <span class='ident'>super</span>::<span class='ident'>Error</span>;
-    <span class='kw'>use</span> <span class='ident'>super</span>::<span class='ident'>Error</span>::<span class='op'>*</span>;
+    <span class='kw'>use</span> <span class='kw'>super</span>::<span class='ident'>Error</span>;
+    <span class='kw'>use</span> <span class='kw'>super</span>::<span class='ident'>Error</span>::<span class='op'>*</span>;
 
     <span class='attribute'>#[<span class='ident'>test</span>]</span>
     <span class='kw'>fn</span> <span class='ident'>test_cause</span>() {
@@ -445,7 +457,7 @@
     <span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>from</span> {
         (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>from</span>:<span class='ident'>expr</span> <span class='op'>=&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>error</span>:<span class='ident'>pat</span>) <span class='op'>=&gt;</span> {
             <span class='kw'>match</span> <span class='ident'>Error</span>::<span class='ident'>from</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>from</span>) {
-                <span class='ident'>e</span> <span class='kw-2'>@</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>error</span> <span class='op'>=&gt;</span> {
+                <span class='ident'>e</span> @ <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>error</span> <span class='op'>=&gt;</span> {
                     <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>e</span>.<span class='ident'>description</span>().<span class='ident'>len</span>() <span class='op'>&gt;</span> <span class='number'>5</span>);
                 } ,
                 _ <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;{:?}&quot;</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>from</span>)
@@ -456,7 +468,7 @@
     <span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>from_and_cause</span> {
         (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>from</span>:<span class='ident'>expr</span> <span class='op'>=&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>error</span>:<span class='ident'>pat</span>) <span class='op'>=&gt;</span> {
             <span class='kw'>match</span> <span class='ident'>Error</span>::<span class='ident'>from</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>from</span>) {
-                <span class='ident'>e</span> <span class='kw-2'>@</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>error</span> <span class='op'>=&gt;</span> {
+                <span class='ident'>e</span> @ <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>error</span> <span class='op'>=&gt;</span> {
                     <span class='kw'>let</span> <span class='ident'>desc</span> <span class='op'>=</span> <span class='ident'>e</span>.<span class='ident'>cause</span>().<span class='ident'>unwrap</span>().<span class='ident'>description</span>();
                     <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>desc</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>from</span>.<span class='ident'>description</span>().<span class='ident'>to_owned</span>());
                     <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>desc</span>, <span class='ident'>e</span>.<span class='ident'>description</span>());
@@ -517,6 +529,8 @@
                     <dd>Move down in search results</dd>
                     <dt>&#9166;</dt>
                     <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
                 </dl>
             </div>
 

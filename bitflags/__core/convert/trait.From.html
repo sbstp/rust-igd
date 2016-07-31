@@ -43,17 +43,17 @@
     </nav>
 
     <section id='main' class="content trait">
-<h1 class='fqn'><span class='in-band'>Trait <a href='../../index.html'>bitflags</a>::<wbr><a href='../index.html'>__core</a>::<wbr><a href='index.html'>convert</a>::<wbr><a class='trait' href=''>From</a></span><span class='out-of-band'><span id='render-detail'>
+<h1 class='fqn'><span class='in-band'>Trait <a href='../../index.html'>bitflags</a>::<wbr><a href='../index.html'>__core</a>::<wbr><a href='index.html'>convert</a>::<wbr><a class='trait' href=''>From</a></span><span class='out-of-band'><span class='since' title='Stable since Rust version 1.0.0'>1.0.0</span><span id='render-detail'>
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-22582' class='srclink' href='https://doc.rust-lang.org/nightly/core/convert/trait.From.html?gotosrc=22582' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-23166' class='srclink' href='https://doc.rust-lang.org/nightly/core/convert/trait.From.html?gotosrc=23166' title='goto source code'>[src]</a></span></h1>
 <pre class='rust trait'>pub trait From&lt;T&gt; {
     fn <a href='#tymethod.from' class='fnname'>from</a>(T) -&gt; Self;
 }</pre><div class='docblock'><p>Construct <code>Self</code> via a conversion.</p>
 
-<p><strong>Note: this trait must not fail</strong>. If the conversion can fail, use a dedicated method which
-returns an <code>Option&lt;T&gt;</code> or a <code>Result&lt;T, E&gt;</code>.</p>
+<p><strong>Note: this trait must not fail</strong>. If the conversion can fail, use <code>TryFrom</code> or a dedicated
+method which returns an <code>Option&lt;T&gt;</code> or a <code>Result&lt;T, E&gt;</code>.</p>
 
 <h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1>
 <p><code>String</code> implements <code>From&lt;&amp;str&gt;</code>:</p>
@@ -76,38 +76,39 @@ returns an <code>Option&lt;T&gt;</code> or a <code>Result&lt;T, E&gt;</code>.</p
 </div></div>
         <h2 id='implementors'>Implementors</h2>
         <ul class='item-list' id='implementors-list'>
-    <li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;f32&gt; for f64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u32&gt; for f64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u16&gt; for f64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u16&gt; for f32</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u8&gt; for f64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u8&gt; for f32</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;i32&gt; for f64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;i16&gt; for f64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;i16&gt; for f32</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;i8&gt; for f64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;i8&gt; for f32</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u32&gt; for i64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u16&gt; for i64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u16&gt; for i32</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u8&gt; for i64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u8&gt; for i32</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u8&gt; for i16</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;i32&gt; for i64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;i16&gt; for i64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;i16&gt; for i32</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;i8&gt; for isize</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;i8&gt; for i64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;i8&gt; for i32</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;i8&gt; for i16</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u32&gt; for u64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u16&gt; for u64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u16&gt; for u32</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u8&gt; for usize</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u8&gt; for u64</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u8&gt; for u32</code></li>
-<li><code>impl <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;u8&gt; for u16</code></li>
-<li><code>impl&lt;Idx&gt; <a class='trait' href='../../../bitflags/__core/convert/trait.From.html' title='bitflags::__core::convert::From'>From</a>&lt;<a class='struct' href='../../../bitflags/__core/ops/struct.Range.html' title='bitflags::__core::ops::Range'>Range</a>&lt;Idx&gt;&gt; for <a class='enum' href='../../../bitflags/__core/ops/enum.RangeInclusive.html' title='bitflags::__core::ops::RangeInclusive'>RangeInclusive</a>&lt;Idx&gt; <span class='where'>where Idx: <a class='trait' href='../../../bitflags/__core/num/trait.One.html' title='bitflags::__core::num::One'>One</a> + <a class='trait' href='../../../bitflags/__core/ops/trait.Sub.html' title='bitflags::__core::ops::Sub'>Sub</a>&lt;Idx, Output=Idx&gt; + <a class='trait' href='../../../bitflags/__core/cmp/trait.PartialOrd.html' title='bitflags::__core::cmp::PartialOrd'>PartialOrd</a>&lt;Idx&gt;</span></code></li>
+    <li><code>impl From&lt;u8&gt; for u16</code></li>
+<li><code>impl From&lt;u8&gt; for u32</code></li>
+<li><code>impl From&lt;u8&gt; for u64</code></li>
+<li><code>impl From&lt;u8&gt; for usize</code></li>
+<li><code>impl From&lt;u16&gt; for u32</code></li>
+<li><code>impl From&lt;u16&gt; for u64</code></li>
+<li><code>impl From&lt;u32&gt; for u64</code></li>
+<li><code>impl From&lt;i8&gt; for i16</code></li>
+<li><code>impl From&lt;i8&gt; for i32</code></li>
+<li><code>impl From&lt;i8&gt; for i64</code></li>
+<li><code>impl From&lt;i8&gt; for isize</code></li>
+<li><code>impl From&lt;i16&gt; for i32</code></li>
+<li><code>impl From&lt;i16&gt; for i64</code></li>
+<li><code>impl From&lt;i32&gt; for i64</code></li>
+<li><code>impl From&lt;u8&gt; for i16</code></li>
+<li><code>impl From&lt;u8&gt; for i32</code></li>
+<li><code>impl From&lt;u8&gt; for i64</code></li>
+<li><code>impl From&lt;u16&gt; for i32</code></li>
+<li><code>impl From&lt;u16&gt; for i64</code></li>
+<li><code>impl From&lt;u32&gt; for i64</code></li>
+<li><code>impl From&lt;i8&gt; for f32</code></li>
+<li><code>impl From&lt;i8&gt; for f64</code></li>
+<li><code>impl From&lt;i16&gt; for f32</code></li>
+<li><code>impl From&lt;i16&gt; for f64</code></li>
+<li><code>impl From&lt;i32&gt; for f64</code></li>
+<li><code>impl From&lt;u8&gt; for f32</code></li>
+<li><code>impl From&lt;u8&gt; for f64</code></li>
+<li><code>impl From&lt;u16&gt; for f32</code></li>
+<li><code>impl From&lt;u16&gt; for f64</code></li>
+<li><code>impl From&lt;u32&gt; for f64</code></li>
+<li><code>impl From&lt;f32&gt; for f64</code></li>
+<li><code>impl&lt;Idx&gt; From&lt;<a class='struct' href='../../../bitflags/__core/ops/struct.Range.html' title='bitflags::__core::ops::Range'>Range</a>&lt;Idx&gt;&gt; for <a class='enum' href='../../../bitflags/__core/ops/enum.RangeInclusive.html' title='bitflags::__core::ops::RangeInclusive'>RangeInclusive</a>&lt;Idx&gt; <span class='where'>where Idx: <a class='trait' href='../../../bitflags/__core/num/trait.One.html' title='bitflags::__core::num::One'>One</a> + <a class='trait' href='../../../bitflags/__core/ops/trait.Sub.html' title='bitflags::__core::ops::Sub'>Sub</a>&lt;Idx, Output=Idx&gt; + <a class='trait' href='../../../bitflags/__core/cmp/trait.PartialOrd.html' title='bitflags::__core::cmp::PartialOrd'>PartialOrd</a>&lt;Idx&gt;</span></code></li>
+<li><code>impl&lt;T&gt; From&lt;T&gt; for T</code></li>
 </ul><script type="text/javascript" async
                          src="../../../implementors/core/convert/trait.From.js">
                  </script></section>
@@ -133,6 +134,8 @@ returns an <code>Option&lt;T&gt;</code> or a <code>Result&lt;T, E&gt;</code>.</p
                     <dd>Move down in search results</dd>
                     <dt>&#9166;</dt>
                     <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
                 </dl>
             </div>
 

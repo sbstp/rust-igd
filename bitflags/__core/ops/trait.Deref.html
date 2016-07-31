@@ -43,11 +43,11 @@
     </nav>
 
     <section id='main' class="content trait">
-<h1 class='fqn'><span class='in-band'>Trait <a href='../../index.html'>bitflags</a>::<wbr><a href='../index.html'>__core</a>::<wbr><a href='index.html'>ops</a>::<wbr><a class='trait' href=''>Deref</a></span><span class='out-of-band'><span id='render-detail'>
+<h1 class='fqn'><span class='in-band'>Trait <a href='../../index.html'>bitflags</a>::<wbr><a href='../index.html'>__core</a>::<wbr><a href='index.html'>ops</a>::<wbr><a class='trait' href=''>Deref</a></span><span class='out-of-band'><span class='since' title='Stable since Rust version 1.0.0'>1.0.0</span><span id='render-detail'>
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-21758' class='srclink' href='https://doc.rust-lang.org/nightly/core/ops/trait.Deref.html?gotosrc=21758' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-22331' class='srclink' href='https://doc.rust-lang.org/nightly/core/ops/trait.Deref.html?gotosrc=22331' title='goto source code'>[src]</a></span></h1>
 <pre class='rust trait'>pub trait Deref {
     type <a href='#associatedtype.Target' class='type'>Target</a>: ?<a class='trait' href='../../../bitflags/__core/marker/trait.Sized.html' title='bitflags::__core::marker::Sized'>Sized</a>;
     fn <a href='#tymethod.deref' class='fnname'>deref</a>(&amp;self) -&gt; &amp;Self::<a class='trait' href='../../../bitflags/__core/ops/trait.Deref.html' title='bitflags::__core::ops::Deref'>Target</a>;
@@ -90,11 +90,13 @@ struct.</p>
 </div></div>
         <h2 id='implementors'>Implementors</h2>
         <ul class='item-list' id='implementors-list'>
-    <li><code>impl&lt;T&gt; <a class='trait' href='../../../bitflags/__core/ops/trait.Deref.html' title='bitflags::__core::ops::Deref'>Deref</a> for <a class='struct' href='../../../bitflags/__core/nonzero/struct.NonZero.html' title='bitflags::__core::nonzero::NonZero'>NonZero</a>&lt;T&gt; <span class='where'>where T: <a class='trait' href='../../../bitflags/__core/nonzero/trait.Zeroable.html' title='bitflags::__core::nonzero::Zeroable'>Zeroable</a></span></code></li>
-<li><code>impl&lt;T&gt; <a class='trait' href='../../../bitflags/__core/ops/trait.Deref.html' title='bitflags::__core::ops::Deref'>Deref</a> for <a class='struct' href='../../../bitflags/__core/ptr/struct.Unique.html' title='bitflags::__core::ptr::Unique'>Unique</a>&lt;T&gt; <span class='where'>where T: ?<a class='trait' href='../../../bitflags/__core/marker/trait.Sized.html' title='bitflags::__core::marker::Sized'>Sized</a></span></code></li>
-<li><code>impl&lt;T&gt; <a class='trait' href='../../../bitflags/__core/ops/trait.Deref.html' title='bitflags::__core::ops::Deref'>Deref</a> for <a class='struct' href='../../../bitflags/__core/ptr/struct.Shared.html' title='bitflags::__core::ptr::Shared'>Shared</a>&lt;T&gt; <span class='where'>where T: ?<a class='trait' href='../../../bitflags/__core/marker/trait.Sized.html' title='bitflags::__core::marker::Sized'>Sized</a></span></code></li>
-<li><code>impl&lt;'b, T&gt; <a class='trait' href='../../../bitflags/__core/ops/trait.Deref.html' title='bitflags::__core::ops::Deref'>Deref</a> for <a class='struct' href='../../../bitflags/__core/cell/struct.Ref.html' title='bitflags::__core::cell::Ref'>Ref</a>&lt;'b, T&gt; <span class='where'>where T: ?<a class='trait' href='../../../bitflags/__core/marker/trait.Sized.html' title='bitflags::__core::marker::Sized'>Sized</a></span></code></li>
-<li><code>impl&lt;'b, T&gt; <a class='trait' href='../../../bitflags/__core/ops/trait.Deref.html' title='bitflags::__core::ops::Deref'>Deref</a> for <a class='struct' href='../../../bitflags/__core/cell/struct.RefMut.html' title='bitflags::__core::cell::RefMut'>RefMut</a>&lt;'b, T&gt; <span class='where'>where T: ?<a class='trait' href='../../../bitflags/__core/marker/trait.Sized.html' title='bitflags::__core::marker::Sized'>Sized</a></span></code></li>
+    <li><code>impl&lt;T&gt; Deref for <a class='struct' href='../../../bitflags/__core/nonzero/struct.NonZero.html' title='bitflags::__core::nonzero::NonZero'>NonZero</a>&lt;T&gt; <span class='where'>where T: <a class='trait' href='../../../bitflags/__core/nonzero/trait.Zeroable.html' title='bitflags::__core::nonzero::Zeroable'>Zeroable</a></span></code></li>
+<li><code>impl&lt;T&gt; Deref for <a class='struct' href='../../../bitflags/__core/ptr/struct.Unique.html' title='bitflags::__core::ptr::Unique'>Unique</a>&lt;T&gt; <span class='where'>where T: ?<a class='trait' href='../../../bitflags/__core/marker/trait.Sized.html' title='bitflags::__core::marker::Sized'>Sized</a></span></code></li>
+<li><code>impl&lt;T&gt; Deref for <a class='struct' href='../../../bitflags/__core/ptr/struct.Shared.html' title='bitflags::__core::ptr::Shared'>Shared</a>&lt;T&gt; <span class='where'>where T: ?<a class='trait' href='../../../bitflags/__core/marker/trait.Sized.html' title='bitflags::__core::marker::Sized'>Sized</a></span></code></li>
+<li><code>impl&lt;'a, T&gt; Deref for &amp;'a T <span class='where'>where T: ?<a class='trait' href='../../../bitflags/__core/marker/trait.Sized.html' title='bitflags::__core::marker::Sized'>Sized</a></span></code></li>
+<li><code>impl&lt;'a, T&gt; Deref for &amp;'a mut T <span class='where'>where T: ?<a class='trait' href='../../../bitflags/__core/marker/trait.Sized.html' title='bitflags::__core::marker::Sized'>Sized</a></span></code></li>
+<li><code>impl&lt;'b, T&gt; Deref for <a class='struct' href='../../../bitflags/__core/cell/struct.Ref.html' title='bitflags::__core::cell::Ref'>Ref</a>&lt;'b, T&gt; <span class='where'>where T: ?<a class='trait' href='../../../bitflags/__core/marker/trait.Sized.html' title='bitflags::__core::marker::Sized'>Sized</a></span></code></li>
+<li><code>impl&lt;'b, T&gt; Deref for <a class='struct' href='../../../bitflags/__core/cell/struct.RefMut.html' title='bitflags::__core::cell::RefMut'>RefMut</a>&lt;'b, T&gt; <span class='where'>where T: ?<a class='trait' href='../../../bitflags/__core/marker/trait.Sized.html' title='bitflags::__core::marker::Sized'>Sized</a></span></code></li>
 </ul><script type="text/javascript" async
                          src="../../../implementors/core/ops/trait.Deref.js">
                  </script></section>
@@ -120,6 +122,8 @@ struct.</p>
                     <dd>Move down in search results</dd>
                     <dt>&#9166;</dt>
                     <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
                 </dl>
             </div>
 

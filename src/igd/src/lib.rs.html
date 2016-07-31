@@ -108,7 +108,7 @@
 
 <span class='comment'>// re-export error types</span>
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>Error</span> <span class='kw'>as</span> <span class='ident'>HttpError</span>;
-<span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>xml</span>::<span class='ident'>common</span>::<span class='ident'>Error</span> <span class='kw'>as</span> <span class='ident'>XmlError</span>;
+<span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>xml</span>::<span class='ident'>reader</span>::<span class='ident'>Error</span> <span class='kw'>as</span> <span class='ident'>XmlError</span>;
 
 <span class='kw'>mod</span> <span class='ident'>gateway</span>;
 <span class='kw'>mod</span> <span class='ident'>search</span>;
@@ -137,6 +137,8 @@
                     <dd>Move down in search results</dd>
                     <dt>&#9166;</dt>
                     <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
                 </dl>
             </div>
 
