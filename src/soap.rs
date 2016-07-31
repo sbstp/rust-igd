@@ -2,9 +2,10 @@ use std::fmt;
 use std::io::{self, Read};
 
 use hyper;
+use hyper::mime;
 use hyper::client::Client;
 use hyper::error::Error as HyperError;
-use hyper::header::{Header, HeaderFormat};
+use hyper::header::{Header, HeaderFormat, ContentType};
 
 #[derive(Clone, Debug)]
 pub struct Action(String);
@@ -60,6 +61,7 @@ pub fn send(url: &str, action: Action, body: &str) -> Result<String, Error>  {
     let client = Client::new();
     let mut resp = try!(client.post(url)
         .header(action)
+        .header(ContentType(mime::Mime(mime::TopLevel::Text, mime::SubLevel::Xml, Vec::new())))
         .body(body)
         .send());
 
