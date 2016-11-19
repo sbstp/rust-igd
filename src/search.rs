@@ -214,9 +214,9 @@ fn get_control_url(location: &(SocketAddrV4, String)) -> Result<String, SearchEr
                         .iter()
                         .zip(tail)
                         .all(|(l, r)| l == r) {
-                    if "urn:schemas-upnp-org:service:WANIPConnection:1"
-                            == service.service_type
-                            && service.control_url.len() != 0 {
+                    if ("urn:schemas-upnp-org:service:WANIPConnection:1" == service.service_type ||
+                        "urn:schemas-upnp-org:service:WANPPPConnection:1" == service.service_type) &&
+                        service.control_url.len() != 0 {
                         return Ok(service.control_url);
                     }
                 }
