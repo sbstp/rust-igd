@@ -11,7 +11,7 @@ keywords = ["igd", "upnp"]
 license = "MIT"
 
 [dependencies]
-regex = "0.1.41"
+regex = "0.2"
 xml-rs = "0.3"
 xmltree = "0.3"
 rand = "0.3"
