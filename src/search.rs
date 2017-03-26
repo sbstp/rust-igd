@@ -153,13 +153,13 @@ fn parse_result(text: &str) -> Option<(SocketAddrV4, String)> {
             None => continue,
             Some(cap) => {
                 // these shouldn't fail if the regex matched.
-                let addr = cap.at(1).unwrap();
-                let port = cap.at(2).unwrap();
+                let addr = &cap[1];
+                let port = &cap[2];
                 return Some(
                     (SocketAddrV4::new(
                         addr.parse::<Ipv4Addr>().unwrap(),
                         port.parse::<u16>().unwrap()),
-                     cap.at(3).unwrap().to_string()));
+                        cap[3].to_string())); 
             },
         }
     }
