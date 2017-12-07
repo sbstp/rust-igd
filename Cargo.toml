@@ -15,7 +15,10 @@ regex = "0.2"
 xml-rs = "0.3"
 xmltree = "0.3"
 rand = "0.3"
+futures = "0.1"
+tokio-core = "0.1"
+tokio-timer = "0.1"
 
 [dependencies.hyper]
-version = "0.10"
+version = "0.11"
 default-features = false

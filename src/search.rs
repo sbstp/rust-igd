@@ -1,11 +1,15 @@
 use std::io;
-use std::net::{Ipv4Addr, SocketAddrV4};
-use std::net::UdpSocket;
+use std::net::{SocketAddr, Ipv4Addr, SocketAddrV4, UdpSocket};
 use std::str;
 use std::fmt;
 use std::error;
 use std::time::Duration;
 
+use futures::{Future,IntoFuture,Stream};
+use futures::future;
+use tokio_core::reactor::{Core,Handle};
+use tokio_core::net::{UdpSocket as AsyncUdpSocket};
+use tokio_timer::{Timer,TimeoutError};
 use hyper;
 use regex::Regex;
 use xml::EventReader;
@@ -58,6 +62,18 @@ impl From<str::Utf8Error> for SearchError {
 impl From<XmlError> for SearchError {
     fn from(err: XmlError) -> SearchError {
         SearchError::XmlError(err)
+    }
+}
+
+impl From<hyper::error::UriError> for SearchError {
+    fn from(err: hyper::error::UriError) -> SearchError {
+        SearchError::HttpError(hyper::Error::from(err))
+    }
+}
+
+impl<F> From<TimeoutError<F>> for SearchError {
+    fn from(_err: TimeoutError<F>) -> SearchError {
+        SearchError::IoError(io::Error::new(io::ErrorKind::TimedOut, "search timed out"))
     }
 }
 
@@ -145,6 +161,61 @@ pub fn search_gateway_from_timeout(ip: Ipv4Addr, timeout: Duration) -> Result<Ga
     }
 }
 
+/// Search gateway, bind to all interfaces and use a timeout of 3 seconds.
+///
+/// Bind to all interfaces.
+/// The request will timeout after 3 seconds.
+pub fn search_gateway_async(handle: &Handle) -> Box<Future<Item=Gateway, Error=SearchError>> {
+    search_gateway_timeout_async(Duration::from_secs(3), handle)
+}
+
+/// Search gateway, bind to all interfaces and use the given duration for the timeout.
+///
+/// Bind to all interfaces.
+/// The request will timeout after the given duration.
+pub fn search_gateway_timeout_async(timeout: Duration, handle: &Handle) -> Box<Future<Item=Gateway, Error=SearchError>> {
+    search_gateway_from_timeout_async(Ipv4Addr::new(0, 0, 0, 0), timeout, handle)
+}
+
+/// Search gateway, bind to the given interface and use a time of 3 seconds.
+///
+/// Bind to the given interface.
+/// The request will timeout after 3 seconds.
+pub fn search_gateway_from_async(ip: Ipv4Addr, handle: &Handle) -> Box<Future<Item=Gateway, Error=SearchError>> {
+    search_gateway_from_timeout_async(ip, Duration::from_secs(3), handle)
+}
+
+/// Search gateway, bind to the given interface and use the given duration for the timeout.
+///
+/// Bind to the given interface.
+/// The request will timeout after the given duration.
+pub fn search_gateway_from_timeout_async(ip: Ipv4Addr, timeout: Duration, handle: &Handle) -> Box<Future<Item=Gateway, Error=SearchError>> {
+    let addr = SocketAddr::V4(SocketAddrV4::new(ip, 0));
+    let handle = handle.clone();
+    let task = AsyncUdpSocket::bind(&addr, &handle).into_future()
+        .and_then(|socket| socket.send_dgram(SEARCH_REQUEST.as_bytes(), "239.255.255.250:1900".parse().unwrap()) )
+        .and_then(|(socket, _)| {
+            socket.recv_dgram(Vec::new())
+        })
+        .map_err(|err| SearchError::from(err) )
+        .and_then(|(_sock, buf, n, _addr)| {
+            str::from_utf8(&buf[..n])
+                .map_err(|err| SearchError::from(err) )
+                .and_then(|text| parse_result(text).ok_or(SearchError::InvalidResponse) )
+        })
+        .and_then(move |location|
+                  get_control_url_async(&location, &handle)
+                  .and_then(move |control_url|
+                            Ok(Gateway{
+                                addr: location.0,
+                                control_url: control_url
+                            })
+                  )
+        );
+    let timeout = Timer::default().timeout(task, timeout);
+    Box::new(timeout)
+}
+
 // Parse the result.
 fn parse_result(text: &str) -> Option<(SocketAddrV4, String)> {
     let re = Regex::new(r"(?i:Location):\s*http://(\d+\.\d+\.\d+\.\d+):(\d+)(/[^\r]*)").unwrap();
@@ -166,9 +237,28 @@ fn parse_result(text: &str) -> Option<(SocketAddrV4, String)> {
     None
 }
 
-fn get_control_url(location: &(SocketAddrV4, String)) -> Result<String, SearchError> {
-    let client = hyper::Client::new();
-    let resp = try!(client.get(&format!("http://{}{}", location.0, location.1)).send());
+fn get_control_url(location: &(SocketAddrV4, String)) -> Result<String,SearchError> {
+    let mut core = Core::new()?;
+    let handle = core.handle();
+    core.run(get_control_url_async(location, &handle))
+}
+
+fn get_control_url_async(location: &(SocketAddrV4, String), handle: &Handle) -> Box<Future<Item=String, Error=SearchError>> {
+    let client = hyper::Client::new(handle);
+    let uri = match format!("http://{}{}", location.0, location.1).parse() {
+        Ok(uri) => uri,
+        Err(err) => return Box::new(future::err(SearchError::from(err)))
+    };
+    let future = client.get(uri)
+        .and_then(|resp| resp.body().concat2() )
+        .then(|result| match result {
+            Ok(body) => parse_control_url(body.as_ref()),
+            Err(err) =>  Err(SearchError::from(err))
+        });
+    Box::new(future)
+}
+
+fn parse_control_url<R>(resp: R) -> Result<String, SearchError> where R: io::Read {
 
     let parser = EventReader::new(resp);
     let mut chain = Vec::<String>::with_capacity(4);

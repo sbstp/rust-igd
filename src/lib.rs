@@ -9,6 +9,9 @@ extern crate regex;
 extern crate xml;
 extern crate xmltree;
 extern crate rand;
+extern crate futures;
+extern crate tokio_core;
+extern crate tokio_timer;
 
 // data structures
 pub use self::gateway::Gateway;
