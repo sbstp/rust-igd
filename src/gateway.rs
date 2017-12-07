@@ -6,8 +6,11 @@ use rand::distributions::IndependentSample;
 
 use hyper;
 use xmltree;
+use futures::{Future};
+use tokio_core::reactor::{Handle};
 use rand;
 use soap;
+
 
 /// Errors that can occur when sending the request to the gateway.
 #[derive(Debug)]
@@ -312,37 +315,16 @@ impl Gateway {
     fn perform_request(&self, header: &str, body: &str, ok: &str) -> Result<(String, xmltree::Element), RequestError> {
         let url = format!("{}", self);
         let text = try!(soap::send(&url, soap::Action::new(header), body));
-        let mut xml = match xmltree::Element::parse(text.as_bytes()) {
-            Ok(xml) => xml,
-            Err(..) => return Err(RequestError::InvalidResponse(text)),
-        };
-        let mut body = match xml.get_mut_child("Body")
-        {
-            Some(body) => body,
-            None => return Err(RequestError::InvalidResponse(text)),
-        };
-        if let Some(ok) = body.take_child(ok) {
-            return Ok((text, ok))
-        }
-        let upnp_error = match body.get_child("Fault")
-                              .and_then(|e| e.get_child("detail"))
-                              .and_then(|e| e.get_child("UPnPError"))
-        {
-            Some(upnp_error) => upnp_error,
-            None => return Err(RequestError::InvalidResponse(text)),
-        };
-        match (upnp_error.get_child("errorCode"), upnp_error.get_child("errorDescription")) {
-            (Some(e), Some(d)) => match (e.text.as_ref(), d.text.as_ref()) {
-                (Some(et), Some(dt)) => {
-                    match et.parse::<u16>() {
-                        Ok(en)  => Err(RequestError::ErrorCode(en, From::from(&dt[..]))),
-                        Err(..) => Err(RequestError::InvalidResponse(text)),
-                    }
-                },
-                _ => Err(RequestError::InvalidResponse(text)),
-            },
-            _ => Err(RequestError::InvalidResponse(text)),
-        }
+        parse_response(text, ok)
+    }
+
+    fn perform_request_async(&self, header: &str, body: &str, ok: &str, handle: &Handle) -> Box<Future<Item=(String, xmltree::Element), Error=RequestError>> {
+        let url = format!("{}", self);
+        let ok = ok.to_owned();
+        let future = soap::send_async(&url, soap::Action::new(header), body, handle)
+            .map_err(|err| RequestError::from(err) )
+            .and_then(move |text| parse_response(text, &ok) );
+        Box::new(future)
     }
 
     /// Get the external IP address of the gateway.
@@ -369,6 +351,35 @@ impl Gateway {
             Err(RequestError::ErrorCode(606, _)) => Err(GetExternalIpError::ActionNotAuthorized),
             Err(e) => Err(GetExternalIpError::RequestError(e)),
         }
+    }
+
+    /// Get the external IP address of the gateway in a tokio compatible way
+    pub fn get_external_ip_async(&self, handle: &Handle) -> Box<Future<Item=Ipv4Addr, Error=GetExternalIpError>> {
+        let header = "\"urn:schemas-upnp-org:service:WANIPConnection:1#GetExternalIPAddress\"";
+        let body = "<?xml version=\"1.0\"?>
+        <SOAP-ENV:Envelope SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">
+            <SOAP-ENV:Body>
+                <m:GetExternalIPAddress xmlns:m=\"urn:schemas-upnp-org:service:WANIPConnection:1\">
+                </m:GetExternalIPAddress>
+            </SOAP-ENV:Body>
+        </SOAP-ENV:Envelope>";
+        let future = self.perform_request_async(header, body, "GetExternalIPAddressResponse", handle)
+            .then(|result| {
+                match result {
+                    Ok((text, response)) => {
+                        match response.get_child("NewExternalIPAddress")
+                            .and_then(|e| e.text.as_ref())
+                            .and_then(|t| t.parse::<Ipv4Addr>().ok())
+                        {
+                            Some(ipv4_addr) => Ok(ipv4_addr),
+                            None => Err(GetExternalIpError::RequestError(RequestError::InvalidResponse(text))),
+                        }
+                    },
+                    Err(RequestError::ErrorCode(606, _)) => Err(GetExternalIpError::ActionNotAuthorized),
+                    Err(e) => Err(GetExternalIpError::RequestError(e)),
+                }
+            });
+        Box::new(future)
     }
 
     /// Get an external socket address with our external ip and any port. This is a convenience
@@ -576,3 +587,36 @@ impl fmt::Display for Gateway {
     }
 }
 
+fn parse_response(text: String, ok: &str) -> Result<(String, xmltree::Element), RequestError> {
+    let mut xml = match xmltree::Element::parse(text.as_bytes()) {
+        Ok(xml) => xml,
+        Err(..) => return Err(RequestError::InvalidResponse(text)),
+    };
+    let mut body = match xml.get_mut_child("Body")
+    {
+        Some(body) => body,
+        None => return Err(RequestError::InvalidResponse(text)),
+    };
+    if let Some(ok) = body.take_child(ok) {
+        return Ok((text, ok))
+    }
+    let upnp_error = match body.get_child("Fault")
+        .and_then(|e| e.get_child("detail"))
+        .and_then(|e| e.get_child("UPnPError"))
+    {
+        Some(upnp_error) => upnp_error,
+        None => return Err(RequestError::InvalidResponse(text)),
+    };
+    match (upnp_error.get_child("errorCode"), upnp_error.get_child("errorDescription")) {
+        (Some(e), Some(d)) => match (e.text.as_ref(), d.text.as_ref()) {
+            (Some(et), Some(dt)) => {
+                match et.parse::<u16>() {
+                    Ok(en)  => Err(RequestError::ErrorCode(en, From::from(&dt[..]))),
+                    Err(..) => Err(RequestError::InvalidResponse(text)),
+                }
+            },
+            _ => Err(RequestError::InvalidResponse(text)),
+        },
+        _ => Err(RequestError::InvalidResponse(text)),
+    }
+}
