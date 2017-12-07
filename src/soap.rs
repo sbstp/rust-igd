@@ -1,11 +1,14 @@
 use std::fmt;
-use std::io::{self, Read};
+use std::string::FromUtf8Error;
+use std::io::{self};
 
+use futures::{Future,Stream};
+use futures::future;
+use tokio_core::reactor::{Core,Handle};
 use hyper;
-use hyper::mime;
-use hyper::client::Client;
+use hyper::{Client,Request,Post};
 use hyper::error::Error as HyperError;
-use hyper::header::{Header, HeaderFormat, ContentType};
+use hyper::header::{Header, ContentType, Raw, Formatter};
 
 #[derive(Clone, Debug)]
 pub struct Action(String);
@@ -25,17 +28,13 @@ impl Header for Action {
     }
 
     #[allow(unused_variables)]
-    fn parse_header(raw: &[Vec<u8>]) -> hyper::Result<Action> {
+    fn parse_header(raw: &Raw) -> hyper::Result<Action> {
         // Leave unimplemented as we shouldn't need it.
         unimplemented!();
     }
 
-}
-
-impl HeaderFormat for Action {
-
-    fn fmt_header(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(&self.0)
+    fn fmt_header(&self, f: &mut Formatter) -> fmt::Result {
+        f.fmt_line(&self.0)
     }
 
 }
@@ -51,21 +50,43 @@ impl From<HyperError> for Error {
     }
 }
 
+impl From<hyper::error::UriError> for Error {
+    fn from(err: hyper::error::UriError) -> Error {
+        Error::HttpError(HyperError::from(err))
+    }
+}
+
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
         Error::IoError(err)
     }
 }
 
-pub fn send(url: &str, action: Action, body: &str) -> Result<String, Error>  {
-    let client = Client::new();
-    let mut resp = try!(client.post(url)
-        .header(action)
-        .header(ContentType(mime::Mime(mime::TopLevel::Text, mime::SubLevel::Xml, Vec::new())))
-        .body(body)
-        .send());
+impl From<FromUtf8Error> for Error {
+    fn from(err: FromUtf8Error) -> Error {
+        Error::HttpError(HyperError::from(err))
+    }
+}
 
-    let mut text = String::new();
-    try!(resp.read_to_string(&mut text));
-    Ok(text)
+pub fn send(url: &str, action: Action, body: &str) -> Result<String, Error>  {
+    let mut core = Core::new()?;
+    let handle = core.handle();
+    core.run( send_async(url, action, body, &handle) )
+}
+
+pub fn send_async(url: &str, action: Action, body: &str, handle: &Handle) -> Box<Future<Item=String, Error=Error>>   {
+    let client = Client::new(&handle);
+    let uri = match url.parse() {
+        Ok(uri) => uri,
+        Err(err) => return Box::new(future::err(Error::from(err)))
+    };
+    let mut req = Request::new(Post, uri);
+    req.headers_mut().set(action);
+    req.headers_mut().set(ContentType::xml());
+    req.set_body(body.to_owned());
+    let future = client.request(req)
+        .and_then(|resp| resp.body().concat2() )
+        .map_err(|err| Error::from(err) )
+        .and_then(|bytes| String::from_utf8(bytes.to_vec()).map_err(|err| Error::from(err) ) );
+    Box::new(future)
 }
