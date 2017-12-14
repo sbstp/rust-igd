@@ -41,7 +41,9 @@ impl Gateway {
     }
 
     /// Get the external IP address of the gateway in a tokio compatible way
-    pub fn get_external_ip(&self) -> Box<Future<Item=Ipv4Addr, Error=GetExternalIpError>> {
+    pub fn get_external_ip<F>(&self) -> Box<F>
+        where
+    F: Future<Item=Ipv4Addr, Error=GetExternalIpError> + Sized {
         let header = "\"urn:schemas-upnp-org:service:WANIPConnection:1#GetExternalIPAddress\"";
         let body = "<?xml version=\"1.0\"?>
         <SOAP-ENV:Envelope SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">
