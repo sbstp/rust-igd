@@ -16,18 +16,20 @@ extern crate tokio_retry;
 
 // data structures
 pub use self::gateway::Gateway;
-pub use self::errors::{RequestError,
-                       GetExternalIpError,
-                       AddPortError,
-                       AddAnyPortError,
-                       RemovePortError};
+pub use self::errors::{SearchError, RequestError, GetExternalIpError, AddPortError,
+                       AddAnyPortError, RemovePortError};
 
 // search of gateway
 pub use self::search::search_gateway;
 pub use self::search::search_gateway_timeout;
 pub use self::search::search_gateway_from;
 pub use self::search::search_gateway_from_timeout;
-pub use self::search::SearchError;
+
+/// Contains Tokio compatible implementations for finding a gateway and configuring port mappings
+pub mod tokio {
+    pub use async::{Gateway, search_gateway_from_timeout, search_gateway_from,
+                    search_gateway_timeout, search_gateway};
+}
 
 // re-export error types
 pub use hyper::Error as HttpError;
@@ -42,7 +44,7 @@ mod errors;
 use std::fmt;
 
 /// Represents the protocols available for port mapping.
-#[derive(Debug,Clone,Copy,PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PortMappingProtocol {
     /// TCP protocol
     TCP,
@@ -52,9 +54,13 @@ pub enum PortMappingProtocol {
 
 impl fmt::Display for PortMappingProtocol {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-         write!(f, "{}", match *self {
-            PortMappingProtocol::TCP => "TCP",
-            PortMappingProtocol::UDP => "UDP",
-        })
+        write!(
+            f,
+            "{}",
+            match *self {
+                PortMappingProtocol::TCP => "TCP",
+                PortMappingProtocol::UDP => "UDP",
+            }
+        )
     }
 }

@@ -27,6 +27,7 @@ pub struct Gateway {
 }
 
 impl Gateway {
+    /// Create a new Gateway for a given Handle to a control loop
     pub fn new(addr: SocketAddrV4, control_url: String, handle: Handle) -> Gateway {
         Gateway {
             addr: addr,

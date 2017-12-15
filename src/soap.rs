@@ -1,12 +1,12 @@
 use std::fmt;
 use std::string::FromUtf8Error;
-use std::io::{self};
+use std::io;
 
-use futures::{Future,Stream};
+use futures::{Future, Stream};
 use futures::future;
-use tokio_core::reactor::{Core,Handle};
+use tokio_core::reactor::Handle;
 use hyper;
-use hyper::{Client,Request,Post};
+use hyper::{Client, Request, Post};
 use hyper::error::Error as HyperError;
 use hyper::header::{Header, ContentType, Raw, Formatter};
 
@@ -14,15 +14,12 @@ use hyper::header::{Header, ContentType, Raw, Formatter};
 pub struct Action(String);
 
 impl Action {
-
     pub fn new(action: &str) -> Action {
         Action(action.into())
     }
-
 }
 
 impl Header for Action {
-
     fn header_name() -> &'static str {
         "SOAPAction"
     }
@@ -36,7 +33,6 @@ impl Header for Action {
     fn fmt_header(&self, f: &mut Formatter) -> fmt::Result {
         f.fmt_line(&self.0)
     }
-
 }
 
 pub enum Error {
@@ -68,25 +64,27 @@ impl From<FromUtf8Error> for Error {
     }
 }
 
-pub fn send(url: &str, action: Action, body: &str) -> Result<String, Error>  {
-    let mut core = Core::new()?;
-    let handle = core.handle();
-    core.run( send_async(url, action, body, &handle) )
-}
-
-pub fn send_async(url: &str, action: Action, body: &str, handle: &Handle) -> Box<Future<Item=String, Error=Error>>   {
+pub fn send_async(
+    url: &str,
+    action: Action,
+    body: &str,
+    handle: &Handle,
+) -> Box<Future<Item = String, Error = Error>> {
     let client = Client::new(&handle);
     let uri = match url.parse() {
         Ok(uri) => uri,
-        Err(err) => return Box::new(future::err(Error::from(err)))
+        Err(err) => return Box::new(future::err(Error::from(err))),
     };
     let mut req = Request::new(Post, uri);
     req.headers_mut().set(action);
     req.headers_mut().set(ContentType::xml());
     req.set_body(body.to_owned());
-    let future = client.request(req)
-        .and_then(|resp| resp.body().concat2() )
-        .map_err(|err| Error::from(err) )
-        .and_then(|bytes| String::from_utf8(bytes.to_vec()).map_err(|err| Error::from(err) ) );
+    let future = client
+        .request(req)
+        .and_then(|resp| resp.body().concat2())
+        .map_err(|err| Error::from(err))
+        .and_then(|bytes| {
+            String::from_utf8(bytes.to_vec()).map_err(|err| Error::from(err))
+        });
     Box::new(future)
 }
