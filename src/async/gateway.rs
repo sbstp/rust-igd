@@ -1,49 +1,56 @@
-use std::io;
 use std::net::{Ipv4Addr, SocketAddrV4};
 use std::hash::{Hash, Hasher};
 use std::fmt;
-use std;
 use rand::distributions::IndependentSample;
 
-use hyper;
 use xmltree;
-use futures::{Future};
+use futures::Future;
 use futures::future;
-use tokio_core::reactor::{Core,Handle};
+use tokio_core::reactor::Handle;
 use tokio_retry::{RetryIf, Error as RetryError};
-use tokio_retry::strategy::{FixedInterval};
+use tokio_retry::strategy::FixedInterval;
 use rand;
 use soap;
-use errors::{RequestError,GetExternalIpError,AddPortError,AddAnyPortError,RemovePortError};
+use errors::{RequestError, GetExternalIpError, AddPortError, AddAnyPortError, RemovePortError};
 
-use ::{PortMappingProtocol};
+use PortMappingProtocol;
 
 /// This structure represents a gateway found by the search functions.
 #[derive(Clone, Debug)]
 pub struct Gateway {
     /// Socket address of the gateway
-    pub addr: SocketAddrV4,
+    addr: SocketAddrV4,
     /// Control url of the device
-    pub control_url: String,
+    control_url: String,
 
-    handle: Handle
+    handle: Handle,
 }
 
 impl Gateway {
+    pub fn new(addr: SocketAddrV4, control_url: String, handle: Handle) -> Gateway {
+        Gateway {
+            addr: addr,
+            control_url: control_url,
+            handle: handle,
+        }
+    }
 
-    fn perform_request(&self, header: &str, body: &str, ok: &str) -> Box<Future<Item=(String, xmltree::Element), Error=RequestError>> {
+    fn perform_request(
+        &self,
+        header: &str,
+        body: &str,
+        ok: &str,
+    ) -> Box<Future<Item = (String, xmltree::Element), Error = RequestError>> {
         let url = format!("{}", self);
         let ok = ok.to_owned();
         let future = soap::send_async(&url, soap::Action::new(header), body, &self.handle)
-            .map_err(|err| RequestError::from(err) )
-            .and_then(move |text| parse_response(text, &ok) );
+            .map_err(|err| RequestError::from(err))
+            .and_then(move |text| parse_response(text, &ok));
         Box::new(future)
     }
 
     /// Get the external IP address of the gateway in a tokio compatible way
-    pub fn get_external_ip<F>(&self) -> Box<F>
-        where
-    F: Future<Item=Ipv4Addr, Error=GetExternalIpError> + Sized {
+    pub fn get_external_ip<F>(&self) -> Box<Future<Item = Ipv4Addr, Error = GetExternalIpError>> {
         let header = "\"urn:schemas-upnp-org:service:WANIPConnection:1#GetExternalIPAddress\"";
         let body = "<?xml version=\"1.0\"?>
         <SOAP-ENV:Envelope SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">
@@ -53,20 +60,22 @@ impl Gateway {
             </SOAP-ENV:Body>
         </SOAP-ENV:Envelope>";
         let future = self.perform_request(header, body, "GetExternalIPAddressResponse")
-            .then(|result| {
-                match result {
-                    Ok((text, response)) => {
-                        match response.get_child("NewExternalIPAddress")
-                            .and_then(|e| e.text.as_ref())
-                            .and_then(|t| t.parse::<Ipv4Addr>().ok())
-                        {
-                            Some(ipv4_addr) => Ok(ipv4_addr),
-                            None => Err(GetExternalIpError::RequestError(RequestError::InvalidResponse(text))),
-                        }
-                    },
-                    Err(RequestError::ErrorCode(606, _)) => Err(GetExternalIpError::ActionNotAuthorized),
-                    Err(e) => Err(GetExternalIpError::RequestError(e)),
+            .then(|result| match result {
+                Ok((text, response)) => {
+                    match response
+                        .get_child("NewExternalIPAddress")
+                        .and_then(|e| e.text.as_ref())
+                        .and_then(|t| t.parse::<Ipv4Addr>().ok()) {
+                        Some(ipv4_addr) => Ok(ipv4_addr),
+                        None => Err(GetExternalIpError::RequestError(
+                            RequestError::InvalidResponse(text),
+                        )),
+                    }
                 }
+                Err(RequestError::ErrorCode(606, _)) => Err(
+                    GetExternalIpError::ActionNotAuthorized,
+                ),
+                Err(e) => Err(GetExternalIpError::RequestError(e)),
             });
         Box::new(future)
     }
@@ -80,30 +89,30 @@ impl Gateway {
     /// # Returns
     ///
     /// The external address that was mapped on success. Otherwise an error.
-    pub fn get_any_address(&self,
-                           protocol: PortMappingProtocol,
-                           local_addr: SocketAddrV4,
-                           lease_duration: u32,
-                           description: &str)
-            -> Box<Future<Item=SocketAddrV4, Error=AddAnyPortError>>
-    {
+    pub fn get_any_address(
+        &self,
+        protocol: PortMappingProtocol,
+        local_addr: SocketAddrV4,
+        lease_duration: u32,
+        description: &str,
+    ) -> Box<Future<Item = SocketAddrV4, Error = AddAnyPortError>> {
         let description = description.to_owned();
         let gateway = self.clone();
-        let future = self.get_external_ip()
-            .map_err(|err|
-                     match err {
-                         GetExternalIpError::ActionNotAuthorized => AddAnyPortError::ActionNotAuthorized,
-                         GetExternalIpError::RequestError(e) => AddAnyPortError::RequestError(e)
-                     }
-            )
-            .and_then(move |ip|
-                      gateway.add_any_port(protocol, local_addr, lease_duration, &description)
-                      .and_then(move |port| Ok(SocketAddrV4::new(ip, port)) )
-            );
+        let future =
+            self.get_external_ip::<Box<Future<Item = Ipv4Addr, Error = GetExternalIpError>>>()
+                .map_err(|err| match err {
+                    GetExternalIpError::ActionNotAuthorized => AddAnyPortError::ActionNotAuthorized,
+                    GetExternalIpError::RequestError(e) => AddAnyPortError::RequestError(e),
+                })
+                .and_then(move |ip| {
+                    gateway
+                        .add_any_port(protocol, local_addr, lease_duration, &description)
+                        .and_then(move |port| Ok(SocketAddrV4::new(ip, port)))
+                });
         Box::new(future)
 
     }
-                        
+
 
     /// Add a port mapping.with any external port.
     ///
@@ -113,11 +122,13 @@ impl Gateway {
     /// # Returns
     ///
     /// The external port that was mapped on success. Otherwise an error.
-    pub fn add_any_port(&self, protocol: PortMappingProtocol,
-                        local_addr: SocketAddrV4,
-                        lease_duration: u32, description: &str)
-            -> Box<Future<Item=u16, Error=AddAnyPortError>>
-    {
+    pub fn add_any_port(
+        &self,
+        protocol: PortMappingProtocol,
+        local_addr: SocketAddrV4,
+        lease_duration: u32,
+        description: &str,
+    ) -> Box<Future<Item = u16, Error = AddAnyPortError>> {
         // This function first attempts to call AddAnyPortMapping on the IGD with a random port
         // number. If that fails due to the method being unknown it attempts to call AddPortMapping
         // instead with a random port number. If that fails due to ConflictInMappingEntry it retrys
@@ -125,7 +136,7 @@ impl Gateway {
         // it retrys once with the same port values.
 
         if local_addr.port() == 0 {
-            return Box::new(future::err(AddAnyPortError::InternalPortZeroInvalid))
+            return Box::new(future::err(AddAnyPortError::InternalPortZeroInvalid));
         }
 
         let port_range = rand::distributions::Range::new(32768u16, 65535u16);
@@ -133,7 +144,8 @@ impl Gateway {
         let external_port = port_range.ind_sample(&mut rng);
 
         let header = "\"urn:schemas-upnp-org:service:WANIPConnection:1#AddAnyPortMapping\"";
-        let body = format!("<?xml version=\"1.0\"?>
+        let body = format!(
+            "<?xml version=\"1.0\"?>
         <s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">
         <s:Body>
             <u:AddAnyPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">
@@ -148,8 +160,14 @@ impl Gateway {
             </u:AddAnyPortMapping>
         </s:Body>
         </s:Envelope>
-        ", protocol, external_port, local_addr.ip(),
-                           local_addr.port(), lease_duration, description);
+        ",
+            protocol,
+            external_port,
+            local_addr.ip(),
+            local_addr.port(),
+            lease_duration,
+            description
+        );
         let gateway = self.clone();
         let description = description.to_owned();
         // First, attempt to call the AddAnyPortMapping method.
@@ -184,25 +202,40 @@ impl Gateway {
         Box::new(future)
     }
 
-    fn retry_add_random_port_mapping(&self, protocol: PortMappingProtocol, local_addr: SocketAddrV4,
-                                     lease_duration: u32, description: &str) -> Box<Future<Item=u16, Error=AddAnyPortError>> {
+    fn retry_add_random_port_mapping(
+        &self,
+        protocol: PortMappingProtocol,
+        local_addr: SocketAddrV4,
+        lease_duration: u32,
+        description: &str,
+    ) -> Box<Future<Item = u16, Error = AddAnyPortError>> {
         let description = description.to_owned();
         let gateway = self.clone();
         let retry_strategy = FixedInterval::from_millis(0).take(20);
-        let future = RetryIf::spawn(gateway.handle.clone(),
-                                    retry_strategy,
-                                    move || gateway.add_random_port_mapping(protocol, local_addr, lease_duration, &description),
-                                    |err: &AddAnyPortError| match err { &AddAnyPortError::NoPortsAvailable => true, _ => false } )
-            .map_err(|err|
-                     match err {
-                         RetryError::OperationError(e) => e,
-                         RetryError::TimerError(io_error) => AddAnyPortError::from(RequestError::from(io_error))
-                     });
+        let future = RetryIf::spawn(
+            gateway.handle.clone(),
+            retry_strategy,
+            move || {
+                gateway.add_random_port_mapping(protocol, local_addr, lease_duration, &description)
+            },
+            |err: &AddAnyPortError| match err {
+                &AddAnyPortError::NoPortsAvailable => true,
+                _ => false,
+            },
+        ).map_err(|err| match err {
+            RetryError::OperationError(e) => e,
+            RetryError::TimerError(io_error) => AddAnyPortError::from(RequestError::from(io_error)),
+        });
         Box::new(future)
     }
 
-    fn add_random_port_mapping(&self, protocol: PortMappingProtocol, local_addr: SocketAddrV4,
-                               lease_duration: u32, description: &str) -> Box<Future<Item=u16, Error=AddAnyPortError>> {
+    fn add_random_port_mapping(
+        &self,
+        protocol: PortMappingProtocol,
+        local_addr: SocketAddrV4,
+        lease_duration: u32,
+        description: &str,
+    ) -> Box<Future<Item = u16, Error = AddAnyPortError>> {
         let description = description.to_owned();
         let gateway = self.clone();
         let port_range = rand::distributions::Range::new(32768u16, 65535u16);
@@ -231,26 +264,43 @@ impl Gateway {
         Box::new(future)
     }
 
-    fn add_same_port_mapping(&self, protocol: PortMappingProtocol, local_addr: SocketAddrV4,
-                             lease_duration: u32, description: &str) -> Box<Future<Item=u16, Error=AddAnyPortError>> {
-        let future = self.add_port_mapping(protocol, local_addr.port(), local_addr, lease_duration, description)
-            .then(move |result|
-                  match result {
-                      Ok(()) => Ok(local_addr.port()),
-                      Err(RequestError::ErrorCode(606, _)) => Err(AddAnyPortError::ActionNotAuthorized),
-                      Err(RequestError::ErrorCode(718, _)) => Err(AddAnyPortError::ExternalPortInUse),
-                      Err(RequestError::ErrorCode(725, _)) => Err(AddAnyPortError::OnlyPermanentLeasesSupported),
-                      Err(e) => Err(AddAnyPortError::RequestError(e)),
-                  });
+    fn add_same_port_mapping(
+        &self,
+        protocol: PortMappingProtocol,
+        local_addr: SocketAddrV4,
+        lease_duration: u32,
+        description: &str,
+    ) -> Box<Future<Item = u16, Error = AddAnyPortError>> {
+        let future = self.add_port_mapping(
+            protocol,
+            local_addr.port(),
+            local_addr,
+            lease_duration,
+            description,
+        ).then(move |result| match result {
+                Ok(()) => Ok(local_addr.port()),
+                Err(RequestError::ErrorCode(606, _)) => Err(AddAnyPortError::ActionNotAuthorized),
+                Err(RequestError::ErrorCode(718, _)) => Err(AddAnyPortError::ExternalPortInUse),
+                Err(RequestError::ErrorCode(725, _)) => Err(
+                    AddAnyPortError::OnlyPermanentLeasesSupported,
+                ),
+                Err(e) => Err(AddAnyPortError::RequestError(e)),
+            });
         Box::new(future)
     }
 
-    fn add_port_mapping(&self, protocol: PortMappingProtocol,
-                        external_port: u16, local_addr: SocketAddrV4, lease_duration: u32,
-                        description: &str) -> Box<Future<Item=(), Error=RequestError>> {
+    fn add_port_mapping(
+        &self,
+        protocol: PortMappingProtocol,
+        external_port: u16,
+        local_addr: SocketAddrV4,
+        lease_duration: u32,
+        description: &str,
+    ) -> Box<Future<Item = (), Error = RequestError>> {
 
         let header = "\"urn:schemas-upnp-org:service:WANIPConnection:1#AddPortMapping\"";
-        let body = format!("<?xml version=\"1.0\"?>
+        let body = format!(
+            "<?xml version=\"1.0\"?>
         <s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">
         <s:Body>
             <u:AddPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">
@@ -265,9 +315,16 @@ impl Gateway {
             </u:AddPortMapping>
         </s:Body>
         </s:Envelope>
-        ", protocol, external_port, local_addr.ip(),
-           local_addr.port(), lease_duration, description);
-        let future = self.perform_request(header, &*body, "AddPortMappingResponse").map(|_| ());
+        ",
+            protocol,
+            external_port,
+            local_addr.ip(),
+            local_addr.port(),
+            lease_duration,
+            description
+        );
+        let future = self.perform_request(header, &*body, "AddPortMappingResponse")
+            .map(|_| ());
         Box::new(future)
     }
 
@@ -275,17 +332,27 @@ impl Gateway {
     ///
     /// The local_addr is the address where the traffic is sent to.
     /// The lease_duration parameter is in seconds. A value of 0 is infinite.
-    pub fn add_port(&self, protocol: PortMappingProtocol,
-                    external_port: u16, local_addr: SocketAddrV4, lease_duration: u32,
-                    description: &str) -> Box<Future<Item=(), Error=AddPortError>> {
+    pub fn add_port(
+        &self,
+        protocol: PortMappingProtocol,
+        external_port: u16,
+        local_addr: SocketAddrV4,
+        lease_duration: u32,
+        description: &str,
+    ) -> Box<Future<Item = (), Error = AddPortError>> {
         if external_port == 0 {
             return Box::new(future::err(AddPortError::ExternalPortZeroInvalid));
         }
         if local_addr.port() == 0 {
             return Box::new(future::err(AddPortError::InternalPortZeroInvalid));
         }
-        let future = self.add_port_mapping(protocol, external_port, local_addr, lease_duration, description)
-            .map_err(|err| match err {
+        let future = self.add_port_mapping(
+            protocol,
+            external_port,
+            local_addr,
+            lease_duration,
+            description,
+        ).map_err(|err| match err {
                 RequestError::ErrorCode(605, _) => AddPortError::DescriptionTooLong,
                 RequestError::ErrorCode(606, _) => AddPortError::ActionNotAuthorized,
                 RequestError::ErrorCode(718, _) => AddPortError::PortInUse,
@@ -297,10 +364,14 @@ impl Gateway {
     }
 
     /// Remove a port mapping.
-    pub fn remove_port(&self, protocol: PortMappingProtocol,
-                       external_port: u16) -> Box<Future<Item=(), Error=RemovePortError>> {
+    pub fn remove_port(
+        &self,
+        protocol: PortMappingProtocol,
+        external_port: u16,
+    ) -> Box<Future<Item = (), Error = RemovePortError>> {
         let header = "\"urn:schemas-upnp-org:service:WANIPConnection:1#DeletePortMapping\"";
-        let body = format!("<?xml version=\"1.0\"?>
+        let body = format!(
+            "<?xml version=\"1.0\"?>
         <s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">
         <s:Body>
             <u:DeletePortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">
@@ -310,16 +381,18 @@ impl Gateway {
             </u:DeletePortMapping>
         </s:Body>
         </s:Envelope>
-        ", protocol, external_port);
+        ",
+            protocol,
+            external_port
+        );
 
         let future = self.perform_request(header, &*body, "DeletePortMappingResponse")
             .map(|_| ())
-            .map_err(|err|
-                     match err {
-                         RequestError::ErrorCode(606, _) => RemovePortError::ActionNotAuthorized,
-                         RequestError::ErrorCode(714, _) => RemovePortError::NoSuchPortMapping,
-                         e => RemovePortError::RequestError(e),
-                     });
+            .map_err(|err| match err {
+                RequestError::ErrorCode(606, _) => RemovePortError::ActionNotAuthorized,
+                RequestError::ErrorCode(714, _) => RemovePortError::NoSuchPortMapping,
+                e => RemovePortError::RequestError(e),
+            });
         Box::new(future)
     }
 }
@@ -332,8 +405,7 @@ impl fmt::Display for Gateway {
 
 impl PartialEq for Gateway {
     fn eq(&self, other: &Gateway) -> bool {
-        self.addr == other.addr &&
-            self.control_url == other.control_url
+        self.addr == other.addr && self.control_url == other.control_url
     }
 }
 
@@ -351,31 +423,34 @@ fn parse_response(text: String, ok: &str) -> Result<(String, xmltree::Element), 
         Ok(xml) => xml,
         Err(..) => return Err(RequestError::InvalidResponse(text)),
     };
-    let mut body = match xml.get_mut_child("Body")
-    {
+    let mut body = match xml.get_mut_child("Body") {
         Some(body) => body,
         None => return Err(RequestError::InvalidResponse(text)),
     };
     if let Some(ok) = body.take_child(ok) {
-        return Ok((text, ok))
+        return Ok((text, ok));
     }
     let upnp_error = match body.get_child("Fault")
         .and_then(|e| e.get_child("detail"))
-        .and_then(|e| e.get_child("UPnPError"))
-    {
+        .and_then(|e| e.get_child("UPnPError")) {
         Some(upnp_error) => upnp_error,
         None => return Err(RequestError::InvalidResponse(text)),
     };
-    match (upnp_error.get_child("errorCode"), upnp_error.get_child("errorDescription")) {
-        (Some(e), Some(d)) => match (e.text.as_ref(), d.text.as_ref()) {
-            (Some(et), Some(dt)) => {
-                match et.parse::<u16>() {
-                    Ok(en)  => Err(RequestError::ErrorCode(en, From::from(&dt[..]))),
-                    Err(..) => Err(RequestError::InvalidResponse(text)),
+    match (
+        upnp_error.get_child("errorCode"),
+        upnp_error.get_child("errorDescription"),
+    ) {
+        (Some(e), Some(d)) => {
+            match (e.text.as_ref(), d.text.as_ref()) {
+                (Some(et), Some(dt)) => {
+                    match et.parse::<u16>() {
+                        Ok(en) => Err(RequestError::ErrorCode(en, From::from(&dt[..]))),
+                        Err(..) => Err(RequestError::InvalidResponse(text)),
+                    }
                 }
-            },
-            _ => Err(RequestError::InvalidResponse(text)),
-        },
+                _ => Err(RequestError::InvalidResponse(text)),
+            }
+        }
         _ => Err(RequestError::InvalidResponse(text)),
     }
 }
