@@ -12,7 +12,7 @@ use hyper;
 use xml::EventReader;
 use xml::reader::XmlEvent;
 
-use gateway::Gateway;
+use async::Gateway;
 use errors::SearchError;
 use search::{SEARCH_REQUEST, parse_result};
 
@@ -76,10 +76,7 @@ pub fn search_gateway_from_timeout(
         })
         .and_then(move |location| {
             get_control_url(&location, &handle).and_then(move |control_url| {
-                Ok(Gateway {
-                    addr: location.0,
-                    control_url: control_url,
-                })
+                Ok(Gateway::new(location.0, control_url, handle))
             })
         });
     let timeout = Timer::default().timeout(task, timeout);
