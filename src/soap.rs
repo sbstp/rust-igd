@@ -8,7 +8,7 @@ use tokio_core::reactor::Handle;
 use hyper;
 use hyper::{Client, Request, Post};
 use hyper::error::Error as HyperError;
-use hyper::header::{Header, ContentType, Raw, Formatter};
+use hyper::header::{Header, ContentType, ContentLength, Raw, Formatter};
 
 #[derive(Clone, Debug)]
 pub struct Action(String);
@@ -78,6 +78,7 @@ pub fn send_async(
     let mut req = Request::new(Post, uri);
     req.headers_mut().set(action);
     req.headers_mut().set(ContentType::xml());
+    req.headers_mut().set(ContentLength(body.len() as u64));
     req.set_body(body.to_owned());
     let future = client
         .request(req)
