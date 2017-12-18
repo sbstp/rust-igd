@@ -65,7 +65,7 @@ pub fn search_gateway_from_timeout(
                 "239.255.255.250:1900".parse().unwrap(),
             )
         })
-        .and_then(|(socket, _)| socket.recv_dgram(Vec::new()))
+        .and_then(|(socket, _)| socket.recv_dgram(vec![0u8; 1500]))
         .map_err(|err| SearchError::from(err))
         .and_then(|(_sock, buf, n, _addr)| {
             str::from_utf8(&buf[..n])
