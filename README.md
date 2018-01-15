@@ -5,7 +5,9 @@ At the moment, you can search for the gateway, request the gateway's external ad
 
 Contributions are welcome! This is pretty delicate to test, please submit an issue if you have trouble using this.
 
-[Documentation](https://sbstp.github.io/rust-igd/igd/)
+* [Documentation](https://docs.rs/igd/)
+* [Repository](https://github.com/sbstp/rust-igd)
+* [Crates.io](https://crates.io/crates/igd)
 
 ## License
 MIT
