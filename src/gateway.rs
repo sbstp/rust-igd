@@ -316,7 +316,7 @@ impl Gateway {
             Ok(xml) => xml,
             Err(..) => return Err(RequestError::InvalidResponse(text)),
         };
-        let mut body = match xml.get_mut_child("Body")
+        let body = match xml.get_mut_child("Body")
         {
             Some(body) => body,
             None => return Err(RequestError::InvalidResponse(text)),

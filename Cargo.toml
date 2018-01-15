@@ -12,9 +12,9 @@ license = "MIT"
 
 [dependencies]
 regex = "0.2"
-xml-rs = "0.3"
-xmltree = "0.3"
-rand = "0.3"
+xml-rs = "0.7"
+xmltree = "0.7"
+rand = "0.4"
 
 [dependencies.hyper]
 version = "0.10"
