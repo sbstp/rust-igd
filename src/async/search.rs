@@ -1,5 +1,5 @@
 use std::io;
-use std::net::{SocketAddr, Ipv4Addr, SocketAddrV4};
+use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 use std::str;
 use std::time::Duration;
 
@@ -14,7 +14,7 @@ use xml::reader::XmlEvent;
 
 use async::Gateway;
 use errors::SearchError;
-use search::{SEARCH_REQUEST, parse_result};
+use search::{parse_result, SEARCH_REQUEST};
 
 /// Search gateway, bind to all interfaces and use a timeout of 3 seconds.
 ///
@@ -70,14 +70,11 @@ pub fn search_gateway_from_timeout(
         .and_then(|(_sock, buf, n, _addr)| {
             str::from_utf8(&buf[..n])
                 .map_err(|err| SearchError::from(err))
-                .and_then(|text| {
-                    parse_result(text).ok_or(SearchError::InvalidResponse)
-                })
+                .and_then(|text| parse_result(text).ok_or(SearchError::InvalidResponse))
         })
         .and_then(move |location| {
-            get_control_url(&location, &handle).and_then(move |control_url| {
-                Ok(Gateway::new(location.0, control_url, handle))
-            })
+            get_control_url(&location, &handle)
+                .and_then(move |control_url| Ok(Gateway::new(location.0, control_url, handle)))
         });
     let timeout = Timer::default().timeout(task, timeout);
     Box::new(timeout)
@@ -92,13 +89,12 @@ pub fn get_control_url(
         Ok(uri) => uri,
         Err(err) => return Box::new(future::err(SearchError::from(err))),
     };
-    let future = client
-        .get(uri)
-        .and_then(|resp| resp.body().concat2())
-        .then(|result| match result {
+    let future = client.get(uri).and_then(|resp| resp.body().concat2()).then(
+        |result| match result {
             Ok(body) => parse_control_url(body.as_ref()),
             Err(err) => Err(SearchError::from(err)),
-        });
+        },
+    );
     Box::new(future)
 }
 
@@ -106,7 +102,6 @@ fn parse_control_url<R>(resp: R) -> Result<String, SearchError>
 where
     R: io::Read,
 {
-
     let parser = EventReader::new(resp);
     let mut chain = Vec::<String>::with_capacity(4);
 
@@ -147,19 +142,16 @@ where
                     continue;
                 };
 
-                if vec!["device", "serviceList"].iter().zip(tail).all(
-                    |(l, r)| {
-                        l == r
-                    },
-                )
+                if vec!["device", "serviceList"]
+                    .iter()
+                    .zip(tail)
+                    .all(|(l, r)| l == r)
+                    && ("urn:schemas-upnp-org:service:WANIPConnection:1" == service.service_type
+                        || "urn:schemas-upnp-org:service:WANPPPConnection:1"
+                            == service.service_type)
+                    && service.control_url.len() != 0
                 {
-                    if ("urn:schemas-upnp-org:service:WANIPConnection:1" == service.service_type ||
-                            "urn:schemas-upnp-org:service:WANPPPConnection:1" ==
-                                service.service_type) &&
-                        service.control_url.len() != 0
-                    {
-                        return Ok(service.control_url);
-                    }
+                    return Ok(service.control_url);
                 }
             }
             XmlEvent::Characters(text) => {

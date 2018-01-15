@@ -1,12 +1,10 @@
 use std::net::{Ipv4Addr, SocketAddrV4};
 use std::fmt;
 use tokio_core::reactor::Core;
-use futures::Future;
 
-use errors::{GetExternalIpError, AddPortError, AddAnyPortError, RemovePortError};
+use errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError};
 use PortMappingProtocol;
 use async::Gateway as AsyncGateway;
-
 
 /// This structure represents a gateway found by the search functions.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -22,12 +20,7 @@ impl Gateway {
     pub fn get_external_ip(&self) -> Result<Ipv4Addr, GetExternalIpError> {
         let mut core = Core::new().unwrap();
         let async = AsyncGateway::new(self.addr, self.control_url.clone(), core.handle());
-        core.run(async.get_external_ip::<Box<
-            Future<
-                Item = Ipv4Addr,
-                Error = GetExternalIpError,
-            >,
-        >>())
+        core.run(async.get_external_ip())
     }
 
     /// Get an external socket address with our external ip and any port. This is a convenience
@@ -48,14 +41,8 @@ impl Gateway {
     ) -> Result<SocketAddrV4, AddAnyPortError> {
         let mut core = Core::new().unwrap();
         let async = AsyncGateway::new(self.addr, self.control_url.clone(), core.handle());
-        core.run(async.get_any_address(
-            protocol,
-            local_addr,
-            lease_duration,
-            description,
-        ))
+        core.run(async.get_any_address(protocol, local_addr, lease_duration, description))
     }
-
 
     /// Add a port mapping.with any external port.
     ///
@@ -74,12 +61,7 @@ impl Gateway {
     ) -> Result<u16, AddAnyPortError> {
         let mut core = Core::new().unwrap();
         let async = AsyncGateway::new(self.addr, self.control_url.clone(), core.handle());
-        core.run(async.add_any_port(
-            protocol,
-            local_addr,
-            lease_duration,
-            description,
-        ))
+        core.run(async.add_any_port(protocol, local_addr, lease_duration, description))
     }
 
     /// Add a port mapping.
