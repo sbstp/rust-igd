@@ -1,9 +1,10 @@
 use std::net::{Ipv4Addr, SocketAddrV4};
 use std::hash::{Hash, Hasher};
 use std::fmt;
+use std::str::FromStr;
 use rand::distributions::IndependentSample;
 
-use xmltree;
+use quick_xml::{Reader, events::Event};
 use futures::Future;
 use futures::future;
 use tokio_core::reactor::Handle;
@@ -36,17 +37,18 @@ impl Gateway {
         }
     }
 
-    fn perform_request(
+    fn perform_request<T: 'static, F: 'static + Fn(String, &mut Reader<&[u8]>) -> Result<T, RequestError>>(
         &self,
         header: &str,
         body: &str,
         ok: &str,
-    ) -> Box<Future<Item = (String, xmltree::Element), Error = RequestError>> {
+        f: F,
+    ) -> Box<Future<Item = T, Error = RequestError>> {
         let url = format!("{}", self);
         let ok = ok.to_owned();
         let future = soap::send_async(&url, soap::Action::new(header), body, &self.handle)
             .map_err(|err| RequestError::from(err))
-            .and_then(move |text| parse_response(text, &ok));
+            .and_then(move |text| parse_response(text, &ok, f));
         Box::new(future)
     }
 
@@ -60,18 +62,16 @@ impl Gateway {
                 </m:GetExternalIPAddress>
             </SOAP-ENV:Body>
         </SOAP-ENV:Envelope>";
-        let future = self.perform_request(header, body, "GetExternalIPAddressResponse")
+
+        let future = self.perform_request(header,
+                                          body,
+                                          "GetExternalIPAddressResponse",
+                                          |txt, xml| parse_child::<Ipv4Addr, _>(txt,
+                                                                 xml,
+                                                                 "GetExternalIPAddressResponse",
+                                                                 "NewExternalIPAddress"))
             .then(|result| match result {
-                Ok((text, response)) => match response
-                    .get_child("NewExternalIPAddress")
-                    .and_then(|e| e.text.as_ref())
-                    .and_then(|t| t.parse::<Ipv4Addr>().ok())
-                {
-                    Some(ipv4_addr) => Ok(ipv4_addr),
-                    None => Err(GetExternalIpError::RequestError(
-                        RequestError::InvalidResponse(text),
-                    )),
-                },
+                Ok(ip) => Ok(ip),
                 Err(RequestError::ErrorCode(606, _)) => {
                     Err(GetExternalIpError::ActionNotAuthorized)
                 }
@@ -168,17 +168,7 @@ impl Gateway {
         let gateway = self.clone();
         let description = description.to_owned();
         // First, attempt to call the AddAnyPortMapping method.
-        let future = self.perform_request(header, &*body, "AddAnyPortMappingResponse")
-            .and_then(|(text, response)| {
-                match response
-                    .get_child("NewReservedPort")
-                    .and_then(|e| e.text.as_ref())
-                    .and_then(|t| t.parse::<u16>().ok())
-                {
-                    Some(port) => Ok(port),
-                    None => Err(RequestError::InvalidResponse(text)),
-                }
-            })
+        let future = self.perform_request(header, &*body, "AddAnyPortMappingResponse", |txt, xml| parse_child::<u16, _>(txt, xml, "AddAnyPortMappingResponse", "NewReservedPort"))
             .or_else(move |err| {
                 match err {
                     // The router doesn't know the AddAnyPortMapping method. Try using AddPortMapping
@@ -329,8 +319,7 @@ impl Gateway {
             lease_duration,
             description
         );
-        let future = self.perform_request(header, &*body, "AddPortMappingResponse")
-            .map(|_| ());
+        let future = self.perform_request(header, &*body, "AddPortMappingResponse", |_, _| Ok(()));
         Box::new(future)
     }
 
@@ -392,8 +381,7 @@ impl Gateway {
             external_port
         );
 
-        let future = self.perform_request(header, &*body, "DeletePortMappingResponse")
-            .map(|_| ())
+        let future = self.perform_request(header, &*body, "DeletePortMappingResponse", |_, _| Ok(()))
             .map_err(|err| match err {
                 RequestError::ErrorCode(606, _) => RemovePortError::ActionNotAuthorized,
                 RequestError::ErrorCode(714, _) => RemovePortError::NoSuchPortMapping,
@@ -424,36 +412,130 @@ impl Hash for Gateway {
     }
 }
 
-fn parse_response(text: String, ok: &str) -> Result<(String, xmltree::Element), RequestError> {
-    let mut xml = match xmltree::Element::parse(text.as_bytes()) {
-        Ok(xml) => xml,
-        Err(..) => return Err(RequestError::InvalidResponse(text)),
-    };
-    let body = match xml.get_mut_child("Body") {
-        Some(body) => body,
-        None => return Err(RequestError::InvalidResponse(text)),
-    };
-    if let Some(ok) = body.take_child(ok) {
-        return Ok((text, ok));
+// fn parse_response(text: String, ok: &str) -> Result<(String, xmltree::Element), RequestError> {
+//     
+//     let mut xml = match xmltree::Element::parse(text.as_bytes()) {
+//         Ok(xml) => xml,
+//         Err(..) => return Err(RequestError::InvalidResponse(text)),
+//     };
+//     let body = match xml.get_mut_child("Body") {
+//         Some(body) => body,
+//         None => return Err(RequestError::InvalidResponse(text)),
+//     };
+//     if let Some(ok) = body.take_child(ok) {
+//         return Ok((text, ok));
+//     }
+//     let upnp_error = match body.get_child("Fault")
+//         .and_then(|e| e.get_child("detail"))
+//         .and_then(|e| e.get_child("UPnPError"))
+//     {
+//         Some(upnp_error) => upnp_error,
+//         None => return Err(RequestError::InvalidResponse(text)),
+//     };
+//     match (
+//         upnp_error.get_child("errorCode"),
+//         upnp_error.get_child("errorDescription"),
+//     ) {
+//         (Some(e), Some(d)) => match (e.text.as_ref(), d.text.as_ref()) {
+//             (Some(et), Some(dt)) => match et.parse::<u16>() {
+//                 Ok(en) => Err(RequestError::ErrorCode(en, From::from(&dt[..]))),
+//                 Err(..) => Err(RequestError::InvalidResponse(text)),
+//             },
+//             _ => Err(RequestError::InvalidResponse(text)),
+//         },
+//         _ => Err(RequestError::InvalidResponse(text)),
+//     }
+// }
+
+fn parse_response<T, F>(text: String, ok: &str, f: F) -> Result<T, RequestError>
+    where
+        F: Fn(String, &mut Reader<&[u8]>) -> Result<T, RequestError>,
+{
+    let xml = text.clone();
+    let mut xml = Reader::from_str(&xml);
+    let mut buf = Vec::new();
+
+    #[derive(Clone, Copy)]
+    enum State {
+        Body,
+        Fault,
+        Detail,
+        UPnPError,
     }
-    let upnp_error = match body.get_child("Fault")
-        .and_then(|e| e.get_child("detail"))
-        .and_then(|e| e.get_child("UPnPError"))
-    {
-        Some(upnp_error) => upnp_error,
-        None => return Err(RequestError::InvalidResponse(text)),
-    };
-    match (
-        upnp_error.get_child("errorCode"),
-        upnp_error.get_child("errorDescription"),
-    ) {
-        (Some(e), Some(d)) => match (e.text.as_ref(), d.text.as_ref()) {
-            (Some(et), Some(dt)) => match et.parse::<u16>() {
-                Ok(en) => Err(RequestError::ErrorCode(en, From::from(&dt[..]))),
-                Err(..) => Err(RequestError::InvalidResponse(text)),
-            },
-            _ => Err(RequestError::InvalidResponse(text)),
-        },
-        _ => Err(RequestError::InvalidResponse(text)),
+
+    let mut state = State::Body;
+    
+    loop {
+        match xml.read_event(&mut buf) {
+            Ok(Event::Start(ref e)) => {
+                match (state, e.name()) {
+                    (State::Body, b"Body") => state = State::Fault,
+                    (State::Fault, name) if name == ok.as_bytes() => {
+                        return f(text, &mut xml);
+                    }
+                    (State::Fault, b"Fault") => state = State::Detail,
+                    (State::Detail, b"detail") => state = State::UPnPError,
+                    (State::UPnPError, b"UPnPError") => {
+                        let mut buf2 = Vec::new();
+                        let mut code = 0u16;
+                        let mut description = String::new();
+                        loop {
+                            match xml.read_event(&mut buf2) {
+                                Ok(Event::Start(ref e)) if e.name() == b"errorDescription" => {
+                                    match xml.read_text(b"errorDescription", &mut Vec::new()) {
+                                        Ok(d) => description = d,
+                                        Err(_) => break,
+                                    }
+                                }
+                                Ok(Event::Start(ref e)) if e.name() == b"errorCode" => {
+                                    match xml.read_text(b"errorCode", &mut Vec::new())
+                                        .ok()
+                                        .and_then(|c| c.parse().ok())
+                                    {
+                                        Some(c) => code = c,
+                                        None => break,
+                                    }
+                                }
+                                Ok(Event::End(ref e)) if e.name() == b"UPnPError" => {
+                                    return Err(RequestError::ErrorCode(code, description));
+                                }
+                                Err(_) | Ok(Event::Eof) => break,
+                                _ => (),
+                            }
+                        }
+                        return Err(RequestError::InvalidResponse(text));
+                    }
+                    _ => (),
+                }
+            }
+            Err(_) | Ok(Event::Eof) => {
+                return Err(RequestError::InvalidResponse(text));
+            }
+            _ => (),
+        }
+        buf.clear();
     }
+}
+fn parse_child<T: FromStr, S: AsRef<[u8]>>(text: String, xml: &mut Reader<&[u8]>, parent: S, child: S) -> Result<T, RequestError> {
+    let mut buf = Vec::new();
+    loop {
+        match xml.read_event(&mut buf) {
+            Ok(Event::Start(ref e)) if e.name() == child.as_ref() => {
+                let mut buf2 = Vec::new();
+                match xml.read_text(child.as_ref(), &mut buf2)
+                    .ok()
+                    .and_then(|t| t.parse().ok())
+                {
+                    Some(t) => return Ok(t),
+                    None => break,
+                }
+            }
+            Ok(Event::End(ref e)) if e.name() == parent.as_ref() => {
+                return Err(RequestError::InvalidResponse(text));
+            }
+            Err(_) | Ok(Event::Eof) => break,
+            _ => (),
+        }
+    }
+    Err(RequestError::InvalidResponse(text))
 }

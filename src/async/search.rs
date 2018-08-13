@@ -159,5 +159,6 @@ fn parse_control_url(resp: &[u8]) -> Result<String, SearchError> {
             Event::Eof => return Err(SearchError::InvalidResponse),
             _ => (),
         }
+        buf.clear();
     }
 }

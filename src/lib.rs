@@ -7,7 +7,6 @@
 extern crate hyper;
 extern crate regex;
 extern crate quick_xml;
-extern crate xmltree;
 extern crate rand;
 extern crate failure;
 extern crate futures;
