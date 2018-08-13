@@ -1,4 +1,3 @@
-use std::io;
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 use std::str;
 use std::time::Duration;
@@ -9,8 +8,7 @@ use tokio_core::reactor::Handle;
 use tokio_core::net::UdpSocket;
 use tokio_timer::Timer;
 use hyper;
-use xml::EventReader;
-use xml::reader::XmlEvent;
+use quick_xml::{Reader, events::Event};
 
 use async::Gateway;
 use errors::SearchError;
@@ -98,86 +96,68 @@ pub fn get_control_url(
     Box::new(future)
 }
 
-fn parse_control_url<R>(resp: R) -> Result<String, SearchError>
-where
-    R: io::Read,
-{
-    let parser = EventReader::new(resp);
-    let mut chain = Vec::<String>::with_capacity(4);
+fn parse_control_url(resp: &[u8]) -> Result<String, SearchError> {
+    let mut parser = Reader::from_reader(resp);
+    parser.trim_text(true).expand_empty_elements(false);
 
     struct Service {
-        service_type: String,
-        control_url: String,
+        service_type: Vec<u8>,
+        control_url: Vec<u8>,
     }
 
     let mut service = Service {
-        service_type: "".to_string(),
-        control_url: "".to_string(),
+        service_type: vec![],
+        control_url: vec![],
     };
 
-    for e in parser.into_iter() {
-        match try!(e) {
-            XmlEvent::StartElement { name, .. } => {
-                chain.push(name.borrow().to_repr());
-                let tail = if chain.len() >= 3 {
-                    chain.iter().skip(chain.len() - 3)
-                } else {
-                    continue;
-                };
+    #[derive(Clone, Copy, PartialEq)]
+    enum Node {
+        Device,
+        ServiceList,
+        Service,
+        ServiceType,
+        ControlUrl,
+        Ignored
+    }
 
-                if vec!["device", "serviceList", "service"]
-                    .iter()
-                    .zip(tail)
-                    .all(|(l, r)| l == r)
-                {
+    let mut buf = Vec::with_capacity(resp.len());
+    let mut chain = [Node::Ignored; 4];
+
+    loop {
+        match parser.read_event(&mut buf)? {
+            Event::Start(e) => {
+                chain.rotate_left(1);
+                match e.name() {
+                    b"device" => chain[3] = Node::Device,
+                    b"serviceList" => chain[3] = Node::ServiceList,
+                    b"service" => chain[3] = Node::Service,
+                    b"serviceType" => chain[3] = Node::ServiceType,
+                    b"controlURL" => chain[3] = Node::ControlUrl,
+                    _ => chain[3] = Node::Ignored,
+                }
+                if &chain[1..] == &[Node::Device, Node::ServiceList, Node::Service] {
                     service.service_type.clear();
                     service.control_url.clear();
                 }
             }
-            XmlEvent::EndElement { .. } => {
-                let top = chain.pop();
-                let tail = if top == Some("service".to_string()) && chain.len() >= 2 {
-                    chain.iter().skip(chain.len() - 2)
-                } else {
-                    continue;
-                };
-
-                if vec!["device", "serviceList"]
-                    .iter()
-                    .zip(tail)
-                    .all(|(l, r)| l == r)
-                    && ("urn:schemas-upnp-org:service:WANIPConnection:1" == service.service_type
-                        || "urn:schemas-upnp-org:service:WANPPPConnection:1"
-                            == service.service_type)
-                    && service.control_url.len() != 0
+            Event::End(_) => {
+                if &chain[1..] == &[Node::Device, Node::ServiceList, Node::Service]
+                    && (&*service.service_type == b"urn:schemas-upnp-org:service:WANIPConnection:1".as_ref()
+                        || &*service.service_type == b"urn:schemas-upnp-org:service:WANPPPConnection:1".as_ref())
+                    && !service.control_url.is_empty()
                 {
-                    return Ok(service.control_url);
+                    return Ok(parser.decode(&service.control_url).into_owned());
                 }
             }
-            XmlEvent::Characters(text) => {
-                let tail = if chain.len() >= 4 {
-                    chain.iter().skip(chain.len() - 4)
-                } else {
-                    continue;
-                };
-
-                if vec!["device", "serviceList", "service", "serviceType"]
-                    .iter()
-                    .zip(tail.clone())
-                    .all(|(l, r)| l == r)
-                {
-                    service.service_type.push_str(&text);
-                }
-                if vec!["device", "serviceList", "service", "controlURL"]
-                    .iter()
-                    .zip(tail)
-                    .all(|(l, r)| l == r)
-                {
-                    service.control_url.push_str(&text);
+            Event::Text(e) => {
+                if chain == [Node::Device, Node::ServiceList, Node::Service, Node::ServiceType] {
+                    service.service_type.extend_from_slice(&*e.unescaped()?);
+                } else if chain == [Node::Device, Node::ServiceList, Node::Service, Node::ControlUrl] {
+                    service.control_url.extend_from_slice(&*e.unescaped()?);
                 }
             }
+            Event::Eof => return Err(SearchError::InvalidResponse),
             _ => (),
         }
     }
-    Err(SearchError::InvalidResponse)
 }

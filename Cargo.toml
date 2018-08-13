@@ -12,7 +12,8 @@ license = "MIT"
 
 [dependencies]
 regex = "0.2"
-xml-rs = "0.7"
+quick-xml = "0.12.1"
+failure = "0.1.2"
 xmltree = "0.7"
 rand = "0.4"
 futures = "0.1"

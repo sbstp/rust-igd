@@ -6,7 +6,9 @@ use std;
 
 use hyper;
 use tokio_timer::TimeoutError;
-use xml::reader::Error as XmlError;
+use failure::{Compat, Fail};
+
+type XmlError = Compat<::quick_xml::Error>;
 
 use soap;
 
@@ -359,9 +361,9 @@ impl From<str::Utf8Error> for SearchError {
     }
 }
 
-impl From<XmlError> for SearchError {
-    fn from(err: XmlError) -> SearchError {
-        SearchError::XmlError(err)
+impl From<::quick_xml::Error> for SearchError {
+    fn from(err: ::quick_xml::Error) -> SearchError {
+        SearchError::XmlError(err.compat())
     }
 }
 

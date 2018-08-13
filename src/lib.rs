@@ -6,9 +6,10 @@
 
 extern crate hyper;
 extern crate regex;
-extern crate xml;
+extern crate quick_xml;
 extern crate xmltree;
 extern crate rand;
+extern crate failure;
 extern crate futures;
 extern crate tokio_core;
 extern crate tokio_timer;
@@ -33,7 +34,7 @@ pub mod tokio {
 
 // re-export error types
 pub use hyper::Error as HttpError;
-pub use xml::reader::Error as XmlError;
+pub use quick_xml::Error as XmlError;
 
 mod gateway;
 mod search;
