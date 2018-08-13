@@ -1,14 +1,14 @@
 use std::fmt;
-use std::string::FromUtf8Error;
 use std::io;
+use std::string::FromUtf8Error;
 
-use futures::{Future, Stream};
 use futures::future;
-use tokio_core::reactor::Handle;
+use futures::{Future, Stream};
 use hyper;
-use hyper::{Client, Request, Post};
 use hyper::error::Error as HyperError;
-use hyper::header::{Header, ContentType, ContentLength, Raw, Formatter};
+use hyper::header::{ContentLength, ContentType, Formatter, Header, Raw};
+use hyper::{Client, Post, Request};
+use tokio_core::reactor::Handle;
 
 #[derive(Clone, Debug)]
 pub struct Action(String);
@@ -84,8 +84,6 @@ pub fn send_async(
         .request(req)
         .and_then(|resp| resp.body().concat2())
         .map_err(|err| Error::from(err))
-        .and_then(|bytes| {
-            String::from_utf8(bytes.to_vec()).map_err(|err| Error::from(err))
-        });
+        .and_then(|bytes| String::from_utf8(bytes.to_vec()).map_err(|err| Error::from(err)));
     Box::new(future)
 }

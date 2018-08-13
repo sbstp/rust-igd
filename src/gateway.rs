@@ -1,10 +1,10 @@
-use std::net::{Ipv4Addr, SocketAddrV4};
 use std::fmt;
+use std::net::{Ipv4Addr, SocketAddrV4};
 use tokio_core::reactor::Core;
 
+use async::Gateway as AsyncGateway;
 use errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError};
 use PortMappingProtocol;
-use async::Gateway as AsyncGateway;
 
 /// This structure represents a gateway found by the search functions.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

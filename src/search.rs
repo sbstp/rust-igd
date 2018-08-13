@@ -2,12 +2,12 @@ use std::net::{Ipv4Addr, SocketAddrV4, UdpSocket};
 use std::str;
 use std::time::Duration;
 
-use tokio_core::reactor::Core;
 use regex::Regex;
+use tokio_core::reactor::Core;
 
-use gateway::Gateway;
-use errors::SearchError;
 use async::get_control_url as get_control_url_async;
+use errors::SearchError;
+use gateway::Gateway;
 
 // Content of the request.
 pub const SEARCH_REQUEST: &'static str = "M-SEARCH * HTTP/1.1\r
@@ -15,7 +15,6 @@ Host:239.255.255.250:1900\r
 ST:urn:schemas-upnp-org:device:InternetGatewayDevice:1\r
 Man:\"ssdp:discover\"\r
 MX:3\r\n\r\n";
-
 
 /// Search gateway, bind to all interfaces and use a timeout of 3 seconds.
 ///
@@ -53,10 +52,7 @@ pub fn search_gateway_from_timeout(
     let socket = try!(UdpSocket::bind(addr));
     try!(socket.set_read_timeout(Some(timeout)));
 
-    try!(socket.send_to(
-        SEARCH_REQUEST.as_bytes(),
-        "239.255.255.250:1900",
-    ));
+    try!(socket.send_to(SEARCH_REQUEST.as_bytes(), "239.255.255.250:1900",));
     let mut buf = [0u8; 1024];
     let (read, _) = try!(socket.recv_from(&mut buf));
     let text = try!(str::from_utf8(&buf[..read]));
@@ -75,9 +71,7 @@ pub fn search_gateway_from_timeout(
 
 // Parse the result.
 pub fn parse_result(text: &str) -> Option<(SocketAddrV4, String)> {
-    let re = Regex::new(
-        r"(?i:Location):\s*http://(\d+\.\d+\.\d+\.\d+):(\d+)(/[^\r]*)",
-    ).unwrap();
+    let re = Regex::new(r"(?i:Location):\s*http://(\d+\.\d+\.\d+\.\d+):(\d+)(/[^\r]*)").unwrap();
     for line in text.lines() {
         match re.captures(line) {
             None => continue,
@@ -103,7 +97,6 @@ fn get_control_url(location: &(SocketAddrV4, String)) -> Result<String, SearchEr
     let handle = core.handle();
     core.run(get_control_url_async(location, &handle))
 }
-
 
 #[test]
 fn test_parse_result_case_insensitivity() {

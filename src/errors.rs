@@ -1,12 +1,12 @@
-use std::io;
-use std::fmt;
-use std::error;
-use std::str;
 use std;
+use std::error;
+use std::fmt;
+use std::io;
+use std::str;
 
+use failure::{Compat, Fail};
 use hyper;
 use tokio_timer::TimeoutError;
-use failure::{Compat, Fail};
 
 type XmlError = Compat<::quick_xml::Error>;
 
@@ -267,30 +267,22 @@ impl fmt::Display for AddPortError {
             AddPortError::InternalPortZeroInvalid => {
                 write!(f, "Can not add a mapping for local port 0")
             }
-            AddPortError::ExternalPortZeroInvalid => {
-                write!(
-                    f,
-                    "External port number 0 (any port) is considered invalid by the gateway."
-                )
-            }
-            AddPortError::PortInUse => {
-                write!(
-                    f,
-                    "The requested mapping conflicts with a mapping assigned to another client."
-                )
-            }
-            AddPortError::SamePortValuesRequired => {
-                write!(
-                    f,
-                    "The gateway requires that the requested internal and external ports are the same."
-                )
-            }
-            AddPortError::OnlyPermanentLeasesSupported => {
-                write!(
-                    f,
-                    "The gateway only supports permanent leases (ie. a `lease_duration` of 0),"
-                )
-            }
+            AddPortError::ExternalPortZeroInvalid => write!(
+                f,
+                "External port number 0 (any port) is considered invalid by the gateway."
+            ),
+            AddPortError::PortInUse => write!(
+                f,
+                "The requested mapping conflicts with a mapping assigned to another client."
+            ),
+            AddPortError::SamePortValuesRequired => write!(
+                f,
+                "The gateway requires that the requested internal and external ports are the same."
+            ),
+            AddPortError::OnlyPermanentLeasesSupported => write!(
+                f,
+                "The gateway only supports permanent leases (ie. a `lease_duration` of 0),"
+            ),
             AddPortError::DescriptionTooLong => {
                 write!(f, "The description was too long for the gateway to handle.")
             }

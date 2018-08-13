@@ -1,18 +1,18 @@
-use std::net::{Ipv4Addr, SocketAddrV4};
-use std::hash::{Hash, Hasher};
-use std::fmt;
-use std::str::FromStr;
 use rand::distributions::IndependentSample;
+use std::fmt;
+use std::hash::{Hash, Hasher};
+use std::net::{Ipv4Addr, SocketAddrV4};
+use std::str::FromStr;
 
-use quick_xml::{Reader, events::Event};
-use futures::Future;
+use errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError};
 use futures::future;
-use tokio_core::reactor::Handle;
-use tokio_retry::{Error as RetryError, RetryIf};
-use tokio_retry::strategy::FixedInterval;
+use futures::Future;
+use quick_xml::{events::Event, Reader};
 use rand;
 use soap;
-use errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError};
+use tokio_core::reactor::Handle;
+use tokio_retry::strategy::FixedInterval;
+use tokio_retry::{Error as RetryError, RetryIf};
 
 use PortMappingProtocol;
 
@@ -37,7 +37,10 @@ impl Gateway {
         }
     }
 
-    fn perform_request<T: 'static, F: 'static + Fn(String, &mut Reader<&[u8]>) -> Result<T, RequestError>>(
+    fn perform_request<
+        T: 'static,
+        F: 'static + Fn(String, &mut Reader<&[u8]>) -> Result<T, RequestError>,
+    >(
         &self,
         header: &str,
         body: &str,
@@ -63,14 +66,15 @@ impl Gateway {
             </SOAP-ENV:Body>
         </SOAP-ENV:Envelope>";
 
-        let future = self.perform_request(header,
-                                          body,
-                                          "GetExternalIPAddressResponse",
-                                          |txt, xml| parse_child::<Ipv4Addr, _>(txt,
-                                                                 xml,
-                                                                 "GetExternalIPAddressResponse",
-                                                                 "NewExternalIPAddress"))
-            .then(|result| match result {
+        let future =
+            self.perform_request(header, body, "GetExternalIPAddressResponse", |txt, xml| {
+                parse_child::<Ipv4Addr, _>(
+                    txt,
+                    xml,
+                    "GetExternalIPAddressResponse",
+                    "NewExternalIPAddress",
+                )
+            }).then(|result| match result {
                 Ok(ip) => Ok(ip),
                 Err(RequestError::ErrorCode(606, _)) => {
                     Err(GetExternalIpError::ActionNotAuthorized)
@@ -98,7 +102,8 @@ impl Gateway {
     ) -> Box<Future<Item = SocketAddrV4, Error = AddAnyPortError>> {
         let description = description.to_owned();
         let gateway = self.clone();
-        let future = self.get_external_ip()
+        let future = self
+            .get_external_ip()
             .map_err(|err| match err {
                 GetExternalIpError::ActionNotAuthorized => AddAnyPortError::ActionNotAuthorized,
                 GetExternalIpError::RequestError(e) => AddAnyPortError::RequestError(e),
@@ -168,7 +173,10 @@ impl Gateway {
         let gateway = self.clone();
         let description = description.to_owned();
         // First, attempt to call the AddAnyPortMapping method.
-        let future = self.perform_request(header, &*body, "AddAnyPortMappingResponse", |txt, xml| parse_child::<u16, _>(txt, xml, "AddAnyPortMappingResponse", "NewReservedPort"))
+        let future = self
+            .perform_request(header, &*body, "AddAnyPortMappingResponse", |txt, xml| {
+                parse_child::<u16, _>(txt, xml, "AddAnyPortMappingResponse", "NewReservedPort")
+            })
             .or_else(move |err| {
                 match err {
                     // The router doesn't know the AddAnyPortMapping method. Try using AddPortMapping
@@ -235,18 +243,20 @@ impl Gateway {
         let port_range = rand::distributions::Range::new(32_768_u16, 65_535_u16);
         let mut rng = rand::thread_rng();
         let external_port = port_range.ind_sample(&mut rng);
-        let future = self.add_port_mapping(
-            protocol,
-            external_port,
-            local_addr,
-            lease_duration,
-            &description,
-        ).map(move |_| external_port)
+        let future = self
+            .add_port_mapping(
+                protocol,
+                external_port,
+                local_addr,
+                lease_duration,
+                &description,
+            )
+            .map(move |_| external_port)
             .or_else(move |err| match err {
                          RequestError::ErrorCode(724, _) =>
                          // The router requires that internal and external ports are the same.
                              gateway.add_same_port_mapping(protocol, local_addr, lease_duration, &description),
-                         e => { 
+                         e => {
                              let err = match e {
                                  RequestError::ErrorCode(605, _) => AddAnyPortError::DescriptionTooLong,
                                  RequestError::ErrorCode(606, _) => AddAnyPortError::ActionNotAuthorized,
@@ -268,21 +278,22 @@ impl Gateway {
         lease_duration: u32,
         description: &str,
     ) -> Box<Future<Item = u16, Error = AddAnyPortError>> {
-        let future = self.add_port_mapping(
-            protocol,
-            local_addr.port(),
-            local_addr,
-            lease_duration,
-            description,
-        ).then(move |result| match result {
-            Ok(()) => Ok(local_addr.port()),
-            Err(RequestError::ErrorCode(606, _)) => Err(AddAnyPortError::ActionNotAuthorized),
-            Err(RequestError::ErrorCode(718, _)) => Err(AddAnyPortError::ExternalPortInUse),
-            Err(RequestError::ErrorCode(725, _)) => {
-                Err(AddAnyPortError::OnlyPermanentLeasesSupported)
-            }
-            Err(e) => Err(AddAnyPortError::RequestError(e)),
-        });
+        let future =
+            self.add_port_mapping(
+                protocol,
+                local_addr.port(),
+                local_addr,
+                lease_duration,
+                description,
+            ).then(move |result| match result {
+                Ok(()) => Ok(local_addr.port()),
+                Err(RequestError::ErrorCode(606, _)) => Err(AddAnyPortError::ActionNotAuthorized),
+                Err(RequestError::ErrorCode(718, _)) => Err(AddAnyPortError::ExternalPortInUse),
+                Err(RequestError::ErrorCode(725, _)) => {
+                    Err(AddAnyPortError::OnlyPermanentLeasesSupported)
+                }
+                Err(e) => Err(AddAnyPortError::RequestError(e)),
+            });
         Box::new(future)
     }
 
@@ -341,20 +352,21 @@ impl Gateway {
         if local_addr.port() == 0 {
             return Box::new(future::err(AddPortError::InternalPortZeroInvalid));
         }
-        let future = self.add_port_mapping(
-            protocol,
-            external_port,
-            local_addr,
-            lease_duration,
-            description,
-        ).map_err(|err| match err {
-            RequestError::ErrorCode(605, _) => AddPortError::DescriptionTooLong,
-            RequestError::ErrorCode(606, _) => AddPortError::ActionNotAuthorized,
-            RequestError::ErrorCode(718, _) => AddPortError::PortInUse,
-            RequestError::ErrorCode(724, _) => AddPortError::SamePortValuesRequired,
-            RequestError::ErrorCode(725, _) => AddPortError::OnlyPermanentLeasesSupported,
-            e => AddPortError::RequestError(e),
-        });
+        let future =
+            self.add_port_mapping(
+                protocol,
+                external_port,
+                local_addr,
+                lease_duration,
+                description,
+            ).map_err(|err| match err {
+                RequestError::ErrorCode(605, _) => AddPortError::DescriptionTooLong,
+                RequestError::ErrorCode(606, _) => AddPortError::ActionNotAuthorized,
+                RequestError::ErrorCode(718, _) => AddPortError::PortInUse,
+                RequestError::ErrorCode(724, _) => AddPortError::SamePortValuesRequired,
+                RequestError::ErrorCode(725, _) => AddPortError::OnlyPermanentLeasesSupported,
+                e => AddPortError::RequestError(e),
+            });
         Box::new(future)
     }
 
@@ -381,7 +393,8 @@ impl Gateway {
             external_port
         );
 
-        let future = self.perform_request(header, &*body, "DeletePortMappingResponse", |_, _| Ok(()))
+        let future = self
+            .perform_request(header, &*body, "DeletePortMappingResponse", |_, _| Ok(()))
             .map_err(|err| match err {
                 RequestError::ErrorCode(606, _) => RemovePortError::ActionNotAuthorized,
                 RequestError::ErrorCode(714, _) => RemovePortError::NoSuchPortMapping,
@@ -412,44 +425,9 @@ impl Hash for Gateway {
     }
 }
 
-// fn parse_response(text: String, ok: &str) -> Result<(String, xmltree::Element), RequestError> {
-//     
-//     let mut xml = match xmltree::Element::parse(text.as_bytes()) {
-//         Ok(xml) => xml,
-//         Err(..) => return Err(RequestError::InvalidResponse(text)),
-//     };
-//     let body = match xml.get_mut_child("Body") {
-//         Some(body) => body,
-//         None => return Err(RequestError::InvalidResponse(text)),
-//     };
-//     if let Some(ok) = body.take_child(ok) {
-//         return Ok((text, ok));
-//     }
-//     let upnp_error = match body.get_child("Fault")
-//         .and_then(|e| e.get_child("detail"))
-//         .and_then(|e| e.get_child("UPnPError"))
-//     {
-//         Some(upnp_error) => upnp_error,
-//         None => return Err(RequestError::InvalidResponse(text)),
-//     };
-//     match (
-//         upnp_error.get_child("errorCode"),
-//         upnp_error.get_child("errorDescription"),
-//     ) {
-//         (Some(e), Some(d)) => match (e.text.as_ref(), d.text.as_ref()) {
-//             (Some(et), Some(dt)) => match et.parse::<u16>() {
-//                 Ok(en) => Err(RequestError::ErrorCode(en, From::from(&dt[..]))),
-//                 Err(..) => Err(RequestError::InvalidResponse(text)),
-//             },
-//             _ => Err(RequestError::InvalidResponse(text)),
-//         },
-//         _ => Err(RequestError::InvalidResponse(text)),
-//     }
-// }
-
 fn parse_response<T, F>(text: String, ok: &str, f: F) -> Result<T, RequestError>
-    where
-        F: Fn(String, &mut Reader<&[u8]>) -> Result<T, RequestError>,
+where
+    F: Fn(String, &mut Reader<&[u8]>) -> Result<T, RequestError>,
 {
     let xml = text.clone();
     let mut xml = Reader::from_str(&xml);
@@ -464,50 +442,47 @@ fn parse_response<T, F>(text: String, ok: &str, f: F) -> Result<T, RequestError>
     }
 
     let mut state = State::Body;
-    
+
     loop {
         match xml.read_event(&mut buf) {
-            Ok(Event::Start(ref e)) => {
-                match (state, e.name()) {
-                    (State::Body, b"Body") => state = State::Fault,
-                    (State::Fault, name) if name == ok.as_bytes() => {
-                        return f(text, &mut xml);
-                    }
-                    (State::Fault, b"Fault") => state = State::Detail,
-                    (State::Detail, b"detail") => state = State::UPnPError,
-                    (State::UPnPError, b"UPnPError") => {
-                        let mut buf2 = Vec::new();
-                        let mut code = 0u16;
-                        let mut description = String::new();
-                        loop {
-                            match xml.read_event(&mut buf2) {
-                                Ok(Event::Start(ref e)) if e.name() == b"errorDescription" => {
-                                    match xml.read_text(b"errorDescription", &mut Vec::new()) {
-                                        Ok(d) => description = d,
-                                        Err(_) => break,
-                                    }
-                                }
-                                Ok(Event::Start(ref e)) if e.name() == b"errorCode" => {
-                                    match xml.read_text(b"errorCode", &mut Vec::new())
-                                        .ok()
-                                        .and_then(|c| c.parse().ok())
-                                    {
-                                        Some(c) => code = c,
-                                        None => break,
-                                    }
-                                }
-                                Ok(Event::End(ref e)) if e.name() == b"UPnPError" => {
-                                    return Err(RequestError::ErrorCode(code, description));
-                                }
-                                Err(_) | Ok(Event::Eof) => break,
-                                _ => (),
-                            }
-                        }
-                        return Err(RequestError::InvalidResponse(text));
-                    }
-                    _ => (),
+            Ok(Event::Start(ref e)) => match (state, e.name()) {
+                (State::Body, b"Body") => state = State::Fault,
+                (State::Fault, name) if name == ok.as_bytes() => {
+                    return f(text, &mut xml);
                 }
-            }
+                (State::Fault, b"Fault") => state = State::Detail,
+                (State::Detail, b"detail") => state = State::UPnPError,
+                (State::UPnPError, b"UPnPError") => {
+                    let mut buf2 = Vec::new();
+                    let mut code = 0u16;
+                    let mut description = String::new();
+                    loop {
+                        match xml.read_event(&mut buf2) {
+                            Ok(Event::Start(ref e)) if e.name() == b"errorDescription" => {
+                                match xml.read_text(b"errorDescription", &mut Vec::new()) {
+                                    Ok(d) => description = d,
+                                    Err(_) => break,
+                                }
+                            }
+                            Ok(Event::Start(ref e)) if e.name() == b"errorCode" => match xml
+                                .read_text(b"errorCode", &mut Vec::new())
+                                .ok()
+                                .and_then(|c| c.parse().ok())
+                            {
+                                Some(c) => code = c,
+                                None => break,
+                            },
+                            Ok(Event::End(ref e)) if e.name() == b"UPnPError" => {
+                                return Err(RequestError::ErrorCode(code, description));
+                            }
+                            Err(_) | Ok(Event::Eof) => break,
+                            _ => (),
+                        }
+                    }
+                    return Err(RequestError::InvalidResponse(text));
+                }
+                _ => (),
+            },
             Err(_) | Ok(Event::Eof) => {
                 return Err(RequestError::InvalidResponse(text));
             }
@@ -516,13 +491,19 @@ fn parse_response<T, F>(text: String, ok: &str, f: F) -> Result<T, RequestError>
         buf.clear();
     }
 }
-fn parse_child<T: FromStr, S: AsRef<[u8]>>(text: String, xml: &mut Reader<&[u8]>, parent: S, child: S) -> Result<T, RequestError> {
+fn parse_child<T: FromStr, S: AsRef<[u8]>>(
+    text: String,
+    xml: &mut Reader<&[u8]>,
+    parent: S,
+    child: S,
+) -> Result<T, RequestError> {
     let mut buf = Vec::new();
     loop {
         match xml.read_event(&mut buf) {
             Ok(Event::Start(ref e)) if e.name() == child.as_ref() => {
                 let mut buf2 = Vec::new();
-                match xml.read_text(child.as_ref(), &mut buf2)
+                match xml
+                    .read_text(child.as_ref(), &mut buf2)
                     .ok()
                     .and_then(|t| t.parse().ok())
                 {

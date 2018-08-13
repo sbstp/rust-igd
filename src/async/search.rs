@@ -2,13 +2,13 @@ use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 use std::str;
 use std::time::Duration;
 
-use futures::{Future, IntoFuture, Stream};
 use futures::future;
-use tokio_core::reactor::Handle;
-use tokio_core::net::UdpSocket;
-use tokio_timer::Timer;
+use futures::{Future, IntoFuture, Stream};
 use hyper;
-use quick_xml::{Reader, events::Event};
+use quick_xml::{events::Event, Reader};
+use tokio_core::net::UdpSocket;
+use tokio_core::reactor::Handle;
+use tokio_timer::Timer;
 
 use async::Gateway;
 use errors::SearchError;
@@ -117,7 +117,7 @@ fn parse_control_url(resp: &[u8]) -> Result<String, SearchError> {
         Service,
         ServiceType,
         ControlUrl,
-        Ignored
+        Ignored,
     }
 
     let mut buf = Vec::with_capacity(resp.len());
@@ -142,17 +142,31 @@ fn parse_control_url(resp: &[u8]) -> Result<String, SearchError> {
             }
             Event::End(_) => {
                 if &chain[1..] == &[Node::Device, Node::ServiceList, Node::Service]
-                    && (&*service.service_type == b"urn:schemas-upnp-org:service:WANIPConnection:1".as_ref()
-                        || &*service.service_type == b"urn:schemas-upnp-org:service:WANPPPConnection:1".as_ref())
+                    && (&*service.service_type
+                        == b"urn:schemas-upnp-org:service:WANIPConnection:1".as_ref()
+                        || &*service.service_type
+                            == b"urn:schemas-upnp-org:service:WANPPPConnection:1".as_ref())
                     && !service.control_url.is_empty()
                 {
                     return Ok(parser.decode(&service.control_url).into_owned());
                 }
             }
             Event::Text(e) => {
-                if chain == [Node::Device, Node::ServiceList, Node::Service, Node::ServiceType] {
+                if chain
+                    == [
+                        Node::Device,
+                        Node::ServiceList,
+                        Node::Service,
+                        Node::ServiceType,
+                    ] {
                     service.service_type.extend_from_slice(&*e.unescaped()?);
-                } else if chain == [Node::Device, Node::ServiceList, Node::Service, Node::ControlUrl] {
+                } else if chain
+                    == [
+                        Node::Device,
+                        Node::ServiceList,
+                        Node::Service,
+                        Node::ControlUrl,
+                    ] {
                     service.control_url.extend_from_slice(&*e.unescaped()?);
                 }
             }
