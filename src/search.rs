@@ -57,18 +57,23 @@ pub fn search_gateway_from_timeout(
         SEARCH_REQUEST.as_bytes(),
         "239.255.255.250:1900",
     ));
-    let mut buf = [0u8; 1024];
-    let (read, _) = try!(socket.recv_from(&mut buf));
-    let text = try!(str::from_utf8(&buf[..read]));
+    loop {
+        let mut buf = [0u8; 1024];
+        let (read, _) = try!(socket.recv_from(&mut buf));
+        let text = try!(str::from_utf8(&buf[..read]));
 
-    match parse_result(text) {
-        None => Err(SearchError::InvalidResponse),
-        Some(location) => {
-            let control_url = try!(get_control_url(&location));
-            Ok(Gateway {
-                addr: location.0,
-                control_url: control_url,
-            })
+        match parse_result(text) {
+            None => return Err(SearchError::InvalidResponse),
+            Some(location) => {
+                match get_control_url(&location) {
+                    Ok(control_url) =>
+                        return Ok(Gateway {
+                            addr: location.0,
+                            control_url: control_url,
+                        }),
+                    _ => ()
+                }
+            }
         }
     }
 }
