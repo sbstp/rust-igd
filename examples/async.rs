@@ -12,7 +12,7 @@ extern crate igd;
 extern crate futures;
 extern crate tokio_core;
 
-use igd::tokio::search_gateway;
+use igd::async::search_gateway;
 use igd::PortMappingProtocol;
 use futures::future::Future;
 
