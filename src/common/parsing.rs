@@ -2,7 +2,7 @@ use std::io;
 
 use xmltree::Element;
 
-use errors::SearchError;
+use errors::{RequestError, SearchError};
 
 pub fn parse_control_url<R>(resp: R) -> Result<String, SearchError>
 where
@@ -47,6 +47,13 @@ fn parse_control_url_scan_device(device: &Element) -> Result<String, SearchError
 
     return Err(SearchError::InvalidResponse);
 }
+
+pub struct RequestReponse {
+    text: String,
+    xml: xmltree::Element,
+}
+
+pub type RequestResult = Result<RequestReponse, RequestError>;
 
 #[test]
 fn test_parse_device1() {

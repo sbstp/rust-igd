@@ -10,7 +10,7 @@ use tokio_core::reactor::Handle;
 use tokio_timer::Timer;
 
 use async::Gateway;
-use common;
+use common::parsing;
 use errors::SearchError;
 use search::{parse_result, SEARCH_REQUEST};
 
@@ -80,7 +80,7 @@ pub fn get_control_url(
         .get(uri)
         .and_then(|resp| resp.body().concat2())
         .then(|result| match result {
-            Ok(body) => common::parse_control_url(body.as_ref()),
+            Ok(body) => parsing::parse_control_url(body.as_ref()),
             Err(err) => Err(SearchError::from(err)),
         });
     Box::new(future)
