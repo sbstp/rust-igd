@@ -57,7 +57,6 @@ pub struct RequestReponse {
 pub type RequestResult = Result<RequestReponse, RequestError>;
 
 pub fn parse_response(text: String, ok: &str) -> RequestResult {
-    println!("{}", text);
     let mut xml = match xmltree::Element::parse(text.as_bytes()) {
         Ok(xml) => xml,
         Err(..) => return Err(RequestError::InvalidResponse(text)),
