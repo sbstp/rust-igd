@@ -1,8 +1,9 @@
 use std::io;
+use std::net::Ipv4Addr;
 
 use xmltree::Element;
 
-use errors::{RequestError, SearchError};
+use errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError, SearchError};
 
 pub fn parse_control_url<R>(resp: R) -> Result<String, SearchError>
 where
@@ -54,6 +55,127 @@ pub struct RequestReponse {
 }
 
 pub type RequestResult = Result<RequestReponse, RequestError>;
+
+pub fn parse_response(text: String, ok: &str) -> RequestResult {
+    let mut xml = match xmltree::Element::parse(text.as_bytes()) {
+        Ok(xml) => xml,
+        Err(..) => return Err(RequestError::InvalidResponse(text)),
+    };
+    let body = match xml.get_mut_child("Body") {
+        Some(body) => body,
+        None => return Err(RequestError::InvalidResponse(text)),
+    };
+    if let Some(ok) = body.take_child(ok) {
+        return Ok(RequestReponse { text: text, xml: ok });
+    }
+    let upnp_error = match body
+        .get_child("Fault")
+        .and_then(|e| e.get_child("detail"))
+        .and_then(|e| e.get_child("UPnPError"))
+    {
+        Some(upnp_error) => upnp_error,
+        None => return Err(RequestError::InvalidResponse(text)),
+    };
+
+    match (
+        upnp_error.get_child("errorCode"),
+        upnp_error.get_child("errorDescription"),
+    ) {
+        (Some(e), Some(d)) => match (e.text.as_ref(), d.text.as_ref()) {
+            (Some(et), Some(dt)) => match et.parse::<u16>() {
+                Ok(en) => Err(RequestError::ErrorCode(en, From::from(&dt[..]))),
+                Err(..) => Err(RequestError::InvalidResponse(text)),
+            },
+            _ => Err(RequestError::InvalidResponse(text)),
+        },
+        _ => Err(RequestError::InvalidResponse(text)),
+    }
+}
+
+pub fn parse_get_external_ip_response(result: RequestResult) -> Result<Ipv4Addr, GetExternalIpError> {
+    match result {
+        Ok(resp) => match resp
+            .xml
+            .get_child("NewExternalIPAddress")
+            .and_then(|e| e.text.as_ref())
+            .and_then(|t| t.parse::<Ipv4Addr>().ok())
+        {
+            Some(ipv4_addr) => Ok(ipv4_addr),
+            None => Err(GetExternalIpError::RequestError(RequestError::InvalidResponse(
+                resp.text,
+            ))),
+        },
+        Err(RequestError::ErrorCode(606, _)) => Err(GetExternalIpError::ActionNotAuthorized),
+        Err(e) => Err(GetExternalIpError::RequestError(e)),
+    }
+}
+
+pub fn parse_add_any_port_mapping_response(result: RequestResult) -> Result<u16, Option<AddAnyPortError>> {
+    match result {
+        Ok(resp) => {
+            match resp
+                .xml
+                .get_child("NewReservedPort")
+                .and_then(|e| e.text.as_ref())
+                .and_then(|t| t.parse::<u16>().ok())
+            {
+                Some(port) => Ok(port),
+                None => Err(Some(AddAnyPortError::RequestError(RequestError::InvalidResponse(
+                    resp.text,
+                )))),
+            }
+        }
+        Err(err) => Err(match err {
+            RequestError::ErrorCode(401, _) => None,
+            RequestError::ErrorCode(605, _) => Some(AddAnyPortError::DescriptionTooLong),
+            RequestError::ErrorCode(606, _) => Some(AddAnyPortError::ActionNotAuthorized),
+            RequestError::ErrorCode(728, _) => Some(AddAnyPortError::NoPortsAvailable),
+            e => Some(AddAnyPortError::RequestError(e)),
+        }),
+    }
+}
+
+pub fn convert_add_random_port_mapping_error(error: RequestError) -> Option<AddAnyPortError> {
+    match error {
+        RequestError::ErrorCode(724, _) => None,
+        RequestError::ErrorCode(605, _) => Some(AddAnyPortError::DescriptionTooLong),
+        RequestError::ErrorCode(606, _) => Some(AddAnyPortError::ActionNotAuthorized),
+        RequestError::ErrorCode(718, _) => Some(AddAnyPortError::NoPortsAvailable),
+        RequestError::ErrorCode(725, _) => Some(AddAnyPortError::OnlyPermanentLeasesSupported),
+        e => Some(AddAnyPortError::RequestError(e)),
+    }
+}
+
+pub fn convert_add_same_port_mapping_error(error: RequestError) -> AddAnyPortError {
+    match error {
+        RequestError::ErrorCode(606, _) => AddAnyPortError::ActionNotAuthorized,
+        RequestError::ErrorCode(718, _) => AddAnyPortError::ExternalPortInUse,
+        RequestError::ErrorCode(725, _) => AddAnyPortError::OnlyPermanentLeasesSupported,
+        e => AddAnyPortError::RequestError(e),
+    }
+}
+
+pub fn convert_add_port_error(err: RequestError) -> AddPortError {
+    match err {
+        RequestError::ErrorCode(605, _) => AddPortError::DescriptionTooLong,
+        RequestError::ErrorCode(606, _) => AddPortError::ActionNotAuthorized,
+        RequestError::ErrorCode(718, _) => AddPortError::PortInUse,
+        RequestError::ErrorCode(724, _) => AddPortError::SamePortValuesRequired,
+        RequestError::ErrorCode(725, _) => AddPortError::OnlyPermanentLeasesSupported,
+        e => AddPortError::RequestError(e),
+    }
+}
+
+pub fn parse_delete_port_mapping_response(result: RequestResult) -> Result<(), RemovePortError> {
+    match result {
+        Ok(_) => Ok(()),
+        Err(err) => Err(match err {
+            RequestError::ErrorCode(606, _) => RemovePortError::ActionNotAuthorized,
+            RequestError::ErrorCode(714, _) => RemovePortError::NoSuchPortMapping,
+            e => RemovePortError::RequestError(e),
+        }),
+    }
+}
 
 #[test]
 fn test_parse_device1() {
