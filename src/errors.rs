@@ -3,23 +3,97 @@ use std::error;
 use std::fmt;
 use std::io;
 use std::str;
+#[cfg(feature = "async")]
+use std::string::FromUtf8Error;
 
+#[cfg(feature = "async")]
 use hyper;
-use tokio_timer::TimeoutError;
-
-use soap;
+use lynx;
 
 /// Errors that can occur when sending the request to the gateway.
 #[derive(Debug)]
 pub enum RequestError {
     /// Http/Hyper error
-    HttpError(hyper::Error),
+    HttpError(lynx::HttpError),
     /// IO Error
     IoError(io::Error),
     /// The response from the gateway could not be parsed.
     InvalidResponse(String),
     /// The gateway returned an unhandled error code and description.
     ErrorCode(u16, String),
+    /// When using the async feature.
+    #[cfg(feature = "async")]
+    HyperError(hyper::Error),
+}
+
+impl From<lynx::HttpError> for RequestError {
+    fn from(err: lynx::HttpError) -> RequestError {
+        RequestError::HttpError(err)
+    }
+}
+
+impl From<io::Error> for RequestError {
+    fn from(err: io::Error) -> RequestError {
+        RequestError::IoError(err)
+    }
+}
+
+#[cfg(feature = "async")]
+impl From<hyper::Error> for RequestError {
+    fn from(err: hyper::Error) -> RequestError {
+        RequestError::HyperError(err)
+    }
+}
+
+#[cfg(feature = "async")]
+impl From<hyper::error::UriError> for RequestError {
+    fn from(err: hyper::error::UriError) -> RequestError {
+        RequestError::HyperError(hyper::Error::from(err))
+    }
+}
+
+#[cfg(feature = "async")]
+impl From<FromUtf8Error> for RequestError {
+    fn from(err: FromUtf8Error) -> RequestError {
+        RequestError::HyperError(hyper::Error::from(err))
+    }
+}
+
+impl fmt::Display for RequestError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            RequestError::HttpError(ref e) => write!(f, "HTTP error {}", e),
+            RequestError::InvalidResponse(ref e) => write!(f, "Invalid response from gateway: {}", e),
+            RequestError::IoError(ref e) => write!(f, "IO error. {}", e),
+            RequestError::ErrorCode(n, ref e) => write!(f, "Gateway response error {}: {}", n, e),
+            #[cfg(feature = "async")]
+            RequestError::HyperError(ref e) => write!(f, "Hyper Error: {}", e),
+        }
+    }
+}
+
+impl std::error::Error for RequestError {
+    fn cause(&self) -> Option<&std::error::Error> {
+        match *self {
+            RequestError::HttpError(ref e) => Some(e),
+            RequestError::InvalidResponse(..) => None,
+            RequestError::IoError(ref e) => Some(e),
+            RequestError::ErrorCode(..) => None,
+            #[cfg(feature = "async")]
+            RequestError::HyperError(ref e) => Some(e),
+        }
+    }
+
+    fn description(&self) -> &str {
+        match *self {
+            RequestError::HttpError(..) => "Http error",
+            RequestError::InvalidResponse(..) => "Invalid response",
+            RequestError::IoError(..) => "IO error",
+            RequestError::ErrorCode(_, ref e) => &e[..],
+            #[cfg(feature = "async")]
+            RequestError::HyperError(_) => "Hyper Error",
+        }
+    }
 }
 
 /// Errors returned by `Gateway::get_external_ip`
@@ -68,6 +142,15 @@ impl From<RequestError> for AddAnyPortError {
     }
 }
 
+impl From<GetExternalIpError> for AddAnyPortError {
+    fn from(err: GetExternalIpError) -> AddAnyPortError {
+        match err {
+            GetExternalIpError::ActionNotAuthorized => AddAnyPortError::ActionNotAuthorized,
+            GetExternalIpError::RequestError(e) => AddAnyPortError::RequestError(e),
+        }
+    }
+}
+
 /// Errors returned by `Gateway::add_port`
 #[derive(Debug)]
 pub enum AddPortError {
@@ -87,52 +170,6 @@ pub enum AddPortError {
     DescriptionTooLong,
     /// Some other error occured performing the request.
     RequestError(RequestError),
-}
-
-impl From<io::Error> for RequestError {
-    fn from(err: io::Error) -> RequestError {
-        RequestError::IoError(err)
-    }
-}
-
-impl From<soap::Error> for RequestError {
-    fn from(err: soap::Error) -> RequestError {
-        match err {
-            soap::Error::HttpError(e) => RequestError::HttpError(e),
-            soap::Error::IoError(e) => RequestError::IoError(e),
-        }
-    }
-}
-
-impl fmt::Display for RequestError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            RequestError::HttpError(ref e) => write!(f, "HTTP error. {}", e),
-            RequestError::InvalidResponse(ref e) => write!(f, "Invalid response from gateway: {}", e),
-            RequestError::IoError(ref e) => write!(f, "IO error. {}", e),
-            RequestError::ErrorCode(n, ref e) => write!(f, "Gateway response error {}: {}", n, e),
-        }
-    }
-}
-
-impl std::error::Error for RequestError {
-    fn cause(&self) -> Option<&std::error::Error> {
-        match *self {
-            RequestError::HttpError(ref e) => Some(e),
-            RequestError::InvalidResponse(..) => None,
-            RequestError::IoError(ref e) => Some(e),
-            RequestError::ErrorCode(..) => None,
-        }
-    }
-
-    fn description(&self) -> &str {
-        match *self {
-            RequestError::HttpError(..) => "Http error",
-            RequestError::InvalidResponse(..) => "Invalid response",
-            RequestError::IoError(..) => "IO error",
-            RequestError::ErrorCode(_, ref e) => &e[..],
-        }
-    }
 }
 
 impl fmt::Display for GetExternalIpError {
@@ -301,7 +338,7 @@ impl std::error::Error for AddPortError {
 #[derive(Debug)]
 pub enum SearchError {
     /// Http/Hyper error
-    HttpError(hyper::Error),
+    HttpError(lynx::HttpError),
     /// Unable to process the response
     InvalidResponse,
     /// IO Error
@@ -310,10 +347,13 @@ pub enum SearchError {
     Utf8Error(str::Utf8Error),
     /// XML processing error
     XmlError(xmltree::ParseError),
+    /// When using the async feature.
+    #[cfg(feature = "async")]
+    HyperError(hyper::Error),
 }
 
-impl From<hyper::Error> for SearchError {
-    fn from(err: hyper::Error) -> SearchError {
+impl From<lynx::HttpError> for SearchError {
+    fn from(err: lynx::HttpError) -> SearchError {
         SearchError::HttpError(err)
     }
 }
@@ -336,14 +376,23 @@ impl From<xmltree::ParseError> for SearchError {
     }
 }
 
-impl From<hyper::error::UriError> for SearchError {
-    fn from(err: hyper::error::UriError) -> SearchError {
-        SearchError::HttpError(hyper::Error::from(err))
+#[cfg(feature = "async")]
+impl From<hyper::Error> for SearchError {
+    fn from(err: hyper::Error) -> SearchError {
+        SearchError::HyperError(err)
     }
 }
 
-impl<F> From<TimeoutError<F>> for SearchError {
-    fn from(_err: TimeoutError<F>) -> SearchError {
+#[cfg(feature = "async")]
+impl From<hyper::error::UriError> for SearchError {
+    fn from(err: hyper::error::UriError) -> SearchError {
+        SearchError::HyperError(hyper::Error::from(err))
+    }
+}
+
+#[cfg(feature = "async")]
+impl<F> From<tokio_timer::TimeoutError<F>> for SearchError {
+    fn from(_err: tokio_timer::TimeoutError<F>) -> SearchError {
         SearchError::IoError(io::Error::new(io::ErrorKind::TimedOut, "search timed out"))
     }
 }
@@ -351,11 +400,13 @@ impl<F> From<TimeoutError<F>> for SearchError {
 impl fmt::Display for SearchError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            SearchError::HttpError(ref e) => write!(f, "HTTP error: {}", e),
+            SearchError::HttpError(ref e) => write!(f, "HTTP error {}", e),
             SearchError::InvalidResponse => write!(f, "Invalid response"),
             SearchError::IoError(ref e) => write!(f, "IO error: {}", e),
             SearchError::Utf8Error(ref e) => write!(f, "UTF-8 error: {}", e),
             SearchError::XmlError(ref e) => write!(f, "XML error: {}", e),
+            #[cfg(feature = "async")]
+            SearchError::HyperError(ref e) => write!(f, "Hyper Error: {}", e),
         }
     }
 }
@@ -368,6 +419,8 @@ impl error::Error for SearchError {
             SearchError::IoError(ref e) => Some(e),
             SearchError::Utf8Error(ref e) => Some(e),
             SearchError::XmlError(ref e) => Some(e),
+            #[cfg(feature = "async")]
+            SearchError::HyperError(ref e) => Some(e),
         }
     }
 
@@ -378,6 +431,8 @@ impl error::Error for SearchError {
             SearchError::IoError(..) => "IO error",
             SearchError::Utf8Error(..) => "UTF-8 error",
             SearchError::XmlError(..) => "XML error",
+            #[cfg(feature = "async")]
+            SearchError::HyperError(..) => "Hyper Error",
         }
     }
 }

@@ -67,7 +67,7 @@ pub fn search_gateway_from_timeout(
     Box::new(timeout)
 }
 
-pub fn get_control_url(
+fn get_control_url(
     location: &(SocketAddrV4, String),
     handle: &Handle,
 ) -> Box<Future<Item = String, Error = SearchError>> {

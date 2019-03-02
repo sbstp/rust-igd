@@ -1,17 +1,16 @@
-use rand::distributions::IndependentSample;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::net::{Ipv4Addr, SocketAddrV4};
 
+use super::soap;
 use errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError};
 use futures::future;
 use futures::Future;
-use rand;
-use soap;
 use tokio_core::reactor::Handle;
 use tokio_retry::strategy::FixedInterval;
 use tokio_retry::{Error as RetryError, RetryIf};
 
+use common;
 use common::parsing::RequestReponse;
 use common::{messages, parsing};
 use PortMappingProtocol;
@@ -83,10 +82,7 @@ impl Gateway {
         let gateway = self.clone();
         let future = self
             .get_external_ip()
-            .map_err(|err| match err {
-                GetExternalIpError::ActionNotAuthorized => AddAnyPortError::ActionNotAuthorized,
-                GetExternalIpError::RequestError(e) => AddAnyPortError::RequestError(e),
-            })
+            .map_err(|err| AddAnyPortError::from(err))
             .and_then(move |ip| {
                 gateway
                     .add_any_port(protocol, local_addr, lease_duration, &description)
@@ -120,9 +116,7 @@ impl Gateway {
             return Box::new(future::err(AddAnyPortError::InternalPortZeroInvalid));
         }
 
-        let port_range = rand::distributions::Range::new(32_768_u16, 65_535_u16);
-        let mut rng = rand::thread_rng();
-        let external_port = port_range.ind_sample(&mut rng);
+        let external_port = common::random_port();
 
         let gateway = self.clone();
         let description = description.to_owned();
@@ -163,7 +157,9 @@ impl Gateway {
     ) -> Box<Future<Item = u16, Error = AddAnyPortError>> {
         let description = description.to_owned();
         let gateway = self.clone();
+
         let retry_strategy = FixedInterval::from_millis(0).take(20);
+
         let future = RetryIf::spawn(
             gateway.handle.clone(),
             retry_strategy,
@@ -177,6 +173,7 @@ impl Gateway {
             RetryError::OperationError(e) => e,
             RetryError::TimerError(io_error) => AddAnyPortError::from(RequestError::from(io_error)),
         });
+
         Box::new(future)
     }
 
@@ -189,9 +186,9 @@ impl Gateway {
     ) -> Box<Future<Item = u16, Error = AddAnyPortError>> {
         let description = description.to_owned();
         let gateway = self.clone();
-        let port_range = rand::distributions::Range::new(32_768_u16, 65_535_u16);
-        let mut rng = rand::thread_rng();
-        let external_port = port_range.ind_sample(&mut rng);
+
+        let external_port = common::random_port();
+
         let future = self
             .add_port_mapping(protocol, external_port, local_addr, lease_duration, &description)
             .map(move |_| external_port)
@@ -200,6 +197,7 @@ impl Gateway {
                 // The router requires that internal and external ports be the same.
                 None => gateway.add_same_port_mapping(protocol, local_addr, lease_duration, &description),
             });
+
         Box::new(future)
     }
 
@@ -214,6 +212,7 @@ impl Gateway {
             .add_port_mapping(protocol, local_addr.port(), local_addr, lease_duration, description)
             .map(move |_| local_addr.port())
             .map_err(|err| parsing::convert_add_same_port_mapping_error(err));
+
         Box::new(future)
     }
 
@@ -238,6 +237,7 @@ impl Gateway {
                 "AddPortMappingResponse",
             )
             .map(|_| ());
+
         Box::new(future)
     }
 

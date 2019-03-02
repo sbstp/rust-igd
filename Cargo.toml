@@ -14,11 +14,38 @@ license = "MIT"
 regex = "0.2"
 xmltree = "0.7"
 rand = "0.4"
-futures = "0.1"
-tokio-core = "0.1"
-tokio-timer = "0.1"
-tokio-retry = "0.1"
+futures = { version = "0.1", optional = true }
+tokio-core = { version = "0.1", optional = true }
+tokio-timer = { version = "0.1", optional = true }
+tokio-retry = { version = "0.1", optional = true }
+
+[dependencies.lynx]
+git = "https://github.com/sbstp/lynx.git"
 
 [dependencies.hyper]
 version = "0.11"
 default-features = false
+optional = true
+
+[features]
+default = []
+async = ["futures", "tokio-core", "tokio-timer", "tokio-retry", "hyper"]
+
+[[example]]
+name = "add_any_port"
+
+[[example]]
+name = "add_port"
+
+[[example]]
+name = "add_remove"
+
+[[example]]
+name = "async"
+required-features = ["async"]
+
+[[example]]
+name = "external_ip"
+
+[[example]]
+name = "remove_port"

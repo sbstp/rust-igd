@@ -1,17 +1,24 @@
+#![deny(missing_docs)]
+
 //! This library allows you to communicate with an IGD enabled device.
 //! Use one of the `search_gateway` functions to obtain a `Gateway` object.
 //! You can then communicate with the device via this object.
 
-#![deny(missing_docs)]
-
-extern crate futures;
-extern crate hyper;
+extern crate lynx;
 extern crate rand;
 extern crate regex;
-extern crate tokio_core;
-extern crate tokio_retry;
-extern crate tokio_timer;
 extern crate xmltree;
+
+#[cfg(feature = "async")]
+extern crate futures;
+#[cfg(feature = "async")]
+extern crate hyper;
+#[cfg(feature = "async")]
+extern crate tokio_core;
+#[cfg(feature = "async")]
+extern crate tokio_retry;
+#[cfg(feature = "async")]
+extern crate tokio_timer;
 
 // data structures
 pub use self::errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError, SearchError};
@@ -23,22 +30,12 @@ pub use self::search::search_gateway_from;
 pub use self::search::search_gateway_from_timeout;
 pub use self::search::search_gateway_timeout;
 
-/// Contains Tokio compatible implementations for finding a gateway and configuring port mappings
-pub mod tokio {
-    pub use async::{
-        search_gateway, search_gateway_from, search_gateway_from_timeout, search_gateway_timeout, Gateway,
-    };
-}
-
-// re-export error types
-pub use hyper::Error as HttpError;
-
-mod async;
+#[cfg(feature = "async")]
+pub mod async;
 mod common;
 mod errors;
 mod gateway;
 mod search;
-mod soap;
 
 use std::fmt;
 
