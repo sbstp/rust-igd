@@ -4,42 +4,41 @@
 
 #![deny(missing_docs)]
 
-extern crate hyper;
-extern crate regex;
-extern crate xml;
-extern crate xmltree;
-extern crate rand;
 extern crate futures;
+extern crate hyper;
+extern crate rand;
+extern crate regex;
 extern crate tokio_core;
-extern crate tokio_timer;
 extern crate tokio_retry;
+extern crate tokio_timer;
+extern crate xmltree;
 
 // data structures
+pub use self::errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError, SearchError};
 pub use self::gateway::Gateway;
-pub use self::errors::{SearchError, RequestError, GetExternalIpError, AddPortError,
-                       AddAnyPortError, RemovePortError};
 
 // search of gateway
 pub use self::search::search_gateway;
-pub use self::search::search_gateway_timeout;
 pub use self::search::search_gateway_from;
 pub use self::search::search_gateway_from_timeout;
+pub use self::search::search_gateway_timeout;
 
 /// Contains Tokio compatible implementations for finding a gateway and configuring port mappings
 pub mod tokio {
-    pub use async::{Gateway, search_gateway_from_timeout, search_gateway_from,
-                    search_gateway_timeout, search_gateway};
+    pub use async::{
+        search_gateway, search_gateway_from, search_gateway_from_timeout, search_gateway_timeout, Gateway,
+    };
 }
 
 // re-export error types
 pub use hyper::Error as HttpError;
-pub use xml::reader::Error as XmlError;
 
+mod async;
+mod common;
+mod errors;
 mod gateway;
 mod search;
 mod soap;
-mod async;
-mod errors;
 
 use std::fmt;
 

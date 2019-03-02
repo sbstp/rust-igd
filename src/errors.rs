@@ -1,12 +1,11 @@
-use std::io;
-use std::fmt;
-use std::error;
-use std::str;
 use std;
+use std::error;
+use std::fmt;
+use std::io;
+use std::str;
 
 use hyper;
 use tokio_timer::TimeoutError;
-use xml::reader::Error as XmlError;
 
 use soap;
 
@@ -109,9 +108,7 @@ impl fmt::Display for RequestError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             RequestError::HttpError(ref e) => write!(f, "HTTP error. {}", e),
-            RequestError::InvalidResponse(ref e) => {
-                write!(f, "Invalid response from gateway: {}", e)
-            }
+            RequestError::InvalidResponse(ref e) => write!(f, "Invalid response from gateway: {}", e),
             RequestError::IoError(ref e) => write!(f, "IO error. {}", e),
             RequestError::ErrorCode(n, ref e) => write!(f, "Gateway response error {}: {}", n, e),
         }
@@ -141,9 +138,7 @@ impl std::error::Error for RequestError {
 impl fmt::Display for GetExternalIpError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            GetExternalIpError::ActionNotAuthorized => {
-                write!(f, "The client is not authorized to remove the port")
-            }
+            GetExternalIpError::ActionNotAuthorized => write!(f, "The client is not authorized to remove the port"),
             GetExternalIpError::RequestError(ref e) => write!(f, "Request Error. {}", e),
         }
     }
@@ -162,9 +157,7 @@ impl std::error::Error for GetExternalIpError {
 
     fn description(&self) -> &str {
         match *self {
-            GetExternalIpError::ActionNotAuthorized => {
-                "The client is not authorized to remove the port"
-            }
+            GetExternalIpError::ActionNotAuthorized => "The client is not authorized to remove the port",
             GetExternalIpError::RequestError(..) => "Request error",
         }
     }
@@ -173,9 +166,7 @@ impl std::error::Error for GetExternalIpError {
 impl fmt::Display for RemovePortError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            RemovePortError::ActionNotAuthorized => {
-                write!(f, "The client is not authorized to remove the port")
-            }
+            RemovePortError::ActionNotAuthorized => write!(f, "The client is not authorized to remove the port"),
             RemovePortError::NoSuchPortMapping => write!(f, "The port was not mapped"),
             RemovePortError::RequestError(ref e) => write!(f, "Request error. {}", e),
         }
@@ -189,9 +180,7 @@ impl std::error::Error for RemovePortError {
 
     fn description(&self) -> &str {
         match *self {
-            RemovePortError::ActionNotAuthorized => {
-                "The client is not authorized to remove the port"
-            }
+            RemovePortError::ActionNotAuthorized => "The client is not authorized to remove the port",
             RemovePortError::NoSuchPortMapping => "The port was not mapped",
             RemovePortError::RequestError(..) => "Request error",
         }
@@ -259,39 +248,25 @@ impl std::error::Error for AddAnyPortError {
 impl fmt::Display for AddPortError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            AddPortError::ActionNotAuthorized => {
-                write!(f, "The client is not authorized to map this port.")
-            }
-            AddPortError::InternalPortZeroInvalid => {
-                write!(f, "Can not add a mapping for local port 0")
-            }
-            AddPortError::ExternalPortZeroInvalid => {
-                write!(
-                    f,
-                    "External port number 0 (any port) is considered invalid by the gateway."
-                )
-            }
-            AddPortError::PortInUse => {
-                write!(
-                    f,
-                    "The requested mapping conflicts with a mapping assigned to another client."
-                )
-            }
-            AddPortError::SamePortValuesRequired => {
-                write!(
-                    f,
-                    "The gateway requires that the requested internal and external ports are the same."
-                )
-            }
-            AddPortError::OnlyPermanentLeasesSupported => {
-                write!(
-                    f,
-                    "The gateway only supports permanent leases (ie. a `lease_duration` of 0),"
-                )
-            }
-            AddPortError::DescriptionTooLong => {
-                write!(f, "The description was too long for the gateway to handle.")
-            }
+            AddPortError::ActionNotAuthorized => write!(f, "The client is not authorized to map this port."),
+            AddPortError::InternalPortZeroInvalid => write!(f, "Can not add a mapping for local port 0"),
+            AddPortError::ExternalPortZeroInvalid => write!(
+                f,
+                "External port number 0 (any port) is considered invalid by the gateway."
+            ),
+            AddPortError::PortInUse => write!(
+                f,
+                "The requested mapping conflicts with a mapping assigned to another client."
+            ),
+            AddPortError::SamePortValuesRequired => write!(
+                f,
+                "The gateway requires that the requested internal and external ports are the same."
+            ),
+            AddPortError::OnlyPermanentLeasesSupported => write!(
+                f,
+                "The gateway only supports permanent leases (ie. a `lease_duration` of 0),"
+            ),
+            AddPortError::DescriptionTooLong => write!(f, "The description was too long for the gateway to handle."),
             AddPortError::RequestError(ref e) => write!(f, "Request error. {}", e),
         }
     }
@@ -309,18 +284,14 @@ impl std::error::Error for AddPortError {
             AddPortError::ExternalPortZeroInvalid => {
                 "External port number 0 (any port) is considered invalid by the gateway."
             }
-            AddPortError::PortInUse => {
-                "The requested mapping conflicts with a mapping assigned to another client."
-            }
+            AddPortError::PortInUse => "The requested mapping conflicts with a mapping assigned to another client.",
             AddPortError::SamePortValuesRequired => {
                 "The gateway requires that the requested internal and external ports are the same."
             }
             AddPortError::OnlyPermanentLeasesSupported => {
                 "The gateway only supports permanent leases (ie. a `lease_duration` of 0),"
             }
-            AddPortError::DescriptionTooLong => {
-                "The description was too long for the gateway to handle."
-            }
+            AddPortError::DescriptionTooLong => "The description was too long for the gateway to handle.",
             AddPortError::RequestError(..) => "Request error",
         }
     }
@@ -338,7 +309,7 @@ pub enum SearchError {
     /// UTF-8 decoding error
     Utf8Error(str::Utf8Error),
     /// XML processing error
-    XmlError(XmlError),
+    XmlError(xmltree::ParseError),
 }
 
 impl From<hyper::Error> for SearchError {
@@ -359,8 +330,8 @@ impl From<str::Utf8Error> for SearchError {
     }
 }
 
-impl From<XmlError> for SearchError {
-    fn from(err: XmlError) -> SearchError {
+impl From<xmltree::ParseError> for SearchError {
+    fn from(err: xmltree::ParseError) -> SearchError {
         SearchError::XmlError(err)
     }
 }
