@@ -14,13 +14,11 @@ license = "MIT"
 regex = "0.2"
 xmltree = "0.7"
 rand = "0.4"
+lynx = "0.1"
 futures = { version = "0.1", optional = true }
 tokio-core = { version = "0.1", optional = true }
 tokio-timer = { version = "0.1", optional = true }
 tokio-retry = { version = "0.1", optional = true }
-
-[dependencies.lynx]
-git = "https://github.com/sbstp/lynx.git"
 
 [dependencies.hyper]
 version = "0.11"
