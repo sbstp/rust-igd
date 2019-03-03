@@ -25,6 +25,7 @@ impl Gateway {
 
         let mut request = lynx::Request::post(&url);
         request.header("SOAPAction", header)?;
+        request.header("Content-Type", "text/xml")?;
         request.body(body);
         let (_, _, rbody) = request.send()?;
 
