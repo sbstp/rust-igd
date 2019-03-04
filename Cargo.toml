@@ -47,3 +47,6 @@ name = "external_ip"
 
 [[example]]
 name = "remove_port"
+
+[package.metadata.docs.rs]
+all-features = true
