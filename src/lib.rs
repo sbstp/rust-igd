@@ -6,7 +6,7 @@
 
 extern crate lynx;
 extern crate rand;
-extern crate regex;
+extern crate url;
 extern crate xmltree;
 
 #[cfg(feature = "async")]

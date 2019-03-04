@@ -1,9 +1,33 @@
 use std::io;
-use std::net::Ipv4Addr;
+use std::net::{Ipv4Addr, SocketAddrV4};
 
+use url::Url;
 use xmltree::Element;
 
 use errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError, SearchError};
+
+// Parse the result.
+pub fn parse_search_result(text: &str) -> Result<(SocketAddrV4, String), SearchError> {
+    use SearchError::InvalidResponse;
+
+    for line in text.lines() {
+        let line = line.trim();
+        if line.to_ascii_lowercase().starts_with("location:") {
+            if let Some(colon) = line.find(":") {
+                let url_text = &line[colon + 1..].trim();
+                let url = Url::parse(url_text).map_err(|_| InvalidResponse)?;
+                let addr: Ipv4Addr = url
+                    .host_str()
+                    .ok_or(InvalidResponse)
+                    .and_then(|s| s.parse().map_err(|_| InvalidResponse))?;
+                let port: u16 = url.port_or_known_default().ok_or(InvalidResponse)?;
+
+                return Ok((SocketAddrV4::new(addr, port), url.path().to_string()));
+            }
+        }
+    }
+    Err(InvalidResponse)
+}
 
 pub fn parse_control_url<R>(resp: R) -> Result<String, SearchError>
 where
@@ -175,6 +199,25 @@ pub fn parse_delete_port_mapping_response(result: RequestResult) -> Result<(), R
             e => RemovePortError::RequestError(e),
         }),
     }
+}
+
+#[test]
+fn test_parse_search_result_case_insensitivity() {
+    assert!(parse_search_result("location:http://0.0.0.0:0/control_url").is_ok());
+    assert!(parse_search_result("LOCATION:http://0.0.0.0:0/control_url").is_ok());
+}
+
+#[test]
+fn test_parse_search_result_ok() {
+    let result = parse_search_result("location:http://0.0.0.0:0/control_url").unwrap();
+    assert_eq!(result.0.ip(), &Ipv4Addr::new(0, 0, 0, 0));
+    assert_eq!(result.0.port(), 0);
+    assert_eq!(&result.1[..], "/control_url");
+}
+
+#[test]
+fn test_parse_search_result_fail() {
+    assert!(parse_search_result("content-type:http://0.0.0.0:0/control_url").is_err());
 }
 
 #[test]

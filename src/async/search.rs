@@ -10,9 +10,8 @@ use tokio_core::reactor::Handle;
 use tokio_timer::Timer;
 
 use async::Gateway;
-use common::parsing;
+use common::{messages, parsing};
 use errors::SearchError;
-use search::{parse_result, SEARCH_REQUEST};
 
 /// Search gateway, bind to all interfaces and use a timeout of 3 seconds.
 ///
@@ -51,13 +50,13 @@ pub fn search_gateway_from_timeout(
     let handle = handle.clone();
     let task = UdpSocket::bind(&addr, &handle)
         .into_future()
-        .and_then(|socket| socket.send_dgram(SEARCH_REQUEST.as_bytes(), "239.255.255.250:1900".parse().unwrap()))
+        .and_then(|socket| socket.send_dgram(messages::SEARCH_REQUEST.as_bytes(), "239.255.255.250:1900".parse().unwrap()))
         .and_then(|(socket, _)| socket.recv_dgram(vec![0u8; 1500]))
         .map_err(|err| SearchError::from(err))
         .and_then(|(_sock, buf, n, _addr)| {
             str::from_utf8(&buf[..n])
                 .map_err(|err| SearchError::from(err))
-                .and_then(|text| parse_result(text).ok_or(SearchError::InvalidResponse))
+                .and_then(|text| parsing::parse_search_result(text))
         })
         .and_then(move |location| {
             get_control_url(&location, &handle)

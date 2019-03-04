@@ -1,6 +1,13 @@
 use std::net::SocketAddrV4;
 use PortMappingProtocol;
 
+// Content of the request.
+pub const SEARCH_REQUEST: &'static str = "M-SEARCH * HTTP/1.1\r
+Host:239.255.255.250:1900\r
+ST:urn:schemas-upnp-org:device:InternetGatewayDevice:1\r
+Man:\"ssdp:discover\"\r
+MX:3\r\n\r\n";
+
 pub const GET_EXTERNAL_IP_HEADER: &'static str =
     r#""urn:schemas-upnp-org:service:WANIPConnection:1#GetExternalIPAddress""#;
 
