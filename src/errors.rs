@@ -6,15 +6,15 @@ use std::str;
 #[cfg(feature = "async")]
 use std::string::FromUtf8Error;
 
+use attohttpc;
 #[cfg(feature = "async")]
 use hyper;
-use lynx;
 
 /// Errors that can occur when sending the request to the gateway.
 #[derive(Debug)]
 pub enum RequestError {
     /// Http/Hyper error
-    HttpError(lynx::HttpError),
+    HttpError(attohttpc::Error),
     /// IO Error
     IoError(io::Error),
     /// The response from the gateway could not be parsed.
@@ -26,8 +26,8 @@ pub enum RequestError {
     HyperError(hyper::Error),
 }
 
-impl From<lynx::HttpError> for RequestError {
-    fn from(err: lynx::HttpError) -> RequestError {
+impl From<attohttpc::Error> for RequestError {
+    fn from(err: attohttpc::Error) -> RequestError {
         RequestError::HttpError(err)
     }
 }
@@ -338,7 +338,7 @@ impl std::error::Error for AddPortError {
 #[derive(Debug)]
 pub enum SearchError {
     /// Http/Hyper error
-    HttpError(lynx::HttpError),
+    HttpError(attohttpc::Error),
     /// Unable to process the response
     InvalidResponse,
     /// IO Error
@@ -352,8 +352,8 @@ pub enum SearchError {
     HyperError(hyper::Error),
 }
 
-impl From<lynx::HttpError> for SearchError {
-    fn from(err: lynx::HttpError) -> SearchError {
+impl From<attohttpc::Error> for SearchError {
+    fn from(err: attohttpc::Error) -> SearchError {
         SearchError::HttpError(err)
     }
 }

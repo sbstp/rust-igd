@@ -4,5 +4,7 @@ rust:
   - beta
   - nightly
 script:
-  - cargo build --verbose --all-features
-  - cargo test --verbose --all-features
+  - cargo build
+  - cargo test
+  - cargo build --features async
+  - cargo test --features async

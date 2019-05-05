@@ -57,6 +57,6 @@ pub fn search_gateway_from_timeout(ip: Ipv4Addr, timeout: Duration) -> Result<Ga
 
 fn get_control_url(location: &(SocketAddrV4, String)) -> Result<String, SearchError> {
     let url = format!("http://{}:{}{}", location.0.ip(), location.0.port(), location.1);
-    let (_, _, body) = lynx::Request::get(&url).send()?;
-    parsing::parse_control_url(&body.bytes()?[..])
+    let response = attohttpc::get(&url).send()?;
+    parsing::parse_control_url(&response.bytes()?[..])
 }

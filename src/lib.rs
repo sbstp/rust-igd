@@ -4,7 +4,7 @@
 //! Use one of the `search_gateway` functions to obtain a `Gateway` object.
 //! You can then communicate with the device via this object.
 
-extern crate lynx;
+extern crate attohttpc;
 extern crate rand;
 extern crate url;
 extern crate xmltree;

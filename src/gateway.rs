@@ -1,7 +1,7 @@
 use std::fmt;
 use std::net::{Ipv4Addr, SocketAddrV4};
 
-use lynx;
+use attohttpc;
 
 use common;
 use common::messages;
@@ -23,13 +23,13 @@ impl Gateway {
     fn perform_request(&self, header: &str, body: &str, ok: &str) -> RequestResult {
         let url = format!("http://{}{}", self.addr, self.control_url);
 
-        let mut request = lynx::Request::post(&url);
-        request.header("SOAPAction", header)?;
-        request.header("Content-Type", "text/xml")?;
-        request.body(body);
-        let (_, _, rbody) = request.send()?;
+        let response = attohttpc::post(&url)
+            .header("SOAPAction", header)
+            .header("Content-Type", "text/xml")
+            .text(body)
+            .send()?;
 
-        parsing::parse_response(rbody.string()?, ok)
+        parsing::parse_response(response.text()?, ok)
     }
 
     /// Get the external IP address of the gateway.
