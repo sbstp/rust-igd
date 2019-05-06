@@ -12,11 +12,26 @@ extern crate igd;
 extern crate futures;
 extern crate tokio_core;
 
+use std::env;
+use std::net::SocketAddrV4;
+
 use igd::async::search_gateway;
 use igd::PortMappingProtocol;
 use futures::future::Future;
 
 fn main() {
+    let ip = match env::args().nth(1) {
+        Some(ip) => ip,
+        None => {
+            println!("Local socket address is missing!");
+            println!("This example requires a socket address representing the local machine and the port to bind to as an argument");
+            println!("Example: target/debug/examples/async 192.168.0.198:4321");
+            println!("Example: cargo run --features async --example async -- 192.168.0.198:4321");
+            return;
+        }
+    };
+    let ip: SocketAddrV4 = ip.parse().expect("Invalid socket address");
+
     let mut evloop = tokio_core::reactor::Core::new().unwrap();
     let handle = evloop.handle();
 
@@ -34,7 +49,7 @@ fn main() {
             gateway.add_port(
                 PortMappingProtocol::TCP,
                 1234,
-                "192.168.1.210:4321".parse().unwrap(),
+                ip,
                 0,
                 "rust-igd-async-example",
             )
@@ -48,7 +63,7 @@ fn main() {
             gateway.add_port(
                 PortMappingProtocol::TCP,
                 2345,
-                "192.168.1.210:5432".parse().unwrap(),
+                ip,
                 0,
                 "rust-igd-async-example",
             )
