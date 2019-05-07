@@ -10,7 +10,7 @@
 
 extern crate igd;
 extern crate futures;
-extern crate tokio_core;
+extern crate tokio;
 
 use std::env;
 use std::net::SocketAddrV4;
@@ -32,12 +32,10 @@ fn main() {
     };
     let ip: SocketAddrV4 = ip.parse().expect("Invalid socket address");
 
-    let mut evloop = tokio_core::reactor::Core::new().unwrap();
-    let handle = evloop.handle();
-
-    let task = search_gateway(&handle)
+    let f = futures::lazy(move || {
+        search_gateway()
         .map_err(|e| panic!("Failed to find IGD: {}", e))
-        .and_then(|gateway| gateway.get_external_ip()
+        .and_then(move |gateway| gateway.get_external_ip()
             .map_err(|e| panic!("Failed to get external IP: {}", e))
             .and_then(|ip| Ok((gateway, ip)))
         )
@@ -45,7 +43,7 @@ fn main() {
             println!("Our public IP: {}", pub_ip);
             Ok(gateway)
         })
-        .and_then(|gateway| {
+        .and_then(move |gateway| {
             gateway.add_port(
                 PortMappingProtocol::TCP,
                 1234,
@@ -59,7 +57,7 @@ fn main() {
                 Ok(gateway)
             })
         })
-        .and_then(|gateway| {
+        .and_then(move |gateway| {
             gateway.add_port(
                 PortMappingProtocol::TCP,
                 2345,
@@ -77,7 +75,9 @@ fn main() {
         .and_then(|_| {
             println!("Port was removed.");
             Ok(())
-        });
+        })
 
-    let _ = evloop.run(task).unwrap();
+    }).map(|_| () ).map_err(|_| () );
+
+    tokio::run(f);
 }

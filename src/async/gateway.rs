@@ -6,7 +6,8 @@ use super::soap;
 use errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError};
 use futures::future;
 use futures::Future;
-use tokio_core::reactor::Handle;
+
+
 use tokio_retry::strategy::FixedInterval;
 use tokio_retry::{Error as RetryError, RetryIf};
 
@@ -22,17 +23,14 @@ pub struct Gateway {
     addr: SocketAddrV4,
     /// Control url of the device
     control_url: String,
-
-    handle: Handle,
 }
 
 impl Gateway {
-    /// Create a new Gateway for a given Handle to a control loop
-    pub fn new(addr: SocketAddrV4, control_url: String, handle: Handle) -> Gateway {
+    /// Create a new Gateway
+    pub fn new(addr: SocketAddrV4, control_url: String) -> Gateway {
         Gateway {
             addr: addr,
             control_url: control_url,
-            handle: handle,
         }
     }
 
@@ -41,17 +39,17 @@ impl Gateway {
         header: &str,
         body: &str,
         ok: &str,
-    ) -> Box<Future<Item = RequestReponse, Error = RequestError>> {
+    ) -> Box<Future<Item = RequestReponse, Error = RequestError> + Send> {
         let url = format!("{}", self);
         let ok = ok.to_owned();
-        let future = soap::send_async(&url, soap::Action::new(header), body, &self.handle)
+        let future = soap::send_async(&url, soap::Action::new(header), body)
             .map_err(|err| RequestError::from(err))
             .and_then(move |text| parsing::parse_response(text, &ok));
         Box::new(future)
     }
 
     /// Get the external IP address of the gateway in a tokio compatible way
-    pub fn get_external_ip(&self) -> Box<Future<Item = Ipv4Addr, Error = GetExternalIpError>> {
+    pub fn get_external_ip(&self) -> Box<Future<Item = Ipv4Addr, Error = GetExternalIpError> + Send> {
         let future = self
             .perform_request(
                 messages::GET_EXTERNAL_IP_HEADER,
@@ -77,7 +75,7 @@ impl Gateway {
         local_addr: SocketAddrV4,
         lease_duration: u32,
         description: &str,
-    ) -> Box<Future<Item = SocketAddrV4, Error = AddAnyPortError>> {
+    ) -> Box<Future<Item = SocketAddrV4, Error = AddAnyPortError> + Send> {
         let description = description.to_owned();
         let gateway = self.clone();
         let future = self
@@ -105,7 +103,7 @@ impl Gateway {
         local_addr: SocketAddrV4,
         lease_duration: u32,
         description: &str,
-    ) -> Box<Future<Item = u16, Error = AddAnyPortError>> {
+    ) -> Box<Future<Item = u16, Error = AddAnyPortError> + Send> {
         // This function first attempts to call AddAnyPortMapping on the IGD with a random port
         // number. If that fails due to the method being unknown it attempts to call AddPortMapping
         // instead with a random port number. If that fails due to ConflictInMappingEntry it retrys
@@ -154,14 +152,13 @@ impl Gateway {
         local_addr: SocketAddrV4,
         lease_duration: u32,
         description: &str,
-    ) -> Box<Future<Item = u16, Error = AddAnyPortError>> {
+    ) -> Box<Future<Item = u16, Error = AddAnyPortError> + Send> {
         let description = description.to_owned();
         let gateway = self.clone();
 
         let retry_strategy = FixedInterval::from_millis(0).take(20);
 
         let future = RetryIf::spawn(
-            gateway.handle.clone(),
             retry_strategy,
             move || gateway.add_random_port_mapping(protocol, local_addr, lease_duration, &description),
             |err: &AddAnyPortError| match err {
@@ -183,7 +180,7 @@ impl Gateway {
         local_addr: SocketAddrV4,
         lease_duration: u32,
         description: &str,
-    ) -> Box<Future<Item = u16, Error = AddAnyPortError>> {
+    ) -> Box<Future<Item = u16, Error = AddAnyPortError> + Send> {
         let description = description.to_owned();
         let gateway = self.clone();
 
@@ -207,7 +204,7 @@ impl Gateway {
         local_addr: SocketAddrV4,
         lease_duration: u32,
         description: &str,
-    ) -> Box<Future<Item = u16, Error = AddAnyPortError>> {
+    ) -> Box<Future<Item = u16, Error = AddAnyPortError> + Send> {
         let future = self
             .add_port_mapping(protocol, local_addr.port(), local_addr, lease_duration, description)
             .map(move |_| local_addr.port())
@@ -223,7 +220,7 @@ impl Gateway {
         local_addr: SocketAddrV4,
         lease_duration: u32,
         description: &str,
-    ) -> Box<Future<Item = (), Error = RequestError>> {
+    ) -> Box<Future<Item = (), Error = RequestError> + Send> {
         let future = self
             .perform_request(
                 messages::ADD_PORT_MAPPING_HEADER,
@@ -252,7 +249,7 @@ impl Gateway {
         local_addr: SocketAddrV4,
         lease_duration: u32,
         description: &str,
-    ) -> Box<Future<Item = (), Error = AddPortError>> {
+    ) -> Box<Future<Item = (), Error = AddPortError> + Send> {
         if external_port == 0 {
             return Box::new(future::err(AddPortError::ExternalPortZeroInvalid));
         }
@@ -272,7 +269,7 @@ impl Gateway {
         &self,
         protocol: PortMappingProtocol,
         external_port: u16,
-    ) -> Box<Future<Item = (), Error = RemovePortError>> {
+    ) -> Box<Future<Item = (), Error = RemovePortError> + Send> {
         let future = self
             .perform_request(
                 messages::DELETE_PORT_MAPPING_HEADER,
