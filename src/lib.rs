@@ -5,6 +5,11 @@
 //! You can then communicate with the device via this object.
 
 extern crate attohttpc;
+#[macro_use]
+extern crate log;
+extern crate bytes;
+
+extern crate lynx;
 extern crate rand;
 extern crate url;
 extern crate xmltree;

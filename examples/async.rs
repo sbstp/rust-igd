@@ -11,13 +11,15 @@
 extern crate igd;
 extern crate futures;
 extern crate tokio;
+extern crate simplelog;
 
 use std::env;
 use std::net::SocketAddrV4;
 
-use igd::async::search_gateway;
+use igd::async::{search_gateway, SearchOptions};
 use igd::PortMappingProtocol;
 use futures::future::Future;
+use simplelog::{SimpleLogger, LevelFilter, Config as LogConfig};
 
 fn main() {
     let ip = match env::args().nth(1) {
@@ -32,8 +34,10 @@ fn main() {
     };
     let ip: SocketAddrV4 = ip.parse().expect("Invalid socket address");
 
+    let _ = SimpleLogger::init(LevelFilter::Debug, LogConfig::default());
+
     let f = futures::lazy(move || {
-        search_gateway()
+        search_gateway(SearchOptions::default())
         .map_err(|e| panic!("Failed to find IGD: {}", e))
         .and_then(move |gateway| gateway.get_external_ip()
             .map_err(|e| panic!("Failed to get external IP: {}", e))

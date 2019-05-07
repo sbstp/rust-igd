@@ -21,6 +21,10 @@ url = "1"
 futures = { version = "0.1.26", optional = true }
 tokio = { version = "0.1.18", optional = true }
 tokio-retry = { version = "0.2.0", optional = true }
+log = "0.4.6"
+bytes = "0.4.12"
+simplelog = "0.5.3"
+lynx = "0.2.0"
 
 [dependencies.hyper]
 version = "0.12.28"
