@@ -36,7 +36,7 @@ impl Default for SearchOptions {
         Self {
             bind_addr: SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), 0)),
             broadcast_address: "239.255.255.250:1900".parse().unwrap(),
-            timeout: Some(Duration::from_secs(3)),
+            timeout: Some(Duration::from_secs(10)),
         }
     }
 }
@@ -78,7 +78,7 @@ impl SearchFuture {
 
     // Handle a UDP response message
     fn handle_broadcast_resp(from: SocketAddr, data: &[u8]) -> Result<(SocketAddr, String), SearchError> {
-        debug!("handling broadcast response from: {}, data: {:?}", from, data);
+        debug!("handling broadcast response from: {}", from);
 
         // Convert response to text
         let text = str::from_utf8(&data)
@@ -110,7 +110,7 @@ impl SearchFuture {
 
     // Process a control response to extract the control URL
     fn handle_control_resp(addr: SocketAddr, resp: Bytes) -> Result<String, SearchError> {
-        debug!("handling control response from: {}, data: {:?}", addr, resp);
+        debug!("handling control response from: {}", addr);
 
         // Create a cursor over the response data
         let c = std::io::Cursor::new(&resp);
