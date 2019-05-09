@@ -13,8 +13,8 @@ use hyper;
 /// Errors that can occur when sending the request to the gateway.
 #[derive(Debug)]
 pub enum RequestError {
-    /// Http/Hyper error
-    HttpError(attohttpc::Error),
+    /// attohttp error
+    AttoHttpError(attohttpc::Error),
     /// IO Error
     IoError(io::Error),
     /// The response from the gateway could not be parsed.
@@ -26,19 +26,30 @@ pub enum RequestError {
     HyperError(hyper::Error),
 
     #[cfg(feature = "async")]
+    /// http crate error type
+    HttpError(http::Error),
+
+    #[cfg(feature = "async")]
     /// Error parsing HTTP body
     Utf8Error(FromUtf8Error),
 }
 
 impl From<attohttpc::Error> for RequestError {
     fn from(err: attohttpc::Error) -> RequestError {
-        RequestError::HttpError(err)
+        RequestError::AttoHttpError(err)
     }
 }
 
 impl From<io::Error> for RequestError {
     fn from(err: io::Error) -> RequestError {
         RequestError::IoError(err)
+    }
+}
+
+#[cfg(feature = "async")]
+impl From<http::Error> for RequestError {
+    fn from(err: http::Error) -> RequestError {
+        RequestError::HttpError(err)
     }
 }
 
@@ -66,12 +77,14 @@ impl From<tokio::timer::Error> for RequestError {
 impl fmt::Display for RequestError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            RequestError::HttpError(ref e) => write!(f, "HTTP error {}", e),
+            RequestError::AttoHttpError(ref e) => write!(f, "HTTP error {}", e),
             RequestError::InvalidResponse(ref e) => write!(f, "Invalid response from gateway: {}", e),
             RequestError::IoError(ref e) => write!(f, "IO error. {}", e),
             RequestError::ErrorCode(n, ref e) => write!(f, "Gateway response error {}: {}", n, e),
             #[cfg(feature = "async")]
             RequestError::HyperError(ref e) => write!(f, "Hyper Error: {}", e),
+            #[cfg(feature = "async")]
+            RequestError::HttpError(ref e) => write!(f, "Http  Error: {}", e),
             #[cfg(feature = "async")]
             RequestError::Utf8Error(ref e) => write!(f, "Utf8Error Error: {}", e),
         }
@@ -81,12 +94,14 @@ impl fmt::Display for RequestError {
 impl std::error::Error for RequestError {
     fn cause(&self) -> Option<&std::error::Error> {
         match *self {
-            RequestError::HttpError(ref e) => Some(e),
+            RequestError::AttoHttpError(ref e) => Some(e),
             RequestError::InvalidResponse(..) => None,
             RequestError::IoError(ref e) => Some(e),
             RequestError::ErrorCode(..) => None,
             #[cfg(feature = "async")]
             RequestError::HyperError(ref e) => Some(e),
+            #[cfg(feature = "async")]
+            RequestError::HttpError(ref e) => Some(e),
             #[cfg(feature = "async")]
             RequestError::Utf8Error(ref e) => Some(e),
         }
@@ -94,12 +109,14 @@ impl std::error::Error for RequestError {
 
     fn description(&self) -> &str {
         match *self {
-            RequestError::HttpError(..) => "Http error",
+            RequestError::AttoHttpError(..) => "Http error",
             RequestError::InvalidResponse(..) => "Invalid response",
             RequestError::IoError(..) => "IO error",
             RequestError::ErrorCode(_, ref e) => &e[..],
             #[cfg(feature = "async")]
             RequestError::HyperError(_) => "Hyper Error",
+            #[cfg(feature = "async")]
+            RequestError::HttpError(_) => "Http Error",
             #[cfg(feature = "async")]
             RequestError::Utf8Error(_) => "UTF8 Error",
         }

@@ -4,7 +4,6 @@ use std::time::Duration;
 use std::collections::HashMap;
 
 use futures::prelude::*;
-use futures::future::Either;
 use futures::{Future, Stream};
 
 use hyper::Client;
@@ -23,11 +22,11 @@ const MAX_RESPONSE_SIZE: usize = 1500;
 /// Gateway search configuration
 /// SearchOptions::default() should suffice for most situations
 pub struct SearchOptions {
-    /// Bind address for UDP socket (defaults to all interfaces)
+    /// Bind address for UDP socket (defaults to all `0.0.0.0`)
     pub bind_addr: SocketAddr,
-    /// Broadcast address for discovery packets
+    /// Broadcast address for discovery packets (defaults to `239.255.255.250:1900`)
     pub broadcast_address: SocketAddr,
-    /// Timeout for a search iteration
+    /// Timeout for a search iteration (defaults to 10s)
     pub timeout: Option<Duration>,
 }
 
@@ -43,15 +42,19 @@ impl Default for SearchOptions {
 
 /// Search for a gateway with the provided options
 pub fn search_gateway(options: SearchOptions) -> impl Future<Item=Gateway, Error=SearchError> {
+    use futures::future::{err, Either::A, Either::B};
 
     // Create socket for future calls
-    let socket = UdpSocket::bind(&options.bind_addr).unwrap();
+    let socket = match UdpSocket::bind(&options.bind_addr) {
+        Ok(s) => s,
+        Err(e) => return  A(err(SearchError::from(e))),
+    };  
 
     // Create future and issue request
     match options.timeout {
-        Some(t) => Either::A(SearchFuture::search(socket, options.broadcast_address)
-            .and_then(|search| search ).timeout(t).map_err(|e| SearchError::from(e) )),
-        _ => Either::B(SearchFuture::search(socket, options.broadcast_address).and_then(|search| search )),
+        Some(t) =>B(A(SearchFuture::search(socket, options.broadcast_address)
+            .and_then(|search| search ).timeout(t).map_err(|e| SearchError::from(e) ))),
+        _ =>B(B(SearchFuture::search(socket, options.broadcast_address).and_then(|search| search ))),
     }
 }
 

@@ -9,11 +9,12 @@ extern crate attohttpc;
 extern crate log;
 extern crate bytes;
 
-extern crate lynx;
 extern crate rand;
 extern crate url;
 extern crate xmltree;
 
+#[cfg(feature = "async")]
+extern crate http;
 #[cfg(feature = "async")]
 extern crate futures;
 #[cfg(feature = "async")]
