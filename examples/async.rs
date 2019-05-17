@@ -52,7 +52,7 @@ fn main() {
                 PortMappingProtocol::TCP,
                 1234,
                 ip,
-                0,
+                120,
                 "rust-igd-async-example",
             )
             .map_err(|e| panic!("Failed to add port mapping: {}", e))
@@ -66,7 +66,7 @@ fn main() {
                 PortMappingProtocol::TCP,
                 2345,
                 ip,
-                0,
+                120,
                 "rust-igd-async-example",
             )
             .map_err(|e| panic!("Failed to add port mapping: {}", e))
