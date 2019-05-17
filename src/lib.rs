@@ -5,20 +5,24 @@
 //! You can then communicate with the device via this object.
 
 extern crate attohttpc;
+#[macro_use]
+extern crate log;
+extern crate bytes;
+
 extern crate rand;
 extern crate url;
 extern crate xmltree;
 
 #[cfg(feature = "async")]
+extern crate http;
+#[cfg(feature = "async")]
 extern crate futures;
 #[cfg(feature = "async")]
 extern crate hyper;
 #[cfg(feature = "async")]
-extern crate tokio_core;
+extern crate tokio;
 #[cfg(feature = "async")]
 extern crate tokio_retry;
-#[cfg(feature = "async")]
-extern crate tokio_timer;
 
 // data structures
 pub use self::errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError, SearchError};

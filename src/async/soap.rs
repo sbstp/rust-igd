@@ -1,11 +1,8 @@
-use std::fmt;
 
-use futures::future;
 use futures::{Future, Stream};
-use hyper;
-use hyper::header::{ContentLength, ContentType, Formatter, Header, Raw};
-use hyper::{Client, Post, Request};
-use tokio_core::reactor::Handle;
+
+use hyper::header::{CONTENT_LENGTH, CONTENT_TYPE};
+use hyper::{Request, Body, client::Client};
 
 use errors::RequestError;
 
@@ -18,42 +15,37 @@ impl Action {
     }
 }
 
-impl Header for Action {
-    fn header_name() -> &'static str {
-        "SOAPAction"
-    }
-
-    #[allow(unused_variables)]
-    fn parse_header(raw: &Raw) -> hyper::Result<Action> {
-        // Leave unimplemented as we shouldn't need it.
-        unimplemented!();
-    }
-
-    fn fmt_header(&self, f: &mut Formatter) -> fmt::Result {
-        f.fmt_line(&self.0)
-    }
-}
+const HEADER_NAME: &str = "SOAPAction";
 
 pub fn send_async(
     url: &str,
     action: Action,
     body: &str,
-    handle: &Handle,
-) -> Box<Future<Item = String, Error = RequestError>> {
-    let client = Client::new(&handle);
-    let uri = match url.parse() {
-        Ok(uri) => uri,
-        Err(err) => return Box::new(future::err(RequestError::from(err))),
+) -> impl Future<Item = String, Error = RequestError> {
+    use futures::future::{err, Either::A, Either::B};
+
+    let client = Client::new();
+
+    let req = Request::builder()
+        .uri(url)
+        .method("POST")
+        .header(HEADER_NAME, action.0)
+        .header(CONTENT_TYPE, "xml")
+        .header(CONTENT_LENGTH, body.len() as u64)
+        .body(Body::from(body.to_string()))
+        .map_err(|e| RequestError::from(e) );
+
+    let req = match req {
+        Ok(r) => r,
+        Err(e) => return A(err(e)),
     };
-    let mut req = Request::new(Post, uri);
-    req.headers_mut().set(action);
-    req.headers_mut().set(ContentType::xml());
-    req.headers_mut().set(ContentLength(body.len() as u64));
-    req.set_body(body.to_owned());
+
     let future = client
         .request(req)
-        .and_then(|resp| resp.body().concat2())
+        .and_then(|resp| resp.into_body().concat2())
         .map_err(|err| RequestError::from(err))
-        .and_then(|bytes| String::from_utf8(bytes.to_vec()).map_err(|err| RequestError::from(err)));
-    Box::new(future)
+        .and_then(|bytes| String::from_utf8(bytes.to_vec())
+        .map_err(|err| RequestError::from(err)));
+
+    B(future)
 }
