@@ -6,5 +6,5 @@ rust:
 script:
   - cargo build
   - cargo test
-  - cargo build --features async
-  - cargo test --features async
+  - cargo build --features aio
+  - cargo test --features aio

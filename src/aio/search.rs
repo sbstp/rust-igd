@@ -13,7 +13,7 @@ use tokio::net::UdpSocket;
 
 use bytes::Bytes;
 
-use async::Gateway;
+use aio::Gateway;
 use common::{messages, parsing};
 use errors::SearchError;
 
@@ -48,7 +48,7 @@ pub fn search_gateway(options: SearchOptions) -> impl Future<Item=Gateway, Error
     let socket = match UdpSocket::bind(&options.bind_addr) {
         Ok(s) => s,
         Err(e) => return  A(err(SearchError::from(e))),
-    };  
+    };
 
     // Create future and issue request
     match options.timeout {
@@ -86,14 +86,14 @@ impl SearchFuture {
         // Convert response to text
         let text = str::from_utf8(&data)
             .map_err(|e| SearchError::from(e))?;
-        
+
         // Parse socket address and path
         let (addr, path) = parsing::parse_search_result(text)?;
 
         Ok((SocketAddr::V4(addr), path))
     }
 
-    // Issue a control URL request over HTTP using the provided 
+    // Issue a control URL request over HTTP using the provided
     fn request_control_url(addr: SocketAddr, path: String) -> Result<Box<Future<Item=Bytes, Error=SearchError> + Send>, SearchError> {
         let client = Client::new();
 
@@ -103,7 +103,7 @@ impl SearchFuture {
         };
 
         debug!("requesting control url from: {}", uri);
-        
+
         Ok(Box::new(client.get(uri)
             .and_then(|resp| resp.into_body().concat2() )
             .map(|chunk| chunk.into_bytes() )
@@ -177,7 +177,7 @@ impl Future for SearchFuture {
                     }
                     _ => warn!("unsupported IPv6 gateway response from addr: {}", addr),
                 }
-                
+
             } else {
                 *state = SearchState::Error;
             }

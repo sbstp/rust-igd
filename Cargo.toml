@@ -36,7 +36,7 @@ simplelog = "0.5.3"
 
 [features]
 default = []
-async = ["futures", "tokio", "tokio-retry", "hyper"]
+aio = ["futures", "tokio", "tokio-retry", "hyper"]
 
 [[example]]
 name = "add_any_port"
@@ -48,8 +48,8 @@ name = "add_port"
 name = "add_remove"
 
 [[example]]
-name = "async"
-required-features = ["async"]
+name = "aio"
+required-features = ["aio"]
 
 [[example]]
 name = "external_ip"

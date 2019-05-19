@@ -16,7 +16,7 @@ extern crate simplelog;
 use std::env;
 use std::net::SocketAddrV4;
 
-use igd::async::{search_gateway, SearchOptions};
+use igd::aio::{search_gateway, SearchOptions};
 use igd::PortMappingProtocol;
 use futures::future::Future;
 use simplelog::{SimpleLogger, LevelFilter, Config as LogConfig};

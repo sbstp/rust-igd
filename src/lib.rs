@@ -5,6 +5,7 @@
 //! You can then communicate with the device via this object.
 
 extern crate attohttpc;
+#[cfg(feature = "aio")]
 #[macro_use]
 extern crate log;
 extern crate bytes;
@@ -13,15 +14,15 @@ extern crate rand;
 extern crate url;
 extern crate xmltree;
 
-#[cfg(feature = "async")]
+#[cfg(feature = "aio")]
 extern crate http;
-#[cfg(feature = "async")]
+#[cfg(feature = "aio")]
 extern crate futures;
-#[cfg(feature = "async")]
+#[cfg(feature = "aio")]
 extern crate hyper;
-#[cfg(feature = "async")]
+#[cfg(feature = "aio")]
 extern crate tokio;
-#[cfg(feature = "async")]
+#[cfg(feature = "aio")]
 extern crate tokio_retry;
 
 // data structures
@@ -34,8 +35,8 @@ pub use self::search::search_gateway_from;
 pub use self::search::search_gateway_from_timeout;
 pub use self::search::search_gateway_timeout;
 
-#[cfg(feature = "async")]
-pub mod async;
+#[cfg(feature = "aio")]
+pub mod aio;
 mod common;
 mod errors;
 mod gateway;

@@ -3,11 +3,11 @@ use std::error;
 use std::fmt;
 use std::io;
 use std::str;
-#[cfg(feature = "async")]
+#[cfg(feature = "aio")]
 use std::string::FromUtf8Error;
 
 use attohttpc;
-#[cfg(feature = "async")]
+#[cfg(feature = "aio")]
 use hyper;
 
 /// Errors that can occur when sending the request to the gateway.
@@ -21,15 +21,15 @@ pub enum RequestError {
     InvalidResponse(String),
     /// The gateway returned an unhandled error code and description.
     ErrorCode(u16, String),
-    /// When using the async feature.
-    #[cfg(feature = "async")]
+    /// When using the aio feature.
+    #[cfg(feature = "aio")]
     HyperError(hyper::Error),
 
-    #[cfg(feature = "async")]
+    #[cfg(feature = "aio")]
     /// http crate error type
     HttpError(http::Error),
 
-    #[cfg(feature = "async")]
+    #[cfg(feature = "aio")]
     /// Error parsing HTTP body
     Utf8Error(FromUtf8Error),
 }
@@ -46,28 +46,28 @@ impl From<io::Error> for RequestError {
     }
 }
 
-#[cfg(feature = "async")]
+#[cfg(feature = "aio")]
 impl From<http::Error> for RequestError {
     fn from(err: http::Error) -> RequestError {
         RequestError::HttpError(err)
     }
 }
 
-#[cfg(feature = "async")]
+#[cfg(feature = "aio")]
 impl From<hyper::Error> for RequestError {
     fn from(err: hyper::Error) -> RequestError {
         RequestError::HyperError(err)
     }
 }
 
-#[cfg(feature = "async")]
+#[cfg(feature = "aio")]
 impl From<FromUtf8Error> for RequestError {
     fn from(err: FromUtf8Error) -> RequestError {
         RequestError::Utf8Error(err)
     }
 }
 
-#[cfg(feature = "async")]
+#[cfg(feature = "aio")]
 impl From<tokio::timer::Error> for RequestError {
     fn from(_err: tokio::timer::Error) -> RequestError {
         RequestError::IoError(io::Error::new(io::ErrorKind::TimedOut, "timer failed"))
@@ -81,11 +81,11 @@ impl fmt::Display for RequestError {
             RequestError::InvalidResponse(ref e) => write!(f, "Invalid response from gateway: {}", e),
             RequestError::IoError(ref e) => write!(f, "IO error. {}", e),
             RequestError::ErrorCode(n, ref e) => write!(f, "Gateway response error {}: {}", n, e),
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             RequestError::HyperError(ref e) => write!(f, "Hyper Error: {}", e),
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             RequestError::HttpError(ref e) => write!(f, "Http  Error: {}", e),
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             RequestError::Utf8Error(ref e) => write!(f, "Utf8Error Error: {}", e),
         }
     }
@@ -98,11 +98,11 @@ impl std::error::Error for RequestError {
             RequestError::InvalidResponse(..) => None,
             RequestError::IoError(ref e) => Some(e),
             RequestError::ErrorCode(..) => None,
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             RequestError::HyperError(ref e) => Some(e),
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             RequestError::HttpError(ref e) => Some(e),
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             RequestError::Utf8Error(ref e) => Some(e),
         }
     }
@@ -113,11 +113,11 @@ impl std::error::Error for RequestError {
             RequestError::InvalidResponse(..) => "Invalid response",
             RequestError::IoError(..) => "IO error",
             RequestError::ErrorCode(_, ref e) => &e[..],
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             RequestError::HyperError(_) => "Hyper Error",
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             RequestError::HttpError(_) => "Http Error",
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             RequestError::Utf8Error(_) => "UTF8 Error",
         }
     }
@@ -374,11 +374,11 @@ pub enum SearchError {
     Utf8Error(str::Utf8Error),
     /// XML processing error
     XmlError(xmltree::ParseError),
-    /// When using the async feature.
-    #[cfg(feature = "async")]
+    /// When using the aio feature.
+    #[cfg(feature = "aio")]
     HyperError(hyper::Error),
     /// Error parsing URI
-    #[cfg(feature = "async")]
+    #[cfg(feature = "aio")]
     InvalidUri(hyper::http::uri::InvalidUri),
 }
 
@@ -406,20 +406,20 @@ impl From<xmltree::ParseError> for SearchError {
     }
 }
 
-#[cfg(feature = "async")]
+#[cfg(feature = "aio")]
 impl From<hyper::Error> for SearchError {
     fn from(err: hyper::Error) -> SearchError {
         SearchError::HyperError(err)
     }
 }
 
-#[cfg(feature = "async")]
+#[cfg(feature = "aio")]
 impl From<hyper::http::uri::InvalidUri> for SearchError {
     fn from(err: hyper::http::uri::InvalidUri) -> SearchError {
         SearchError::InvalidUri(err)
     }
 }
-#[cfg(feature = "async")]
+#[cfg(feature = "aio")]
 impl From<tokio::timer::timeout::Error<SearchError>> for SearchError {
     fn from(err: tokio::timer::timeout::Error<SearchError>) -> SearchError {
         if err.is_inner() {
@@ -438,9 +438,9 @@ impl fmt::Display for SearchError {
             SearchError::IoError(ref e) => write!(f, "IO error: {}", e),
             SearchError::Utf8Error(ref e) => write!(f, "UTF-8 error: {}", e),
             SearchError::XmlError(ref e) => write!(f, "XML error: {}", e),
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             SearchError::HyperError(ref e) => write!(f, "Hyper Error: {}", e),
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             SearchError::InvalidUri(ref e) => write!(f, "InvalidUri Error: {}", e),
         }
     }
@@ -454,9 +454,9 @@ impl error::Error for SearchError {
             SearchError::IoError(ref e) => Some(e),
             SearchError::Utf8Error(ref e) => Some(e),
             SearchError::XmlError(ref e) => Some(e),
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             SearchError::HyperError(ref e) => Some(e),
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             SearchError::InvalidUri(ref e) => Some(e),
         }
     }
@@ -468,9 +468,9 @@ impl error::Error for SearchError {
             SearchError::IoError(..) => "IO error",
             SearchError::Utf8Error(..) => "UTF-8 error",
             SearchError::XmlError(..) => "XML error",
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             SearchError::HyperError(..) => "Hyper Error",
-            #[cfg(feature = "async")]
+            #[cfg(feature = "aio")]
             SearchError::InvalidUri(_) => "Invalid URI Error"
         }
     }
