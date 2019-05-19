@@ -1,6 +1,5 @@
-use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
+use std::net::{SocketAddr};
 use std::str;
-use std::time::Duration;
 use std::collections::HashMap;
 
 use futures::prelude::*;
@@ -14,31 +13,10 @@ use tokio::net::UdpSocket;
 use bytes::Bytes;
 
 use aio::Gateway;
-use common::{messages, parsing};
+use common::{messages, parsing, SearchOptions};
 use errors::SearchError;
 
 const MAX_RESPONSE_SIZE: usize = 1500;
-
-/// Gateway search configuration
-/// SearchOptions::default() should suffice for most situations
-pub struct SearchOptions {
-    /// Bind address for UDP socket (defaults to all `0.0.0.0`)
-    pub bind_addr: SocketAddr,
-    /// Broadcast address for discovery packets (defaults to `239.255.255.250:1900`)
-    pub broadcast_address: SocketAddr,
-    /// Timeout for a search iteration (defaults to 10s)
-    pub timeout: Option<Duration>,
-}
-
-impl Default for SearchOptions {
-    fn default() -> Self {
-        Self {
-            bind_addr: SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), 0)),
-            broadcast_address: "239.255.255.250:1900".parse().unwrap(),
-            timeout: Some(Duration::from_secs(10)),
-        }
-    }
-}
 
 /// Search for a gateway with the provided options
 pub fn search_gateway(options: SearchOptions) -> impl Future<Item=Gateway, Error=SearchError> {

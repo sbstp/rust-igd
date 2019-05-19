@@ -16,7 +16,7 @@ extern crate simplelog;
 use std::env;
 use std::net::SocketAddrV4;
 
-use igd::aio::{search_gateway, SearchOptions};
+use igd::aio::{search_gateway};
 use igd::PortMappingProtocol;
 use futures::future::Future;
 use simplelog::{SimpleLogger, LevelFilter, Config as LogConfig};
@@ -37,7 +37,7 @@ fn main() {
     let _ = SimpleLogger::init(LevelFilter::Debug, LogConfig::default());
 
     let f = futures::lazy(move || {
-        search_gateway(SearchOptions::default())
+        search_gateway(Default::default())
         .map_err(|e| panic!("Failed to find IGD: {}", e))
         .and_then(move |gateway| gateway.get_external_ip()
             .map_err(|e| panic!("Failed to get external IP: {}", e))

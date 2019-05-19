@@ -28,12 +28,10 @@ extern crate tokio_retry;
 // data structures
 pub use self::errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError, SearchError};
 pub use self::gateway::Gateway;
+pub use self::common::SearchOptions;
 
 // search of gateway
 pub use self::search::search_gateway;
-pub use self::search::search_gateway_from;
-pub use self::search::search_gateway_from_timeout;
-pub use self::search::search_gateway_timeout;
 
 #[cfg(feature = "aio")]
 pub mod aio;

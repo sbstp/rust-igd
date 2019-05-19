@@ -4,7 +4,7 @@ use std::env;
 extern crate igd;
 
 fn main() {
-    match igd::search_gateway() {
+    match igd::search_gateway(Default::default()) {
         Err(ref err) => match *err {
             igd::SearchError::IoError(ref ioe) => println!("IoError: {}", ioe),
             _ => println!("{:?}", err),

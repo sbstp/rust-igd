@@ -1,49 +1,35 @@
-use std::net::{Ipv4Addr, SocketAddrV4, UdpSocket};
+use std::net::{SocketAddrV4, UdpSocket};
 use std::str;
-use std::time::Duration;
 
-use common::{messages, parsing};
+use common::{messages, parsing, SearchOptions};
 use errors::SearchError;
 use gateway::Gateway;
 
-/// Search gateway, bind to all interfaces and use a timeout of 3 seconds.
+/// Search gateway, using the given `SearchOptions`.
 ///
-/// Bind to all interfaces.
-/// The request will timeout after 3 seconds.
-pub fn search_gateway() -> Result<Gateway, SearchError> {
-    search_gateway_timeout(Duration::from_secs(3))
-}
-
-/// Search gateway, bind to all interfaces and use the given duration for the timeout.
+/// The default `SearchOptions` should suffice in most cases.
+/// It can be created with `Default::default()` or `SearchOptions::default()`.
 ///
-/// Bind to all interfaces.
-/// The request will timeout after the given duration.
-pub fn search_gateway_timeout(timeout: Duration) -> Result<Gateway, SearchError> {
-    search_gateway_from_timeout(Ipv4Addr::new(0, 0, 0, 0), timeout)
-}
+/// # Example
+/// ```norun
+/// # use igd::{search_gateway, SearchOptions, SearchError};
+/// # fn main() -> Result<(), SearchError> {
+///     let gateway = search_gateway(Default::default())?;
+///     let ip = gateway.get_external_ip()?;
+///     println!("External IP address: {}", ip);
+/// #   Ok(())
+/// # }
+/// ```
+pub fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
+    let socket = UdpSocket::bind(options.bind_addr)?;
+    socket.set_read_timeout(options.timeout)?;
 
-/// Search gateway, bind to the given interface and use a time of 3 seconds.
-///
-/// Bind to the given interface.
-/// The request will timeout after 3 seconds.
-pub fn search_gateway_from(ip: Ipv4Addr) -> Result<Gateway, SearchError> {
-    search_gateway_from_timeout(ip, Duration::from_secs(3))
-}
+    socket.send_to(messages::SEARCH_REQUEST.as_bytes(), options.broadcast_address)?;
 
-/// Search gateway, bind to the given interface and use the given duration for the timeout.
-///
-/// Bind to the given interface.
-/// The request will timeout after the given duration.
-pub fn search_gateway_from_timeout(ip: Ipv4Addr, timeout: Duration) -> Result<Gateway, SearchError> {
-    let addr = SocketAddrV4::new(ip, 0);
-    let socket = try!(UdpSocket::bind(addr));
-    try!(socket.set_read_timeout(Some(timeout)));
-
-    try!(socket.send_to(messages::SEARCH_REQUEST.as_bytes(), "239.255.255.250:1900",));
     loop {
-        let mut buf = [0u8; 1024];
-        let (read, _) = try!(socket.recv_from(&mut buf));
-        let text = try!(str::from_utf8(&buf[..read]));
+        let mut buf = [0u8; 1500];
+        let (read, _) = socket.recv_from(&mut buf)?;
+        let text = str::from_utf8(&buf[..read])?;
 
         let location = parsing::parse_search_result(text)?;
         if let Ok(control_url) = get_control_url(&location) {

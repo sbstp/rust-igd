@@ -1,5 +1,8 @@
 pub mod messages;
 pub mod parsing;
+pub mod options;
+
+pub use self::options::SearchOptions;
 
 use rand;
 use rand::distributions::IndependentSample;

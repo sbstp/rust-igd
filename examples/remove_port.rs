@@ -1,7 +1,7 @@
 extern crate igd;
 
 fn main() {
-    match igd::search_gateway() {
+    match igd::search_gateway(Default::default()) {
         Err(ref err) => println!("Error: {}", err),
         Ok(gateway) => {
             match gateway.remove_port(igd::PortMappingProtocol::TCP, 80) {

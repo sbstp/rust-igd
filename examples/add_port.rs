@@ -3,7 +3,7 @@ use std::net::{SocketAddrV4, Ipv4Addr};
 extern crate igd;
 
 fn main() {
-    match igd::search_gateway() {
+    match igd::search_gateway(Default::default()) {
         Err(ref err) => println!("Error: {}", err),
         Ok(gateway) => {
             let local_addr = match std::env::args().nth(1) {
