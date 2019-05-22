@@ -11,7 +11,7 @@ use gateway::Gateway;
 /// It can be created with `Default::default()` or `SearchOptions::default()`.
 ///
 /// # Example
-/// ```norun
+/// ```no_run
 /// # use igd::{search_gateway, SearchOptions, SearchError};
 /// # fn main() -> Result<(), SearchError> {
 ///     let gateway = search_gateway(Default::default())?;
