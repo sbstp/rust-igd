@@ -475,3 +475,97 @@ impl error::Error for SearchError {
         }
     }
 }
+
+/// An error type that emcompasses all possible errors.
+#[derive(Debug)]
+pub enum Error {
+    /// `AddAnyPortError`
+    AddAnyPortError(AddAnyPortError),
+    /// `AddPortError`
+    AddPortError(AddPortError),
+    /// `GetExternalIpError`
+    GetExternalIpError(GetExternalIpError),
+    /// `RemovePortError`
+    RemovePortError(RemovePortError),
+    /// `RequestError`
+    RequestError(RequestError),
+    /// `SearchError`
+    SearchError(SearchError),
+}
+
+/// A result type where the error is `igd::Error`.
+pub type Result<T = ()> = std::result::Result<T, Error>;
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Error::AddAnyPortError(ref e) => e.fmt(f),
+            Error::AddPortError(ref e) => e.fmt(f),
+            Error::GetExternalIpError(ref e) => e.fmt(f),
+            Error::RemovePortError(ref e) => e.fmt(f),
+            Error::RequestError(ref e) => e.fmt(f),
+            Error::SearchError(ref e) => e.fmt(f),
+        }
+    }
+}
+
+impl error::Error for Error {
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            Error::AddAnyPortError(ref e) => Some(e),
+            Error::AddPortError(ref e) => Some(e),
+            Error::GetExternalIpError(ref e) => Some(e),
+            Error::RemovePortError(ref e) => Some(e),
+            Error::RequestError(ref e) => Some(e),
+            Error::SearchError(ref e) => Some(e),
+        }
+    }
+
+    fn description(&self) -> &str {
+        match *self {
+            Error::AddAnyPortError(ref e) => e.description(),
+            Error::AddPortError(ref e) => e.description(),
+            Error::GetExternalIpError(ref e) => e.description(),
+            Error::RemovePortError(ref e) => e.description(),
+            Error::RequestError(ref e) => e.description(),
+            Error::SearchError(ref e) => e.description(),
+        }
+    }
+}
+
+impl From<AddAnyPortError> for Error {
+    fn from(err: AddAnyPortError) -> Error {
+        Error::AddAnyPortError(err)
+    }
+}
+
+impl From<AddPortError> for Error {
+    fn from(err: AddPortError) -> Error {
+        Error::AddPortError(err)
+    }
+}
+
+impl From<GetExternalIpError> for Error {
+    fn from(err: GetExternalIpError) -> Error {
+        Error::GetExternalIpError(err)
+    }
+}
+
+impl From<RemovePortError> for Error {
+    fn from(err: RemovePortError) -> Error {
+        Error::RemovePortError(err)
+    }
+}
+
+impl From<RequestError> for Error {
+    fn from(err: RequestError) -> Error {
+        Error::RequestError(err)
+    }
+}
+
+impl From<SearchError> for Error {
+    fn from(err: SearchError) -> Error {
+        Error::SearchError(err)
+    }
+}
+

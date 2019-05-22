@@ -12,13 +12,14 @@ use gateway::Gateway;
 ///
 /// # Example
 /// ```no_run
-/// # use igd::{search_gateway, SearchOptions, SearchError};
-/// # fn main() -> Result<(), SearchError> {
+/// use igd::{search_gateway, SearchOptions, Result};
+///
+/// fn main() -> Result {
 ///     let gateway = search_gateway(Default::default())?;
 ///     let ip = gateway.get_external_ip()?;
 ///     println!("External IP address: {}", ip);
-/// #   Ok(())
-/// # }
+///     Ok(())
+/// }
 /// ```
 pub fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
     let socket = UdpSocket::bind(options.bind_addr)?;
