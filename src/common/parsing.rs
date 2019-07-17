@@ -49,6 +49,7 @@ fn parse_control_url_scan_device(device: &Element) -> Result<String, SearchError
         if service.name == "service" {
             if let Some(service_type) = service.get_child("serviceType") {
                 if service_type.text.as_ref().map(|s| s.as_str())
+                    == Some("urn:schemas-upnp-org:service:WANPPPConnection:1") || service_type.text.as_ref().map(|s| s.as_str())
                     == Some("urn:schemas-upnp-org:service:WANIPConnection:1")
                 {
                     if let Some(control_url) = service.get_child("controlURL") {
