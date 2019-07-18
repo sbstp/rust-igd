@@ -150,7 +150,7 @@ impl Future for SearchFuture {
 
                 match addr {
                     SocketAddr::V4(a) => {
-                        let g = Gateway::new(*a, url[0]);
+                        let g = Gateway::new(*a, url[0].clone());
                         return Ok(Async::Ready(g));
                     }
                     _ => warn!("unsupported IPv6 gateway response from addr: {}", addr),
