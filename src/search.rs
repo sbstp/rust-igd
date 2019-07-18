@@ -87,8 +87,8 @@ fn get_control_url(location: &(SocketAddrV4, String)) -> Result<Vec<String>, Sea
     res
 }
 
-#[test]
-fn test_get_control_urls(){
-    // This test will fail if upnp is disabled on the default interface ( default gateway )
-    assert_eq!(get_control_urls(SearchOptions::default()).unwrap().len() > 0, true);
-}
+// #[test]
+// fn test_get_control_urls(){
+//     // This test will fail if upnp is disabled on the default interface ( default gateway )
+//     assert_eq!(get_control_urls(SearchOptions::default()).unwrap().len() > 0, true);
+// }
