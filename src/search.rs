@@ -53,14 +53,12 @@ pub fn get_control_urls(options: SearchOptions) -> Result<Vec<String>, SearchErr
     socket.set_read_timeout(options.timeout)?;
 
     socket.send_to(messages::SEARCH_REQUEST.as_bytes(), options.broadcast_address)?;
-
     loop {
         let mut buf = [0u8; 1500];
         let (read, _) = socket.recv_from(&mut buf)?;
         let text = str::from_utf8(&buf[..read])?;
-
+    
         let location = parsing::parse_search_result(text)?;
-
         if let Ok(control_url) = get_control_url(&location) {
             if control_url.len() > 0{
                 return Ok(control_url);
