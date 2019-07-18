@@ -90,7 +90,7 @@ impl SearchFuture {
     }
 
     // Process a control response to extract the control URL
-    fn handle_control_resp(addr: SocketAddr, resp: Bytes) -> Result<String, SearchError> {
+    fn handle_control_resp(addr: SocketAddr, resp: Bytes) -> Result<Vec<String>, SearchError> {
         debug!("handling control response from: {}", addr);
 
         // Create a cursor over the response data
