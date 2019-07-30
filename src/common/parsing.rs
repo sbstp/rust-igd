@@ -29,7 +29,7 @@ pub fn parse_search_result(text: &str) -> Result<(SocketAddrV4, String), SearchE
     Err(InvalidResponse)
 }
 
-pub fn parse_control_url<R>(resp: R) -> Result<String, SearchError>
+pub fn parse_control_url<R>(resp: R) -> Result<Vec<String>, SearchError>
 where
     R: io::Read,
 {
@@ -43,18 +43,17 @@ where
     return Err(SearchError::InvalidResponse);
 }
 
-fn parse_control_url_scan_device(device: &Element) -> Result<String, SearchError> {
+fn parse_control_url_scan_device(device: &Element) -> Result<Vec<String>, SearchError> {
     let service_list = device.get_child("serviceList").ok_or(SearchError::InvalidResponse)?;
+    let mut urls: Vec<String> = Vec::new();
     for service in &service_list.children {
         if service.name == "service" {
             if let Some(service_type) = service.get_child("serviceType") {
-                if service_type.text.as_ref().map(|s| s.as_str())
-                    == Some("urn:schemas-upnp-org:service:WANPPPConnection:1") || service_type.text.as_ref().map(|s| s.as_str())
-                    == Some("urn:schemas-upnp-org:service:WANIPConnection:1")
+                if service_type.text.as_ref().map(|s| s.as_str()).unwrap().contains("Connection")
                 {
                     if let Some(control_url) = service.get_child("controlURL") {
                         if let Some(text) = &control_url.text {
-                            return Ok(text.clone());
+                            return Ok(vec![text.clone()]);
                         }
                     }
                 }
@@ -66,12 +65,12 @@ fn parse_control_url_scan_device(device: &Element) -> Result<String, SearchError
     for sub_device in &device_list.children {
         if sub_device.name == "device" {
             if let Ok(control_url) = parse_control_url_scan_device(&sub_device) {
-                return Ok(control_url);
+                urls.extend(control_url);   // Need to look at this some more.          
             }
         }
     }
-
-    return Err(SearchError::InvalidResponse);
+    
+    return Ok(urls); // Assume nothing went wrong if this line is reached.
 }
 
 pub struct RequestReponse {
@@ -299,6 +298,6 @@ fn test_parse_device1() {
       <presentationURL>http://192.168.0.1/</presentationURL>
    </device>
 </root>"#;
-
-    assert_eq!(parse_control_url(text.as_bytes()).unwrap(), "/ctl/IPConn");
+    let urls = parse_control_url(text.as_bytes()).unwrap();
+    assert_eq!(urls.len() > 0, true);
 }

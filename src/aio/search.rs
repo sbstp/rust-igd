@@ -90,7 +90,7 @@ impl SearchFuture {
     }
 
     // Process a control response to extract the control URL
-    fn handle_control_resp(addr: SocketAddr, resp: Bytes) -> Result<String, SearchError> {
+    fn handle_control_resp(addr: SocketAddr, resp: Bytes) -> Result<Vec<String>, SearchError> {
         debug!("handling control response from: {}", addr);
 
         // Create a cursor over the response data
@@ -145,12 +145,12 @@ impl Future for SearchFuture {
 
             // Handle any responses
             if let Ok(url) = Self::handle_control_resp(*addr, resp) {
-                debug!("received control url from: {} (url: {})", addr, url);
-                *state = SearchState::Done(url.clone());
+                debug!("received control url from: {} (url: {:?})", addr, url);
+                *state = SearchState::Done(url[0].clone());
 
                 match addr {
                     SocketAddr::V4(a) => {
-                        let g = Gateway::new(*a, url);
+                        let g = Gateway::new(*a, url[0].clone());
                         return Ok(Async::Ready(g));
                     }
                     _ => warn!("unsupported IPv6 gateway response from addr: {}", addr),
