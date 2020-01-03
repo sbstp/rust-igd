@@ -4,7 +4,7 @@ use std::net::{Ipv4Addr, SocketAddrV4};
 use url::Url;
 use xmltree::Element;
 
-use errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError, SearchError};
+use crate::errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError, SearchError};
 
 // Parse the result.
 pub fn parse_search_result(text: &str) -> Result<(SocketAddrV4, String), SearchError> {

@@ -8,27 +8,22 @@
 //! If everything works fine, 2 port mappings are added, 1 removed and we're left with single
 //! port mapping: External 1234 ---> 4321 Internal
 
-extern crate igd;
-extern crate futures;
-extern crate tokio;
-extern crate simplelog;
-
 use std::env;
 use std::net::SocketAddrV4;
 
 use igd::aio::{search_gateway};
 use igd::PortMappingProtocol;
-use futures::future::Future;
 use simplelog::{SimpleLogger, LevelFilter, Config as LogConfig};
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let ip = match env::args().nth(1) {
         Some(ip) => ip,
         None => {
             println!("Local socket address is missing!");
             println!("This example requires a socket address representing the local machine and the port to bind to as an argument");
-            println!("Example: target/debug/examples/async 192.168.0.198:4321");
-            println!("Example: cargo run --features async --example async -- 192.168.0.198:4321");
+            println!("Example: target/debug/examples/io 192.168.0.198:4321");
+            println!("Example: cargo run --features aio --example aio -- 192.168.0.198:4321");
             return;
         }
     };
@@ -36,52 +31,28 @@ fn main() {
 
     let _ = SimpleLogger::init(LevelFilter::Debug, LogConfig::default());
 
-    let f = futures::lazy(move || {
-        search_gateway(Default::default())
-        .map_err(|e| panic!("Failed to find IGD: {}", e))
-        .and_then(move |gateway| gateway.get_external_ip()
-            .map_err(|e| panic!("Failed to get external IP: {}", e))
-            .and_then(|ip| Ok((gateway, ip)))
-        )
-        .and_then(|(gateway, pub_ip)| {
-            println!("Our public IP: {}", pub_ip);
-            Ok(gateway)
-        })
-        .and_then(move |gateway| {
-            gateway.add_port(
-                PortMappingProtocol::TCP,
-                1234,
-                ip,
-                120,
-                "rust-igd-async-example",
-            )
-            .map_err(|e| panic!("Failed to add port mapping: {}", e))
-            .and_then(|_| {
-                println!("New port mapping was successfully added.");
-                Ok(gateway)
-            })
-        })
-        .and_then(move |gateway| {
-            gateway.add_port(
-                PortMappingProtocol::TCP,
-                2345,
-                ip,
-                120,
-                "rust-igd-async-example",
-            )
-            .map_err(|e| panic!("Failed to add port mapping: {}", e))
-            .and_then(|_| {
-                println!("New port mapping was successfully added.");
-                Ok(gateway)
-            })
-        })
-        .and_then(|gateway| gateway.remove_port(PortMappingProtocol::TCP, 2345))
-        .and_then(|_| {
-            println!("Port was removed.");
-            Ok(())
-        })
+    let gateway = match search_gateway(Default::default()).await {
+        Ok(g) => g,
+        Err(err) => return println!("Faild to find IGD: {}", err)
+    };
+    let pub_ip = match gateway.get_external_ip().await {
+        Ok(ip) => ip,
+        Err(err) => return println!("Failed to get external IP: {}", err)
+    };
+    println!("Our public IP is {}", pub_ip);
+    if let Err(e) = gateway.add_port(PortMappingProtocol::TCP, 1234, ip, 120, "rust-igd-async-example").await {
+        println!("Failed to add port mapping: {}", e);
+    }
+    println!("New port mapping was successfully added.");
 
-    }).map(|_| () ).map_err(|_| () );
+    if let Err(e) = gateway.add_port(PortMappingProtocol::TCP, 2345, ip, 120, "rust-igd-async-example").await {
+        println!("Failed to add port mapping: {}", e);
+    }
+    println!("New port mapping was successfully added.");
 
-    tokio::run(f);
+    if gateway.remove_port(PortMappingProtocol::TCP, 2345).await.is_err() {
+        println!("Port mapping was not successfully removed");
+    } else {
+        println!("Port was removed.");
+    }
 }

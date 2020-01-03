@@ -1,9 +1,9 @@
 use std::net::{SocketAddrV4, UdpSocket};
 use std::str;
 
-use common::{messages, parsing, SearchOptions};
-use errors::SearchError;
-use gateway::Gateway;
+use crate::common::{messages, parsing, SearchOptions};
+use crate::errors::SearchError;
+use crate::gateway::Gateway;
 
 /// Search gateway, using the given `SearchOptions`.
 ///

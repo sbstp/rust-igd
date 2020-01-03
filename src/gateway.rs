@@ -3,12 +3,9 @@ use std::net::{Ipv4Addr, SocketAddrV4};
 
 use attohttpc;
 
-use common;
-use common::messages;
-use common::parsing::{self, RequestResult};
-use errors::RequestError;
-use errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError};
-use PortMappingProtocol;
+use crate::common::{self, messages, parsing, parsing::RequestResult};
+use crate::errors::{RequestError, AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError};
+use crate::PortMappingProtocol;
 
 /// This structure represents a gateway found by the search functions.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

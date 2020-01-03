@@ -1,5 +1,5 @@
 use std::net::SocketAddrV4;
-use PortMappingProtocol;
+use crate::PortMappingProtocol;
 
 // Content of the request.
 pub const SEARCH_REQUEST: &'static str = "M-SEARCH * HTTP/1.1\r

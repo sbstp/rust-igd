@@ -3,18 +3,10 @@ use std::hash::{Hash, Hasher};
 use std::net::{Ipv4Addr, SocketAddrV4};
 
 use super::soap;
-use errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError};
-use futures::future;
-use futures::Future;
+use crate::errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError};
 
-
-use tokio_retry::strategy::FixedInterval;
-use tokio_retry::{Error as RetryError, RetryIf};
-
-use common;
-use common::parsing::RequestReponse;
-use common::{messages, parsing};
-use PortMappingProtocol;
+use crate::common::{self, parsing::RequestReponse, messages, parsing};
+use crate::PortMappingProtocol;
 
 /// This structure represents a gateway found by the search functions.
 #[derive(Clone, Debug)]
@@ -34,30 +26,26 @@ impl Gateway {
         }
     }
 
-    fn perform_request(
+    async fn perform_request(
         &self,
         header: &str,
         body: &str,
         ok: &str,
-    ) -> Box<Future<Item = RequestReponse, Error = RequestError> + Send> {
+    ) -> Result<RequestReponse, RequestError> {
         let url = format!("{}", self);
-        let ok = ok.to_owned();
-        let future = soap::send_async(&url, soap::Action::new(header), body)
-            .map_err(|err| RequestError::from(err))
-            .and_then(move |text| parsing::parse_response(text, &ok));
-        Box::new(future)
+        let text = soap::send_async(&url, soap::Action::new(header), body).await?;
+        parsing::parse_response(text, ok)
     }
 
     /// Get the external IP address of the gateway in a tokio compatible way
-    pub fn get_external_ip(&self) -> Box<Future<Item = Ipv4Addr, Error = GetExternalIpError> + Send> {
-        let future = self
+    pub async fn get_external_ip(&self) -> Result<Ipv4Addr, GetExternalIpError> {
+        let result = self
             .perform_request(
                 messages::GET_EXTERNAL_IP_HEADER,
                 &messages::format_get_external_ip_message(),
                 "GetExternalIPAddressResponse",
-            )
-            .then(|result| parsing::parse_get_external_ip_response(result));
-        Box::new(future)
+            ).await;
+        parsing::parse_get_external_ip_response(result)
     }
 
     /// Get an external socket address with our external ip and any port. This is a convenience
@@ -69,24 +57,17 @@ impl Gateway {
     /// # Returns
     ///
     /// The external address that was mapped on success. Otherwise an error.
-    pub fn get_any_address(
+    pub async fn get_any_address(
         &self,
         protocol: PortMappingProtocol,
         local_addr: SocketAddrV4,
         lease_duration: u32,
         description: &str,
-    ) -> Box<Future<Item = SocketAddrV4, Error = AddAnyPortError> + Send> {
+    ) -> Result<SocketAddrV4, AddAnyPortError> {
         let description = description.to_owned();
-        let gateway = self.clone();
-        let future = self
-            .get_external_ip()
-            .map_err(|err| AddAnyPortError::from(err))
-            .and_then(move |ip| {
-                gateway
-                    .add_any_port(protocol, local_addr, lease_duration, &description)
-                    .and_then(move |port| Ok(SocketAddrV4::new(ip, port)))
-            });
-        Box::new(future)
+        let ip = self.get_external_ip().await?;
+        let port  = self.add_any_port(protocol, local_addr, lease_duration, &description).await?;
+        Ok(SocketAddrV4::new(ip, port))
     }
 
     /// Add a port mapping.with any external port.
@@ -97,13 +78,13 @@ impl Gateway {
     /// # Returns
     ///
     /// The external port that was mapped on success. Otherwise an error.
-    pub fn add_any_port(
+    pub async fn add_any_port(
         &self,
         protocol: PortMappingProtocol,
         local_addr: SocketAddrV4,
         lease_duration: u32,
         description: &str,
-    ) -> Box<Future<Item = u16, Error = AddAnyPortError> + Send> {
+    ) -> Result<u16, AddAnyPortError> {
         // This function first attempts to call AddAnyPortMapping on the IGD with a random port
         // number. If that fails due to the method being unknown it attempts to call AddPortMapping
         // instead with a random port number. If that fails due to ConflictInMappingEntry it retrys
@@ -111,7 +92,7 @@ impl Gateway {
         // it retrys once with the same port values.
 
         if local_addr.port() == 0 {
-            return Box::new(future::err(AddAnyPortError::InternalPortZeroInvalid));
+            return Err(AddAnyPortError::InternalPortZeroInvalid);
         }
 
         let external_port = common::random_port();
@@ -120,7 +101,7 @@ impl Gateway {
         let description = description.to_owned();
 
         // First, attempt to call the AddAnyPortMapping method.
-        let future = self
+        let resp = self
             .perform_request(
                 messages::ADD_ANY_PORT_MAPPING_HEADER,
                 &messages::format_add_any_port_mapping_message(
@@ -131,97 +112,81 @@ impl Gateway {
                     &description,
                 ),
                 "AddAnyPortMappingResponse",
-            )
-            .then(
-                move |result| match parsing::parse_add_any_port_mapping_response(result) {
-                    Ok(port) => Box::new(future::ok(port)),
-                    Err(None) => {
-                        // The router does not have the AddAnyPortMapping method.
-                        // Fall back to using AddPortMapping with a random port.
-                        gateway.retry_add_random_port_mapping(protocol, local_addr, lease_duration, &description)
-                    }
-                    Err(Some(err)) => Box::new(future::err(err)),
-                },
-            );
-        Box::new(future)
+            ).await;
+        match parsing::parse_add_any_port_mapping_response(resp) {
+            Ok(port) => Ok(port),
+            Err(None) => {
+                // The router does not have the AddAnyPortMapping method.
+                // Fall back to using AddPortMapping with a random port.
+                gateway.retry_add_random_port_mapping(protocol, local_addr, lease_duration, &description).await
+            }
+            Err(Some(err)) => Err(err),
+        }
     }
 
-    fn retry_add_random_port_mapping(
+    async fn retry_add_random_port_mapping(
         &self,
         protocol: PortMappingProtocol,
         local_addr: SocketAddrV4,
         lease_duration: u32,
         description: &str,
-    ) -> Box<Future<Item = u16, Error = AddAnyPortError> + Send> {
-        let description = description.to_owned();
-        let gateway = self.clone();
-
-        let retry_strategy = FixedInterval::from_millis(0).take(20);
-
-        let future = RetryIf::spawn(
-            retry_strategy,
-            move || gateway.add_random_port_mapping(protocol, local_addr, lease_duration, &description),
-            |err: &AddAnyPortError| match err {
-                &AddAnyPortError::NoPortsAvailable => true,
-                _ => false,
-            },
-        )
-        .map_err(|err| match err {
-            RetryError::OperationError(e) => e,
-            RetryError::TimerError(io_error) => AddAnyPortError::from(RequestError::from(io_error)),
-        });
-
-        Box::new(future)
+    ) -> Result<u16, AddAnyPortError> {
+        for _ in 0u8..20u8 {
+            match self.add_random_port_mapping(protocol, local_addr, lease_duration, &description).await {
+                Ok(port) => return Ok(port),
+                Err(AddAnyPortError::NoPortsAvailable) => continue,
+                e => return e,
+            }
+        }
+        Err(AddAnyPortError::NoPortsAvailable)
     }
 
-    fn add_random_port_mapping(
+    async fn add_random_port_mapping(
         &self,
         protocol: PortMappingProtocol,
         local_addr: SocketAddrV4,
         lease_duration: u32,
         description: &str,
-    ) -> Box<Future<Item = u16, Error = AddAnyPortError> + Send> {
+    ) -> Result<u16, AddAnyPortError> {
         let description = description.to_owned();
         let gateway = self.clone();
 
         let external_port = common::random_port();
-
-        let future = self
-            .add_port_mapping(protocol, external_port, local_addr, lease_duration, &description)
-            .map(move |_| external_port)
-            .or_else(move |err| match parsing::convert_add_random_port_mapping_error(err) {
-                Some(err) => Box::new(future::err(err)),
-                // The router requires that internal and external ports be the same.
-                None => gateway.add_same_port_mapping(protocol, local_addr, lease_duration, &description),
-            });
-
-        Box::new(future)
+        let res = self.add_port_mapping(protocol, external_port, local_addr, lease_duration, &description).await;
+        
+        match res {
+            Ok(_) => Ok(external_port),
+            Err(err) => match parsing::convert_add_random_port_mapping_error(err) {
+                Some(err) => Err(err),
+                None => gateway.add_same_port_mapping(protocol, local_addr, lease_duration, &description).await
+            }
+        }
     }
 
-    fn add_same_port_mapping(
+    async fn add_same_port_mapping(
         &self,
         protocol: PortMappingProtocol,
         local_addr: SocketAddrV4,
         lease_duration: u32,
         description: &str,
-    ) -> Box<Future<Item = u16, Error = AddAnyPortError> + Send> {
-        let future = self
-            .add_port_mapping(protocol, local_addr.port(), local_addr, lease_duration, description)
-            .map(move |_| local_addr.port())
-            .map_err(|err| parsing::convert_add_same_port_mapping_error(err));
-
-        Box::new(future)
+    ) -> Result<u16, AddAnyPortError> {
+        let res = self
+            .add_port_mapping(protocol, local_addr.port(), local_addr, lease_duration, description).await;
+        match res {
+            Ok(_) => Ok(local_addr.port()),
+            Err(err) => Err(parsing::convert_add_same_port_mapping_error(err))
+        }
     }
 
-    fn add_port_mapping(
+    async fn add_port_mapping(
         &self,
         protocol: PortMappingProtocol,
         external_port: u16,
         local_addr: SocketAddrV4,
         lease_duration: u32,
         description: &str,
-    ) -> Box<Future<Item = (), Error = RequestError> + Send> {
-        let future = self
+    ) -> Result<(), RequestError> {
+        self
             .perform_request(
                 messages::ADD_PORT_MAPPING_HEADER,
                 &messages::format_add_port_mapping_message(
@@ -232,52 +197,49 @@ impl Gateway {
                     description,
                 ),
                 "AddPortMappingResponse",
-            )
-            .map(|_| ());
-
-        Box::new(future)
+            ).await?;
+        Ok(())
     }
 
     /// Add a port mapping.
     ///
     /// The local_addr is the address where the traffic is sent to.
     /// The lease_duration parameter is in seconds. A value of 0 is infinite.
-    pub fn add_port(
+    pub async fn add_port(
         &self,
         protocol: PortMappingProtocol,
         external_port: u16,
         local_addr: SocketAddrV4,
         lease_duration: u32,
         description: &str,
-    ) -> Box<Future<Item = (), Error = AddPortError> + Send> {
+    ) -> Result<(), AddPortError> {
         if external_port == 0 {
-            return Box::new(future::err(AddPortError::ExternalPortZeroInvalid));
+            return Err(AddPortError::ExternalPortZeroInvalid);
         }
         if local_addr.port() == 0 {
-            return Box::new(future::err(AddPortError::InternalPortZeroInvalid));
+            return Err(AddPortError::InternalPortZeroInvalid);
         }
 
-        let future = self
-            .add_port_mapping(protocol, external_port, local_addr, lease_duration, description)
-            .map_err(|err| parsing::convert_add_port_error(err));
-
-        Box::new(future)
+        let res = self.add_port_mapping(protocol, external_port, local_addr, lease_duration, description).await;
+        if let Err(err) = res {
+            return Err(parsing::convert_add_port_error(err));
+        };
+        Ok(())
     }
 
     /// Remove a port mapping.
-    pub fn remove_port(
+    pub async fn remove_port(
         &self,
         protocol: PortMappingProtocol,
         external_port: u16,
-    ) -> Box<Future<Item = (), Error = RemovePortError> + Send> {
-        let future = self
+    ) -> Result<(), RemovePortError> {
+        let res = self
             .perform_request(
                 messages::DELETE_PORT_MAPPING_HEADER,
                 &messages::format_delete_port_message(protocol, external_port),
                 "DeletePortMappingResponse",
-            )
-            .then(|result| parsing::parse_delete_port_mapping_response(result));
-        Box::new(future)
+            ).await;
+        parsing::parse_delete_port_mapping_response(res)
     }
 }
 
