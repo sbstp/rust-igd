@@ -26,7 +26,7 @@ pub async fn send_async(
         .uri(url)
         .method("POST")
         .header(HEADER_NAME, action.0)
-        .header(CONTENT_TYPE, "xml")
+        .header(CONTENT_TYPE, "text/xml")
         .header(CONTENT_LENGTH, body.len() as u64)
         .body(Body::from(body.to_string()))?;
 
