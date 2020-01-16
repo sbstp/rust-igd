@@ -4,7 +4,8 @@ use std::net::{Ipv4Addr, SocketAddrV4};
 use url::Url;
 use xmltree::Element;
 
-use crate::errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError, SearchError};
+use crate::PortMappingProtocol;
+use crate::errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, GetGenericPortMappingEntryError, RequestError, SearchError};
 
 // Parse the result.
 pub fn parse_search_result(text: &str) -> Result<(SocketAddrV4, String), SearchError> {
@@ -200,6 +201,52 @@ pub fn parse_delete_port_mapping_response(result: RequestResult) -> Result<(), R
             e => RemovePortError::RequestError(e),
         }),
     }
+}
+
+/// One port mapping entry as returned by GetGenericPortMappingEntry
+pub struct PortMappingEntry {
+    /// The remote host for which the mapping is valid
+    /// Can be an IP address or a host name
+    pub remote_host: String,
+    /// The external port of the mapping
+    pub external_port: u16,
+    /// The protocol of the mapping
+    pub protocol: PortMappingProtocol,
+    /// The internal (local) port
+    pub internal_port: u16,
+    /// The internal client of the port mapping
+    /// Can be an IP address or a host name
+    pub internal_client: String,
+    /// A flag whether this port mapping is enabled
+    pub enabled: bool,
+    /// A description for this port mapping
+    pub port_mapping_description: String,
+    /// The lease duration of this port mapping in seconds
+    pub lease_duration: u32,
+}
+
+pub fn parse_get_generic_port_mapping_entry(result: RequestResult) -> Result<PortMappingEntry, GetGenericPortMappingEntryError> {
+    let response = result?;
+    let xml = response.xml;
+    let make_err = |msg: String| || GetGenericPortMappingEntryError::RequestError(RequestError::InvalidResponse(msg));
+    let extract_field = |field: &str| xml.get_child(field).ok_or_else(make_err(format!("{} is missing", field)));
+    let remote_host = extract_field("NewRemoteHost")?.text.clone().unwrap_or("".into());
+    let external_port =  extract_field("NewExternalPort")?.text.as_ref().and_then(|t| t.parse::<u16>().ok()).ok_or_else(make_err("Field NewExternalPort is invalid".into()))?;
+    let protocol = match extract_field("NewProtocol")?.text.as_ref().map(String::as_ref) {
+        Some("UDP") => PortMappingProtocol::UDP,
+        Some("TCP") => PortMappingProtocol::TCP,
+        _ => return Err(GetGenericPortMappingEntryError::RequestError(RequestError::InvalidResponse("Field NewProtocol is invalid".into()))),
+    };
+    let internal_port = extract_field("NewInternalPort")?.text.as_ref().and_then(|t| t.parse::<u16>().ok()).ok_or_else(make_err("Field NewInternalPort is invalid".into()))?;
+    let internal_client = extract_field("NewInternalClient")?.text.clone().ok_or_else(make_err("Field NewInternalClient is empty".into()))?;
+    let enabled = match extract_field("NewEnabled")?.text.as_ref().and_then(|t| t.parse::<u16>().ok()).ok_or_else(make_err("Field Enabled is invalid".into()))? {
+        0 => false,
+        1 => true,
+        _ => return Err(GetGenericPortMappingEntryError::RequestError(RequestError::InvalidResponse("Field NewEnabled is invalid".into())))
+    };
+    let port_mapping_description = extract_field("NewPortMappingDescription")?.text.clone().unwrap_or("".into());
+    let lease_duration = extract_field("NewLeaseDuration")?.text.as_ref().and_then(|t| t.parse::<u32>().ok()).ok_or_else(make_err("Field NewLeaseDuration is invalid".into()))?;
+    Ok(PortMappingEntry{ remote_host, external_port, protocol, internal_port, internal_client, enabled, port_mapping_description, lease_duration })
 }
 
 #[test]

@@ -26,9 +26,10 @@ extern crate tokio;
 
 // data structures
 pub use self::errors::{Result, Error};
-pub use self::errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError, SearchError};
+pub use self::errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, GetGenericPortMappingEntryError, RequestError, SearchError};
 pub use self::gateway::Gateway;
 pub use self::common::SearchOptions;
+pub use self::common::parsing::PortMappingEntry;
 
 // search of gateway
 pub use self::search::search_gateway;

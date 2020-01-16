@@ -4,7 +4,7 @@ use std::net::{Ipv4Addr, SocketAddrV4};
 use attohttpc;
 
 use crate::common::{self, messages, parsing, parsing::RequestResult};
-use crate::errors::{RequestError, AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError};
+use crate::errors::{self, RequestError, AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError};
 use crate::PortMappingProtocol;
 
 /// This structure represents a gateway found by the search functions.
@@ -207,6 +207,19 @@ impl Gateway {
             messages::DELETE_PORT_MAPPING_HEADER,
             &messages::format_delete_port_message(protocol, external_port),
             "DeletePortMappingResponse",
+        ))
+    }
+
+    /// Get one port mapping entry
+    /// 
+    /// Gets one port mapping entry by its index.
+    /// Not all existing port mappings might be visible to this client.
+    /// If the index is out of bound, GetGenericPortMappingEntryError::SpecifiedArrayIndexInvalid will be returned
+    pub fn get_generic_port_mapping_entry(&self, index: u32) -> Result<parsing::PortMappingEntry, errors::GetGenericPortMappingEntryError> {
+        parsing::parse_get_generic_port_mapping_entry(self.perform_request(
+            messages::GET_GENERIC_PORT_MAPPING_ENTRY,
+            &messages::formate_get_generic_port_mapping_entry_message(index),
+            "GetGenericPortMappingEntryResponse"
         ))
     }
 }
