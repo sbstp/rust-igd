@@ -1,5 +1,5 @@
 use std::net::SocketAddrV4;
-use PortMappingProtocol;
+use crate::PortMappingProtocol;
 
 // Content of the request.
 pub const SEARCH_REQUEST: &'static str = "M-SEARCH * HTTP/1.1\r
@@ -21,12 +21,12 @@ pub const DELETE_PORT_MAPPING_HEADER: &'static str =
 
 pub fn format_get_external_ip_message() -> String {
     format!(r#"<?xml version="1.0"?>
-<SOAP-ENV:Envelope SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
-    <SOAP-ENV:Body>
+<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+    <s:Body>
         <m:GetExternalIPAddress xmlns:m="urn:schemas-upnp-org:service:WANIPConnection:1">
         </m:GetExternalIPAddress>
-    </SOAP-ENV:Body>
-</SOAP-ENV:Envelope>"#)
+    </s:Body>
+</s:Envelope>"#)
 }
 
 pub fn format_add_any_port_mapping_message(

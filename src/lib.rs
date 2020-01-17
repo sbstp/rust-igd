@@ -23,8 +23,6 @@ extern crate futures;
 extern crate hyper;
 #[cfg(feature = "aio")]
 extern crate tokio;
-#[cfg(feature = "aio")]
-extern crate tokio_retry;
 
 // data structures
 pub use self::errors::{Result, Error};

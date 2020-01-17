@@ -1,38 +1,35 @@
 use std::net::{SocketAddr};
 use std::str;
 use std::collections::HashMap;
+use std::task::{Poll,Context};
+use std::pin::Pin;
 
 use futures::prelude::*;
-use futures::{Future, Stream};
+use futures::{Future};
 
 use hyper::Client;
 
-use tokio::prelude::FutureExt;
 use tokio::net::UdpSocket;
+use tokio::time::timeout;
 
-use bytes::Bytes;
+use hyper::body::Bytes;
 
-use aio::Gateway;
-use common::{messages, parsing, SearchOptions};
-use errors::SearchError;
+use crate::aio::Gateway;
+use crate::common::{messages, parsing, SearchOptions};
+use crate::errors::SearchError;
 
 const MAX_RESPONSE_SIZE: usize = 1500;
 
 /// Search for a gateway with the provided options
-pub fn search_gateway(options: SearchOptions) -> impl Future<Item=Gateway, Error=SearchError> {
-    use futures::future::{err, Either::A, Either::B};
-
+pub async fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
     // Create socket for future calls
-    let socket = match UdpSocket::bind(&options.bind_addr) {
-        Ok(s) => s,
-        Err(e) => return  A(err(SearchError::from(e))),
-    };
+    let socket = UdpSocket::bind(&options.bind_addr).await?;
 
+    let search_future = SearchFuture::search(socket, options.broadcast_address).await?;
     // Create future and issue request
     match options.timeout {
-        Some(t) =>B(A(SearchFuture::search(socket, options.broadcast_address)
-            .and_then(|search| search ).timeout(t).map_err(|e| SearchError::from(e) ))),
-        _ =>B(B(SearchFuture::search(socket, options.broadcast_address).and_then(|search| search ))),
+        Some(t) => timeout(t, search_future).await?,
+        None => search_future.await
     }
 }
 
@@ -42,19 +39,17 @@ pub struct SearchFuture {
 }
 
 enum SearchState {
-    Connecting(Box<Future<Item=Bytes, Error=SearchError> + Send>),
+    Connecting(Pin<Box<dyn Future<Output=Result<Bytes, SearchError>> + Send>>),
     Done(String),
     Error,
 }
 
 impl SearchFuture {
     // Create a new search
-    fn search(socket: UdpSocket, addr: SocketAddr) -> impl Future<Item=SearchFuture, Error=SearchError> {
+    async fn search(mut socket: UdpSocket, addr: SocketAddr) -> Result<SearchFuture, SearchError> {
         debug!("sending broadcast request to: {} on interface: {:?}", addr, socket.local_addr());
-
-        socket.send_dgram(messages::SEARCH_REQUEST.as_bytes(), &addr)
-            .map(|(socket, _n)| SearchFuture{socket, pending: HashMap::new() })
-            .map_err(|e| SearchError::from(e) )
+        socket.send_to(messages::SEARCH_REQUEST.as_bytes(), &addr).await?;
+        Ok(SearchFuture{socket, pending: HashMap::new() })
     }
 
     // Handle a UDP response message
@@ -72,7 +67,7 @@ impl SearchFuture {
     }
 
     // Issue a control URL request over HTTP using the provided
-    fn request_control_url(addr: SocketAddr, path: String) -> Result<Box<Future<Item=Bytes, Error=SearchError> + Send>, SearchError> {
+    fn request_control_url(addr: SocketAddr, path: String) -> Result<Pin<Box<dyn Future<Output=Result<Bytes, SearchError>> + Send>>, SearchError> {
         let client = Client::new();
 
         let uri = match format!("http://{}{}", addr, path).parse() {
@@ -82,9 +77,8 @@ impl SearchFuture {
 
         debug!("requesting control url from: {}", uri);
 
-        Ok(Box::new(client.get(uri)
-            .and_then(|resp| resp.into_body().concat2() )
-            .map(|chunk| chunk.into_bytes() )
+        Ok(Box::pin(client.get(uri)
+            .and_then(|resp| hyper::body::to_bytes(resp.into_body()) )
             .map_err(|e| SearchError::from(e) )
         ))
     }
@@ -105,27 +99,32 @@ impl SearchFuture {
 
 
 impl Future for SearchFuture {
-    type Item=Gateway;
-    type Error=SearchError;
+    type Output = Result<Gateway,SearchError>;
 
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<Gateway,SearchError>> {
 
         // Poll for (and handle) incoming messages
         let mut buff = [0u8; MAX_RESPONSE_SIZE];
-        if let Async::Ready((n, from)) = self.socket.poll_recv_from(&mut buff)? {
+        let resp = self.socket.poll_recv_from(cx, &mut buff);
+        if let Poll::Ready(Ok((n, from))) = resp {
             // Try handle response messages
             if let Ok((addr, path)) = Self::handle_broadcast_resp(from, &buff[0..n]) {
                 if !self.pending.contains_key(&addr) {
                     debug!("received broadcast response from: {}", from);
 
                     // Issue control request
-                    let req = Self::request_control_url(addr, path)?;
+                    match Self::request_control_url(addr, path) {
                     // Store pending requests
-                    self.pending.insert(addr, SearchState::Connecting(req));
+                        Ok(f) => { self.pending.insert(addr, SearchState::Connecting(f)); },
+                        Err(e) => return Poll::Ready(Err(e)),
+                    }
                 } else {
                     debug!("received duplicate broadcast response from: {}, dropping", from);
                 }
             }
+        }
+        if let Poll::Ready(Err(err)) = resp {
+            return Poll::Ready(Err(err.into()));
         }
 
         // Poll on any outstanding control requests
@@ -136,9 +135,9 @@ impl Future for SearchFuture {
                     SearchState::Connecting(c) => c,
                     _ => continue,
                 };
-
-                match c.poll()? {
-                    Async::Ready(resp) => resp,
+                
+                match c.as_mut().poll(cx)? {
+                    Poll::Ready(resp) => resp,
                     _ => continue,
                 }
             };
@@ -151,7 +150,7 @@ impl Future for SearchFuture {
                 match addr {
                     SocketAddr::V4(a) => {
                         let g = Gateway::new(*a, url);
-                        return Ok(Async::Ready(g));
+                        return Poll::Ready(Ok(g));
                     }
                     _ => warn!("unsupported IPv6 gateway response from addr: {}", addr),
                 }
@@ -161,6 +160,6 @@ impl Future for SearchFuture {
             }
         }
 
-        Ok(Async::NotReady)
+        Poll::Pending
     }
 }
