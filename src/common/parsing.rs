@@ -79,7 +79,7 @@ fn parse_control_url_scan_device(device: &Element) -> Result<String, SearchError
         _ => None
     });
     for sub_device in child_elements {
-        if sub_device.get_text() == Some(std::borrow::Cow::Borrowed("device")) {
+        if sub_device.name == "device" {
             if let Ok(control_url) = parse_control_url_scan_device(&sub_device) {
                 return Ok(control_url);
             }
@@ -368,4 +368,111 @@ fn test_parse_device1() {
 </root>"#;
 
     assert_eq!(parse_control_url(text.as_bytes()).unwrap(), "/ctl/IPConn");
+}
+
+#[test]
+fn test_parse_device2() {
+    let text = r#"
+    <?xml version="1.0" ?>
+    <root xmlns="urn:schemas-upnp-org:device-1-0">
+        <specVersion>
+            <major>1</major>
+            <minor>0</minor>
+        </specVersion>
+        <device>
+            <deviceType>urn:schemas-upnp-org:device:InternetGatewayDevice:1</deviceType>
+            <friendlyName>FRITZ!Box 7430</friendlyName>
+            <manufacturer>AVM Berlin</manufacturer>
+            <manufacturerURL>http://www.avm.de</manufacturerURL>
+            <modelDescription>FRITZ!Box 7430</modelDescription>
+            <modelName>FRITZ!Box 7430</modelName>
+            <modelNumber>avm</modelNumber>
+            <modelURL>http://www.avm.de</modelURL>
+            <UDN>uuid:00000000-0000-0000-0000-000000000000</UDN>
+            <iconList>
+                <icon>
+                    <mimetype>image/gif</mimetype>
+                    <width>118</width>
+                    <height>119</height>
+                    <depth>8</depth>
+                    <url>/ligd.gif</url>
+                </icon>
+            </iconList>
+            <serviceList>
+                <service>
+                    <serviceType>urn:schemas-any-com:service:Any:1</serviceType>
+                    <serviceId>urn:any-com:serviceId:any1</serviceId>
+                    <controlURL>/igdupnp/control/any</controlURL>
+                    <eventSubURL>/igdupnp/control/any</eventSubURL>
+                    <SCPDURL>/any.xml</SCPDURL>
+                </service>
+            </serviceList>
+            <deviceList>
+                <device>
+                    <deviceType>urn:schemas-upnp-org:device:WANDevice:1</deviceType>
+                    <friendlyName>WANDevice - FRITZ!Box 7430</friendlyName>
+                    <manufacturer>AVM Berlin</manufacturer>
+                    <manufacturerURL>www.avm.de</manufacturerURL>
+                    <modelDescription>WANDevice - FRITZ!Box 7430</modelDescription>
+                    <modelName>WANDevice - FRITZ!Box 7430</modelName>
+                    <modelNumber>avm</modelNumber>
+                    <modelURL>www.avm.de</modelURL>
+                    <UDN>uuid:00000000-0000-0000-0000-000000000000</UDN>
+                    <UPC>AVM IGD</UPC>
+                    <serviceList>
+                        <service>
+                            <serviceType>urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1</serviceType>
+                            <serviceId>urn:upnp-org:serviceId:WANCommonIFC1</serviceId>
+                            <controlURL>/igdupnp/control/WANCommonIFC1</controlURL>
+                            <eventSubURL>/igdupnp/control/WANCommonIFC1</eventSubURL>
+                            <SCPDURL>/igdicfgSCPD.xml</SCPDURL>
+                        </service>
+                    </serviceList>
+                    <deviceList>
+                        <device>
+                            <deviceType>urn:schemas-upnp-org:device:WANConnectionDevice:1</deviceType>
+                            <friendlyName>WANConnectionDevice - FRITZ!Box 7430</friendlyName>
+                            <manufacturer>AVM Berlin</manufacturer>
+                            <manufacturerURL>www.avm.de</manufacturerURL>
+                            <modelDescription>WANConnectionDevice - FRITZ!Box 7430</modelDescription>
+                            <modelName>WANConnectionDevice - FRITZ!Box 7430</modelName>
+                            <modelNumber>avm</modelNumber>
+                            <modelURL>www.avm.de</modelURL>
+                            <UDN>uuid:00000000-0000-0000-0000-000000000000</UDN>
+                            <UPC>AVM IGD</UPC>
+                            <serviceList>
+                                <service>
+                                    <serviceType>urn:schemas-upnp-org:service:WANDSLLinkConfig:1</serviceType>
+                                    <serviceId>urn:upnp-org:serviceId:WANDSLLinkC1</serviceId>
+                                    <controlURL>/igdupnp/control/WANDSLLinkC1</controlURL>
+                                    <eventSubURL>/igdupnp/control/WANDSLLinkC1</eventSubURL>
+                                    <SCPDURL>/igddslSCPD.xml</SCPDURL>
+                                </service>
+                                <service>
+                                    <serviceType>urn:schemas-upnp-org:service:WANIPConnection:1</serviceType>
+                                    <serviceId>urn:upnp-org:serviceId:WANIPConn1</serviceId>
+                                    <controlURL>/igdupnp/control/WANIPConn1</controlURL>
+                                    <eventSubURL>/igdupnp/control/WANIPConn1</eventSubURL>
+                                    <SCPDURL>/igdconnSCPD.xml</SCPDURL>
+                                </service>
+                                <service>
+                                    <serviceType>urn:schemas-upnp-org:service:WANIPv6FirewallControl:1</serviceType>
+                                    <serviceId>urn:upnp-org:serviceId:WANIPv6Firewall1</serviceId>
+                                    <controlURL>/igd2upnp/control/WANIPv6Firewall1</controlURL>
+                                    <eventSubURL>/igd2upnp/control/WANIPv6Firewall1</eventSubURL>
+                                    <SCPDURL>/igd2ipv6fwcSCPD.xml</SCPDURL>
+                                </service>
+                            </serviceList>
+                        </device>
+                    </deviceList>
+                </device>
+            </deviceList>
+            <presentationURL>http://fritz.box</presentationURL>
+        </device>
+    </root>
+    "#;
+    let result = parse_control_url(text.as_bytes());
+    assert!(result.is_ok());
+    let control_url = result.unwrap();
+    assert_eq!(control_url, "/igdupnp/control/WANIPConn1");
 }
