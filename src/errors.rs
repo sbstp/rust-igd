@@ -92,7 +92,7 @@ impl fmt::Display for RequestError {
 }
 
 impl std::error::Error for RequestError {
-    fn cause(&self) -> Option<&std::error::Error> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match *self {
             RequestError::AttoHttpError(ref e) => Some(e),
             RequestError::InvalidResponse(..) => None,
@@ -215,7 +215,7 @@ impl From<io::Error> for GetExternalIpError {
 }
 
 impl std::error::Error for GetExternalIpError {
-    fn cause(&self) -> Option<&std::error::Error> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
     }
 
@@ -238,7 +238,7 @@ impl fmt::Display for RemovePortError {
 }
 
 impl std::error::Error for RemovePortError {
-    fn cause(&self) -> Option<&std::error::Error> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
     }
 
@@ -284,7 +284,7 @@ impl fmt::Display for AddAnyPortError {
 }
 
 impl std::error::Error for AddAnyPortError {
-    fn cause(&self) -> Option<&std::error::Error> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
     }
 
@@ -337,7 +337,7 @@ impl fmt::Display for AddPortError {
 }
 
 impl std::error::Error for AddPortError {
-    fn cause(&self) -> Option<&std::error::Error> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
     }
 
@@ -443,7 +443,7 @@ impl fmt::Display for SearchError {
 }
 
 impl error::Error for SearchError {
-    fn cause(&self) -> Option<&error::Error> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match *self {
             SearchError::HttpError(ref e) => Some(e),
             SearchError::InvalidResponse => None,
@@ -467,7 +467,7 @@ impl error::Error for SearchError {
             #[cfg(feature = "aio")]
             SearchError::HyperError(..) => "Hyper Error",
             #[cfg(feature = "aio")]
-            SearchError::InvalidUri(_) => "Invalid URI Error"
+            SearchError::InvalidUri(_) => "Invalid URI Error",
         }
     }
 }
@@ -486,8 +486,10 @@ pub enum GetGenericPortMappingEntryError {
 impl From<RequestError> for GetGenericPortMappingEntryError {
     fn from(err: RequestError) -> GetGenericPortMappingEntryError {
         match err {
-            RequestError::ErrorCode(code, message) if code == 606 => GetGenericPortMappingEntryError::ActionNotAuthorized,
-            RequestError::ErrorCode(code, message) if code == 713 => GetGenericPortMappingEntryError::SpecifiedArrayIndexInvalid,
+            RequestError::ErrorCode(code, _) if code == 606 => GetGenericPortMappingEntryError::ActionNotAuthorized,
+            RequestError::ErrorCode(code, _) if code == 713 => {
+                GetGenericPortMappingEntryError::SpecifiedArrayIndexInvalid
+            }
             other => GetGenericPortMappingEntryError::RequestError(other),
         }
     }
@@ -496,16 +498,18 @@ impl From<RequestError> for GetGenericPortMappingEntryError {
 impl fmt::Display for GetGenericPortMappingEntryError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            GetGenericPortMappingEntryError::ActionNotAuthorized => write!(f, "The client is not authorized to look up port mappings."),
-            GetGenericPortMappingEntryError::SpecifiedArrayIndexInvalid => write!(f, "The provided index into the port mapping list is invalid."),
+            GetGenericPortMappingEntryError::ActionNotAuthorized => {
+                write!(f, "The client is not authorized to look up port mappings.")
+            }
+            GetGenericPortMappingEntryError::SpecifiedArrayIndexInvalid => {
+                write!(f, "The provided index into the port mapping list is invalid.")
+            }
             GetGenericPortMappingEntryError::RequestError(ref e) => e.fmt(f),
         }
     }
 }
 
-impl std::error::Error for GetGenericPortMappingEntryError {
-}
-
+impl std::error::Error for GetGenericPortMappingEntryError {}
 
 /// An error type that emcompasses all possible errors.
 #[derive(Debug)]
@@ -541,7 +545,7 @@ impl fmt::Display for Error {
 }
 
 impl error::Error for Error {
-    fn cause(&self) -> Option<&error::Error> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match *self {
             Error::AddAnyPortError(ref e) => Some(e),
             Error::AddPortError(ref e) => Some(e),
@@ -599,4 +603,3 @@ impl From<SearchError> for Error {
         Error::SearchError(err)
     }
 }
-

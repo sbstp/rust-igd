@@ -1,5 +1,5 @@
-use std::net::SocketAddrV4;
 use crate::PortMappingProtocol;
+use std::net::SocketAddrV4;
 
 // Content of the request.
 pub const SEARCH_REQUEST: &'static str = "M-SEARCH * HTTP/1.1\r
@@ -23,13 +23,15 @@ pub const GET_GENERIC_PORT_MAPPING_ENTRY: &'static str =
     r#""urn:schemas-upnp-org:service:WANIPConnection:1#GetGenericPortMappingEntry""#;
 
 pub fn format_get_external_ip_message() -> String {
-    format!(r#"<?xml version="1.0"?>
+    format!(
+        r#"<?xml version="1.0"?>
 <s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
     <s:Body>
         <m:GetExternalIPAddress xmlns:m="urn:schemas-upnp-org:service:WANIPConnection:1">
         </m:GetExternalIPAddress>
     </s:Body>
-</s:Envelope>"#)
+</s:Envelope>"#
+    )
 }
 
 pub fn format_add_any_port_mapping_message(

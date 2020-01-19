@@ -11,9 +11,9 @@
 use std::env;
 use std::net::SocketAddrV4;
 
-use igd::aio::{search_gateway};
+use igd::aio::search_gateway;
 use igd::PortMappingProtocol;
-use simplelog::{SimpleLogger, LevelFilter, Config as LogConfig};
+use simplelog::{Config as LogConfig, LevelFilter, SimpleLogger};
 
 #[tokio::main]
 async fn main() {
@@ -33,19 +33,25 @@ async fn main() {
 
     let gateway = match search_gateway(Default::default()).await {
         Ok(g) => g,
-        Err(err) => return println!("Faild to find IGD: {}", err)
+        Err(err) => return println!("Faild to find IGD: {}", err),
     };
     let pub_ip = match gateway.get_external_ip().await {
         Ok(ip) => ip,
-        Err(err) => return println!("Failed to get external IP: {}", err)
+        Err(err) => return println!("Failed to get external IP: {}", err),
     };
     println!("Our public IP is {}", pub_ip);
-    if let Err(e) = gateway.add_port(PortMappingProtocol::TCP, 1234, ip, 120, "rust-igd-async-example").await {
+    if let Err(e) = gateway
+        .add_port(PortMappingProtocol::TCP, 1234, ip, 120, "rust-igd-async-example")
+        .await
+    {
         println!("Failed to add port mapping: {}", e);
     }
     println!("New port mapping was successfully added.");
 
-    if let Err(e) = gateway.add_port(PortMappingProtocol::TCP, 2345, ip, 120, "rust-igd-async-example").await {
+    if let Err(e) = gateway
+        .add_port(PortMappingProtocol::TCP, 2345, ip, 120, "rust-igd-async-example")
+        .await
+    {
         println!("Failed to add port mapping: {}", e);
     }
     println!("New port mapping was successfully added.");

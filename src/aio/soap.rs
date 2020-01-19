@@ -1,5 +1,5 @@
 use hyper::header::{CONTENT_LENGTH, CONTENT_TYPE};
-use hyper::{Request, Body, client::Client};
+use hyper::{client::Client, Body, Request};
 
 use crate::errors::RequestError;
 
@@ -14,12 +14,7 @@ impl Action {
 
 const HEADER_NAME: &str = "SOAPAction";
 
-pub async fn send_async(
-    url: &str,
-    action: Action,
-    body: &str,
-) -> Result<String, RequestError> {
-
+pub async fn send_async(url: &str, action: Action, body: &str) -> Result<String, RequestError> {
     let client = Client::new();
 
     let req = Request::builder()

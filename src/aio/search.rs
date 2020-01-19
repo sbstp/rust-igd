@@ -1,11 +1,11 @@
-use std::net::{SocketAddr};
-use std::str;
 use std::collections::HashMap;
-use std::task::{Poll,Context};
+use std::net::SocketAddr;
 use std::pin::Pin;
+use std::str;
+use std::task::{Context, Poll};
 
 use futures::prelude::*;
-use futures::{Future};
+use futures::Future;
 
 use hyper::Client;
 
@@ -29,7 +29,7 @@ pub async fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchErr
     // Create future and issue request
     match options.timeout {
         Some(t) => timeout(t, search_future).await?,
-        None => search_future.await
+        None => search_future.await,
     }
 }
 
@@ -39,7 +39,7 @@ pub struct SearchFuture {
 }
 
 enum SearchState {
-    Connecting(Pin<Box<dyn Future<Output=Result<Bytes, SearchError>> + Send>>),
+    Connecting(Pin<Box<dyn Future<Output = Result<Bytes, SearchError>> + Send>>),
     Done(String),
     Error,
 }
@@ -47,9 +47,16 @@ enum SearchState {
 impl SearchFuture {
     // Create a new search
     async fn search(mut socket: UdpSocket, addr: SocketAddr) -> Result<SearchFuture, SearchError> {
-        debug!("sending broadcast request to: {} on interface: {:?}", addr, socket.local_addr());
+        debug!(
+            "sending broadcast request to: {} on interface: {:?}",
+            addr,
+            socket.local_addr()
+        );
         socket.send_to(messages::SEARCH_REQUEST.as_bytes(), &addr).await?;
-        Ok(SearchFuture{socket, pending: HashMap::new() })
+        Ok(SearchFuture {
+            socket,
+            pending: HashMap::new(),
+        })
     }
 
     // Handle a UDP response message
@@ -57,8 +64,7 @@ impl SearchFuture {
         debug!("handling broadcast response from: {}", from);
 
         // Convert response to text
-        let text = str::from_utf8(&data)
-            .map_err(|e| SearchError::from(e))?;
+        let text = str::from_utf8(&data).map_err(|e| SearchError::from(e))?;
 
         // Parse socket address and path
         let (addr, path) = parsing::parse_search_result(text)?;
@@ -67,7 +73,10 @@ impl SearchFuture {
     }
 
     // Issue a control URL request over HTTP using the provided
-    fn request_control_url(addr: SocketAddr, path: String) -> Result<Pin<Box<dyn Future<Output=Result<Bytes, SearchError>> + Send>>, SearchError> {
+    fn request_control_url(
+        addr: SocketAddr,
+        path: String,
+    ) -> Result<Pin<Box<dyn Future<Output = Result<Bytes, SearchError>> + Send>>, SearchError> {
         let client = Client::new();
 
         let uri = match format!("http://{}{}", addr, path).parse() {
@@ -77,9 +86,11 @@ impl SearchFuture {
 
         debug!("requesting control url from: {}", uri);
 
-        Ok(Box::pin(client.get(uri)
-            .and_then(|resp| hyper::body::to_bytes(resp.into_body()) )
-            .map_err(|e| SearchError::from(e) )
+        Ok(Box::pin(
+            client
+                .get(uri)
+                .and_then(|resp| hyper::body::to_bytes(resp.into_body()))
+                .map_err(|e| SearchError::from(e)),
         ))
     }
 
@@ -97,12 +108,10 @@ impl SearchFuture {
     }
 }
 
-
 impl Future for SearchFuture {
-    type Output = Result<Gateway,SearchError>;
+    type Output = Result<Gateway, SearchError>;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<Gateway,SearchError>> {
-
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<Gateway, SearchError>> {
         // Poll for (and handle) incoming messages
         let mut buff = [0u8; MAX_RESPONSE_SIZE];
         let resp = self.socket.poll_recv_from(cx, &mut buff);
@@ -114,8 +123,10 @@ impl Future for SearchFuture {
 
                     // Issue control request
                     match Self::request_control_url(addr, path) {
-                    // Store pending requests
-                        Ok(f) => { self.pending.insert(addr, SearchState::Connecting(f)); },
+                        // Store pending requests
+                        Ok(f) => {
+                            self.pending.insert(addr, SearchState::Connecting(f));
+                        }
                         Err(e) => return Poll::Ready(Err(e)),
                     }
                 } else {
@@ -135,7 +146,7 @@ impl Future for SearchFuture {
                     SearchState::Connecting(c) => c,
                     _ => continue,
                 };
-                
+
                 match c.as_mut().poll(cx)? {
                     Poll::Ready(resp) => resp,
                     _ => continue,
@@ -154,7 +165,6 @@ impl Future for SearchFuture {
                     }
                     _ => warn!("unsupported IPv6 gateway response from addr: {}", addr),
                 }
-
             } else {
                 *state = SearchState::Error;
             }
