@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 use std::net::{Ipv4Addr, SocketAddrV4};
 
 use super::soap;
-use crate::errors::{AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError};
+use crate::errors::{self, AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError};
 
 use crate::common::{self, parsing::RequestReponse, messages, parsing};
 use crate::PortMappingProtocol;
@@ -240,6 +240,20 @@ impl Gateway {
                 "DeletePortMappingResponse",
             ).await;
         parsing::parse_delete_port_mapping_response(res)
+    }
+
+    /// Get one port mapping entry
+    /// 
+    /// Gets one port mapping entry by its index.
+    /// Not all existing port mappings might be visible to this client.
+    /// If the index is out of bound, GetGenericPortMappingEntryError::SpecifiedArrayIndexInvalid will be returned
+    pub async fn get_generic_port_mapping_entry(&self, index: u32) -> Result<parsing::PortMappingEntry, errors::GetGenericPortMappingEntryError> {
+        let result = self.perform_request(
+            messages::GET_GENERIC_PORT_MAPPING_ENTRY,
+            &messages::formate_get_generic_port_mapping_entry_message(index),
+            "GetGenericPortMappingEntryResponse"
+        ).await;
+        parsing::parse_get_generic_port_mapping_entry(result)
     }
 }
 

@@ -472,6 +472,41 @@ impl error::Error for SearchError {
     }
 }
 
+/// Errors than can occur while getting a port mapping
+#[derive(Debug)]
+pub enum GetGenericPortMappingEntryError {
+    /// The client is not authorized to perform the operation.
+    ActionNotAuthorized,
+    /// The specified array index is out of bounds.
+    SpecifiedArrayIndexInvalid,
+    /// Some other error occured performing the request.
+    RequestError(RequestError),
+}
+
+impl From<RequestError> for GetGenericPortMappingEntryError {
+    fn from(err: RequestError) -> GetGenericPortMappingEntryError {
+        match err {
+            RequestError::ErrorCode(code, message) if code == 606 => GetGenericPortMappingEntryError::ActionNotAuthorized,
+            RequestError::ErrorCode(code, message) if code == 713 => GetGenericPortMappingEntryError::SpecifiedArrayIndexInvalid,
+            other => GetGenericPortMappingEntryError::RequestError(other),
+        }
+    }
+}
+
+impl fmt::Display for GetGenericPortMappingEntryError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            GetGenericPortMappingEntryError::ActionNotAuthorized => write!(f, "The client is not authorized to look up port mappings."),
+            GetGenericPortMappingEntryError::SpecifiedArrayIndexInvalid => write!(f, "The provided index into the port mapping list is invalid."),
+            GetGenericPortMappingEntryError::RequestError(ref e) => e.fmt(f),
+        }
+    }
+}
+
+impl std::error::Error for GetGenericPortMappingEntryError {
+}
+
+
 /// An error type that emcompasses all possible errors.
 #[derive(Debug)]
 pub enum Error {

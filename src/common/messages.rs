@@ -19,6 +19,9 @@ pub const ADD_PORT_MAPPING_HEADER: &'static str = r#""urn:schemas-upnp-org:servi
 pub const DELETE_PORT_MAPPING_HEADER: &'static str =
     r#""urn:schemas-upnp-org:service:WANIPConnection:1#DeletePortMapping""#;
 
+pub const GET_GENERIC_PORT_MAPPING_ENTRY: &'static str =
+    r#""urn:schemas-upnp-org:service:WANIPConnection:1#GetGenericPortMappingEntry""#;
+
 pub fn format_get_external_ip_message() -> String {
     format!(r#"<?xml version="1.0"?>
 <s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
@@ -105,4 +108,15 @@ pub fn format_delete_port_message(protocol: PortMappingProtocol, external_port: 
         protocol,
         external_port
     )
+}
+
+pub fn formate_get_generic_port_mapping_entry_message(port_mapping_index: u32) -> String {
+    format!("<?xml version=\"1.0\"?>
+    <s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">
+        <s:Body>
+            <u:GetGenericPortMappingEntry xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">
+                <NewPortMappingIndex>{}</NewPortMappingIndex>
+            </u:GetGenericPortMappingEntry>
+        </s:Body>
+    </s:Envelope>", port_mapping_index)
 }
