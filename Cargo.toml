@@ -15,14 +15,14 @@ license = "MIT"
 all-features = true
 
 [dependencies]
-xmltree = "0.8"
-rand = "0.4"
-attohttpc = { version = "0.4", default-features = false }
-url = "1"
+xmltree = "0.10"
+rand = "0.7"
+attohttpc = { version = "0.10", default-features = false }
+url = "2"
 futures = { version = "0.3", optional = true }
 tokio = { version = "0.2", optional = true , features = [ "udp", "macros" ]}
 log = { version = "0.4", optional = true }
-bytes = { version = "0.4", optional = true }
+bytes = { version = "0.5", optional = true }
 http = {version = "0.2", optional = true }
 
 [dependencies.hyper]
@@ -32,7 +32,7 @@ features = [ "runtime" ]
 optional = true
 
 [dev-dependencies]
-simplelog = "0.5"
+simplelog = "0.7"
 
 [features]
 default = []
