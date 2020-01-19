@@ -1,6 +1,6 @@
 [package]
 name = "igd"
-version = "0.9.1"
+version = "0.10.0"
 edition = "2018"
 authors = ["Simon Bernier St-Pierre <sbernierstpierre@gmail.com>"]
 description = "Internet Gateway Protocol client"
