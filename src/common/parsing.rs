@@ -2,7 +2,7 @@ use std::io;
 use std::net::{Ipv4Addr, SocketAddrV4};
 
 use url::Url;
-use xmltree::Element;
+use xmltree::{self, Element};
 
 use crate::errors::{
     AddAnyPortError, AddPortError, GetExternalIpError, GetGenericPortMappingEntryError, RemovePortError, RequestError,
@@ -49,26 +49,37 @@ where
 
 fn parse_control_url_scan_device(device: &Element) -> Result<String, SearchError> {
     let service_list = device.get_child("serviceList").ok_or(SearchError::InvalidResponse)?;
-    for service in &service_list.children {
-        if service.name == "service" {
-            if let Some(service_type) = service.get_child("serviceType") {
-                if service_type.text.as_ref().map(|s| s.as_str())
-                    == Some("urn:schemas-upnp-org:service:WANPPPConnection:1")
-                    || service_type.text.as_ref().map(|s| s.as_str())
-                        == Some("urn:schemas-upnp-org:service:WANIPConnection:1")
-                {
-                    if let Some(control_url) = service.get_child("controlURL") {
-                        if let Some(text) = &control_url.text {
-                            return Ok(text.clone());
-                        }
-                    }
-                }
+    let child_elements = service_list.children.iter().filter_map(|n| match n {
+        xmltree::XMLNode::Element(e) => Some(e),
+        _ => None,
+    });
+    for element in child_elements {
+        if element.name != "service" {
+            continue;
+        };
+        let service_type = match element.get_child("serviceType") {
+            Some(e) => e,
+            _ => continue,
+        };
+        let service_type_text = service_type.get_text().map(|s| s.into_owned()).unwrap_or("".into());
+        if service_type_text != "urn:schemas-upnp-org:service:WANPPPConnection:1"
+            && service_type_text != "urn:schemas-upnp-org:service:WANIPConnection:1"
+        {
+            continue;
+        }
+        if let Some(control_url) = element.get_child("controlURL") {
+            if let Some(text) = control_url.get_text() {
+                return Ok(text.into_owned());
             }
         }
     }
 
     let device_list = device.get_child("deviceList").ok_or(SearchError::InvalidResponse)?;
-    for sub_device in &device_list.children {
+    let child_elements = device_list.children.iter().filter_map(|n| match n {
+        xmltree::XMLNode::Element(e) => Some(e),
+        _ => None,
+    });
+    for sub_device in child_elements {
         if sub_device.name == "device" {
             if let Ok(control_url) = parse_control_url_scan_device(&sub_device) {
                 return Ok(control_url);
@@ -111,7 +122,7 @@ pub fn parse_response(text: String, ok: &str) -> RequestResult {
         upnp_error.get_child("errorCode"),
         upnp_error.get_child("errorDescription"),
     ) {
-        (Some(e), Some(d)) => match (e.text.as_ref(), d.text.as_ref()) {
+        (Some(e), Some(d)) => match (e.get_text().as_ref(), d.get_text().as_ref()) {
             (Some(et), Some(dt)) => match et.parse::<u16>() {
                 Ok(en) => Err(RequestError::ErrorCode(en, From::from(&dt[..]))),
                 Err(..) => Err(RequestError::InvalidResponse(text)),
@@ -127,7 +138,7 @@ pub fn parse_get_external_ip_response(result: RequestResult) -> Result<Ipv4Addr,
         Ok(resp) => match resp
             .xml
             .get_child("NewExternalIPAddress")
-            .and_then(|e| e.text.as_ref())
+            .and_then(|e| e.get_text())
             .and_then(|t| t.parse::<Ipv4Addr>().ok())
         {
             Some(ipv4_addr) => Ok(ipv4_addr),
@@ -146,7 +157,7 @@ pub fn parse_add_any_port_mapping_response(result: RequestResult) -> Result<u16,
             match resp
                 .xml
                 .get_child("NewReservedPort")
-                .and_then(|e| e.text.as_ref())
+                .and_then(|e| e.get_text())
                 .and_then(|t| t.parse::<u16>().ok())
             {
                 Some(port) => Ok(port),
@@ -239,15 +250,17 @@ pub fn parse_get_generic_port_mapping_entry(
         xml.get_child(field)
             .ok_or_else(make_err(format!("{} is missing", field)))
     };
-    let remote_host = extract_field("NewRemoteHost")?.text.clone().unwrap_or("".into());
+    let remote_host = extract_field("NewRemoteHost")?
+        .get_text()
+        .map(|c| c.into_owned())
+        .unwrap_or("".into());
     let external_port = extract_field("NewExternalPort")?
-        .text
-        .as_ref()
+        .get_text()
         .and_then(|t| t.parse::<u16>().ok())
         .ok_or_else(make_err("Field NewExternalPort is invalid".into()))?;
-    let protocol = match extract_field("NewProtocol")?.text.as_ref().map(String::as_ref) {
-        Some("UDP") => PortMappingProtocol::UDP,
-        Some("TCP") => PortMappingProtocol::TCP,
+    let protocol = match extract_field("NewProtocol")?.get_text() {
+        Some(std::borrow::Cow::Borrowed("UDP")) => PortMappingProtocol::UDP,
+        Some(std::borrow::Cow::Borrowed("TCP")) => PortMappingProtocol::TCP,
         _ => {
             return Err(GetGenericPortMappingEntryError::RequestError(
                 RequestError::InvalidResponse("Field NewProtocol is invalid".into()),
@@ -255,17 +268,15 @@ pub fn parse_get_generic_port_mapping_entry(
         }
     };
     let internal_port = extract_field("NewInternalPort")?
-        .text
-        .as_ref()
+        .get_text()
         .and_then(|t| t.parse::<u16>().ok())
         .ok_or_else(make_err("Field NewInternalPort is invalid".into()))?;
     let internal_client = extract_field("NewInternalClient")?
-        .text
-        .clone()
+        .get_text()
+        .map(|c| c.into_owned())
         .ok_or_else(make_err("Field NewInternalClient is empty".into()))?;
     let enabled = match extract_field("NewEnabled")?
-        .text
-        .as_ref()
+        .get_text()
         .and_then(|t| t.parse::<u16>().ok())
         .ok_or_else(make_err("Field Enabled is invalid".into()))?
     {
@@ -278,12 +289,11 @@ pub fn parse_get_generic_port_mapping_entry(
         }
     };
     let port_mapping_description = extract_field("NewPortMappingDescription")?
-        .text
-        .clone()
+        .get_text()
+        .map(|c| c.into_owned())
         .unwrap_or("".into());
     let lease_duration = extract_field("NewLeaseDuration")?
-        .text
-        .as_ref()
+        .get_text()
         .and_then(|t| t.parse::<u32>().ok())
         .ok_or_else(make_err("Field NewLeaseDuration is invalid".into()))?;
     Ok(PortMappingEntry {
@@ -397,4 +407,111 @@ fn test_parse_device1() {
 </root>"#;
 
     assert_eq!(parse_control_url(text.as_bytes()).unwrap(), "/ctl/IPConn");
+}
+
+#[test]
+fn test_parse_device2() {
+    let text = r#"
+    <?xml version="1.0" ?>
+    <root xmlns="urn:schemas-upnp-org:device-1-0">
+        <specVersion>
+            <major>1</major>
+            <minor>0</minor>
+        </specVersion>
+        <device>
+            <deviceType>urn:schemas-upnp-org:device:InternetGatewayDevice:1</deviceType>
+            <friendlyName>FRITZ!Box 7430</friendlyName>
+            <manufacturer>AVM Berlin</manufacturer>
+            <manufacturerURL>http://www.avm.de</manufacturerURL>
+            <modelDescription>FRITZ!Box 7430</modelDescription>
+            <modelName>FRITZ!Box 7430</modelName>
+            <modelNumber>avm</modelNumber>
+            <modelURL>http://www.avm.de</modelURL>
+            <UDN>uuid:00000000-0000-0000-0000-000000000000</UDN>
+            <iconList>
+                <icon>
+                    <mimetype>image/gif</mimetype>
+                    <width>118</width>
+                    <height>119</height>
+                    <depth>8</depth>
+                    <url>/ligd.gif</url>
+                </icon>
+            </iconList>
+            <serviceList>
+                <service>
+                    <serviceType>urn:schemas-any-com:service:Any:1</serviceType>
+                    <serviceId>urn:any-com:serviceId:any1</serviceId>
+                    <controlURL>/igdupnp/control/any</controlURL>
+                    <eventSubURL>/igdupnp/control/any</eventSubURL>
+                    <SCPDURL>/any.xml</SCPDURL>
+                </service>
+            </serviceList>
+            <deviceList>
+                <device>
+                    <deviceType>urn:schemas-upnp-org:device:WANDevice:1</deviceType>
+                    <friendlyName>WANDevice - FRITZ!Box 7430</friendlyName>
+                    <manufacturer>AVM Berlin</manufacturer>
+                    <manufacturerURL>www.avm.de</manufacturerURL>
+                    <modelDescription>WANDevice - FRITZ!Box 7430</modelDescription>
+                    <modelName>WANDevice - FRITZ!Box 7430</modelName>
+                    <modelNumber>avm</modelNumber>
+                    <modelURL>www.avm.de</modelURL>
+                    <UDN>uuid:00000000-0000-0000-0000-000000000000</UDN>
+                    <UPC>AVM IGD</UPC>
+                    <serviceList>
+                        <service>
+                            <serviceType>urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1</serviceType>
+                            <serviceId>urn:upnp-org:serviceId:WANCommonIFC1</serviceId>
+                            <controlURL>/igdupnp/control/WANCommonIFC1</controlURL>
+                            <eventSubURL>/igdupnp/control/WANCommonIFC1</eventSubURL>
+                            <SCPDURL>/igdicfgSCPD.xml</SCPDURL>
+                        </service>
+                    </serviceList>
+                    <deviceList>
+                        <device>
+                            <deviceType>urn:schemas-upnp-org:device:WANConnectionDevice:1</deviceType>
+                            <friendlyName>WANConnectionDevice - FRITZ!Box 7430</friendlyName>
+                            <manufacturer>AVM Berlin</manufacturer>
+                            <manufacturerURL>www.avm.de</manufacturerURL>
+                            <modelDescription>WANConnectionDevice - FRITZ!Box 7430</modelDescription>
+                            <modelName>WANConnectionDevice - FRITZ!Box 7430</modelName>
+                            <modelNumber>avm</modelNumber>
+                            <modelURL>www.avm.de</modelURL>
+                            <UDN>uuid:00000000-0000-0000-0000-000000000000</UDN>
+                            <UPC>AVM IGD</UPC>
+                            <serviceList>
+                                <service>
+                                    <serviceType>urn:schemas-upnp-org:service:WANDSLLinkConfig:1</serviceType>
+                                    <serviceId>urn:upnp-org:serviceId:WANDSLLinkC1</serviceId>
+                                    <controlURL>/igdupnp/control/WANDSLLinkC1</controlURL>
+                                    <eventSubURL>/igdupnp/control/WANDSLLinkC1</eventSubURL>
+                                    <SCPDURL>/igddslSCPD.xml</SCPDURL>
+                                </service>
+                                <service>
+                                    <serviceType>urn:schemas-upnp-org:service:WANIPConnection:1</serviceType>
+                                    <serviceId>urn:upnp-org:serviceId:WANIPConn1</serviceId>
+                                    <controlURL>/igdupnp/control/WANIPConn1</controlURL>
+                                    <eventSubURL>/igdupnp/control/WANIPConn1</eventSubURL>
+                                    <SCPDURL>/igdconnSCPD.xml</SCPDURL>
+                                </service>
+                                <service>
+                                    <serviceType>urn:schemas-upnp-org:service:WANIPv6FirewallControl:1</serviceType>
+                                    <serviceId>urn:upnp-org:serviceId:WANIPv6Firewall1</serviceId>
+                                    <controlURL>/igd2upnp/control/WANIPv6Firewall1</controlURL>
+                                    <eventSubURL>/igd2upnp/control/WANIPv6Firewall1</eventSubURL>
+                                    <SCPDURL>/igd2ipv6fwcSCPD.xml</SCPDURL>
+                                </service>
+                            </serviceList>
+                        </device>
+                    </deviceList>
+                </device>
+            </deviceList>
+            <presentationURL>http://fritz.box</presentationURL>
+        </device>
+    </root>
+    "#;
+    let result = parse_control_url(text.as_bytes());
+    assert!(result.is_ok());
+    let control_url = result.unwrap();
+    assert_eq!(control_url, "/igdupnp/control/WANIPConn1");
 }
