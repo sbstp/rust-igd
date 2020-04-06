@@ -48,28 +48,29 @@ where
 }
 
 fn parse_control_url_scan_device(device: &Element) -> Result<String, SearchError> {
-    let service_list = device.get_child("serviceList").ok_or(SearchError::InvalidResponse)?;
-    let child_elements = service_list.children.iter().filter_map(|n| match n {
-        xmltree::XMLNode::Element(e) => Some(e),
-        _ => None,
-    });
-    for element in child_elements {
-        if element.name != "service" {
-            continue;
-        };
-        let service_type = match element.get_child("serviceType") {
-            Some(e) => e,
-            _ => continue,
-        };
-        let service_type_text = service_type.get_text().map(|s| s.into_owned()).unwrap_or("".into());
-        if service_type_text != "urn:schemas-upnp-org:service:WANPPPConnection:1"
-            && service_type_text != "urn:schemas-upnp-org:service:WANIPConnection:1"
-        {
-            continue;
-        }
-        if let Some(control_url) = element.get_child("controlURL") {
-            if let Some(text) = control_url.get_text() {
-                return Ok(text.into_owned());
+    if let Some(service_list) = device.get_child("serviceList") {
+        let child_elements = service_list.children.iter().filter_map(|n| match n {
+            xmltree::XMLNode::Element(e) => Some(e),
+            _ => None,
+        });
+        for element in child_elements {
+            if element.name != "service" {
+                continue;
+            };
+            let service_type = match element.get_child("serviceType") {
+                Some(e) => e,
+                _ => continue,
+            };
+            let service_type_text = service_type.get_text().map(|s| s.into_owned()).unwrap_or("".into());
+            if service_type_text != "urn:schemas-upnp-org:service:WANPPPConnection:1"
+                && service_type_text != "urn:schemas-upnp-org:service:WANIPConnection:1"
+            {
+                continue;
+            }
+            if let Some(control_url) = element.get_child("controlURL") {
+                if let Some(text) = control_url.get_text() {
+                    return Ok(text.into_owned());
+                }
             }
         }
     }
@@ -514,4 +515,89 @@ fn test_parse_device2() {
     assert!(result.is_ok());
     let control_url = result.unwrap();
     assert_eq!(control_url, "/igdupnp/control/WANIPConn1");
+}
+
+#[test]
+fn test_parse_device3() {
+    let text = r#"<?xml version="1.0" encoding="UTF-8"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+<specVersion>
+    <major>1</major>
+    <minor>0</minor>
+</specVersion>
+<device xmlns="urn:schemas-upnp-org:device-1-0">
+   <deviceType>urn:schemas-upnp-org:device:InternetGatewayDevice:1</deviceType>
+   <friendlyName></friendlyName>
+   <manufacturer></manufacturer>
+   <manufacturerURL></manufacturerURL>
+   <modelDescription></modelDescription>
+   <modelName></modelName>
+   <modelNumber></modelNumber>
+   <serialNumber></serialNumber>
+   <presentationURL>http://192.168.1.1</presentationURL>
+   <UDN>uuid:00000000-0000-0000-0000-000000000000</UDN>
+   <UPC>999999999001</UPC>
+   <iconList>
+      <icon>
+         <mimetype>image/png</mimetype>
+         <width>16</width>
+         <height>16</height>
+         <depth>8</depth>
+         <url>/ligd.png</url>
+      </icon>
+   </iconList>
+   <deviceList>
+      <device>
+         <deviceType>urn:schemas-upnp-org:device:WANDevice:1</deviceType>
+         <friendlyName></friendlyName>
+         <manufacturer></manufacturer>
+         <manufacturerURL></manufacturerURL>
+         <modelDescription></modelDescription>
+         <modelName></modelName>
+         <modelNumber></modelNumber>
+         <modelURL></modelURL>
+         <serialNumber></serialNumber>
+         <presentationURL>http://192.168.1.254</presentationURL>
+         <UDN>uuid:00000000-0000-0000-0000-000000000000</UDN>
+         <UPC>999999999001</UPC>
+         <serviceList>
+            <service>
+               <serviceType>urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1</serviceType>
+               <serviceId>urn:upnp-org:serviceId:WANCommonIFC1</serviceId>
+               <controlURL>/upnp/control/WANCommonIFC1</controlURL>
+               <eventSubURL>/upnp/control/WANCommonIFC1</eventSubURL>
+               <SCPDURL>/332b484d/wancomicfgSCPD.xml</SCPDURL>
+            </service>
+         </serviceList>
+         <deviceList>
+            <device>
+               <deviceType>urn:schemas-upnp-org:device:WANConnectionDevice:1</deviceType>
+               <friendlyName></friendlyName>
+               <manufacturer></manufacturer>
+               <manufacturerURL></manufacturerURL>
+               <modelDescription></modelDescription>
+               <modelName></modelName>
+               <modelNumber></modelNumber>
+               <modelURL></modelURL>
+               <serialNumber></serialNumber>
+               <presentationURL>http://192.168.1.254</presentationURL>
+               <UDN>uuid:00000000-0000-0000-0000-000000000000</UDN>
+               <UPC>999999999001</UPC>
+               <serviceList>
+                  <service>
+                     <serviceType>urn:schemas-upnp-org:service:WANIPConnection:1</serviceType>
+                     <serviceId>urn:upnp-org:serviceId:WANIPConn1</serviceId>
+                     <controlURL>/upnp/control/WANIPConn1</controlURL>
+                     <eventSubURL>/upnp/control/WANIPConn1</eventSubURL>
+                     <SCPDURL>/332b484d/wanipconnSCPD.xml</SCPDURL>
+                  </service>
+               </serviceList>
+            </device>
+         </deviceList>
+      </device>
+   </deviceList>
+</device>
+</root>"#;
+
+    assert_eq!(parse_control_url(text.as_bytes()).unwrap(), "/upnp/control/WANIPConn1");
 }
