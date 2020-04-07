@@ -12,9 +12,9 @@ use crate::PortMappingProtocol;
 #[derive(Clone, Debug)]
 pub struct Gateway {
     /// Socket address of the gateway
-    addr: SocketAddrV4,
+    pub addr: SocketAddrV4,
     /// Control url of the device
-    control_url: String,
+    pub control_url: String,
 }
 
 impl Gateway {
