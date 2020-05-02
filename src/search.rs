@@ -33,12 +33,16 @@ pub fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
         let text = str::from_utf8(&buf[..read])?;
 
         let location = parsing::parse_search_result(text)?;
-        if let Ok(control_url) = get_control_url(&location) {
-            return Ok(Gateway {
-                addr: location.0,
-                control_url: control_url,
-            });
-        }
+
+        let control_url = match get_control_url(&location) {
+            Ok(o) => o,
+            Err(..) => continue,
+        };
+
+        return Ok(Gateway {
+            addr: location.0,
+            control_url: control_url,
+        });
     }
 }
 
