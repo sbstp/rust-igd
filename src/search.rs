@@ -41,7 +41,7 @@ pub fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
 
         return Ok(Gateway {
             addr,
-            control_url: control_url,
+            control_url,
         });
     }
 }
