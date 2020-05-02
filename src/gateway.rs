@@ -8,7 +8,7 @@ use crate::errors::{self, AddAnyPortError, AddPortError, GetExternalIpError, Rem
 use crate::PortMappingProtocol;
 
 /// This structure represents a gateway found by the search functions.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug)]
 pub struct Gateway {
     /// Socket address of the gateway
     pub addr: SocketAddrV4,
