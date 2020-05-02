@@ -39,56 +39,73 @@ where
 {
     let root = Element::parse(resp)?;
 
-    let device = root.get_child("device").ok_or(SearchError::InvalidResponse)?;
-    if let Ok(control_url) = parse_control_url_scan_device(&device) {
-        return Ok(control_url);
-    }
+    let mut url = root.children.iter().filter_map(|child| {
+        let child = child.as_element()?;
+        if child.name == "device" {
+            Some(parse_device(child)?)
+        } else {
+            None
+        }
+    });
 
-    return Err(SearchError::InvalidResponse);
+    url.next().ok_or(SearchError::InvalidResponse)
 }
 
-fn parse_control_url_scan_device(device: &Element) -> Result<String, SearchError> {
-    if let Some(service_list) = device.get_child("serviceList") {
-        let child_elements = service_list.children.iter().filter_map(|n| match n {
-            xmltree::XMLNode::Element(e) => Some(e),
-            _ => None,
-        });
-        for element in child_elements {
-            if element.name != "service" {
-                continue;
-            };
-            let service_type = match element.get_child("serviceType") {
-                Some(e) => e,
-                _ => continue,
-            };
-            let service_type_text = service_type.get_text().map(|s| s.into_owned()).unwrap_or("".into());
-            if service_type_text != "urn:schemas-upnp-org:service:WANPPPConnection:1"
-                && service_type_text != "urn:schemas-upnp-org:service:WANIPConnection:1"
-            {
-                continue;
-            }
-            if let Some(control_url) = element.get_child("controlURL") {
-                if let Some(text) = control_url.get_text() {
-                    return Ok(text.into_owned());
-                }
-            }
-        }
-    }
+fn parse_device(device: &Element) -> Option<String> {
+    let services = device
+        .get_child("serviceList")
+        .map(|service_list| {
+            service_list
+                .children
+                .iter()
+                .filter_map(|child| {
+                    let child = child.as_element()?;
+                    if child.name == "service" {
+                        parse_service(child)
+                    } else {
+                        None
+                    }
+                })
+                .next()
+        })
+        .flatten();
+    let devices = device.get_child("deviceList").map(parse_device_list).flatten();
+    services.or(devices)
+}
 
-    let device_list = device.get_child("deviceList").ok_or(SearchError::InvalidResponse)?;
-    let child_elements = device_list.children.iter().filter_map(|n| match n {
-        xmltree::XMLNode::Element(e) => Some(e),
-        _ => None,
-    });
-    for sub_device in child_elements {
-        if sub_device.name == "device" {
-            if let Ok(control_url) = parse_control_url_scan_device(&sub_device) {
-                return Ok(control_url);
+fn parse_device_list(device_list: &Element) -> Option<String> {
+    device_list
+        .children
+        .iter()
+        .filter_map(|child| {
+            let child = child.as_element()?;
+            if child.name == "device" {
+                parse_device(child)
+            } else {
+                None
             }
-        }
-    }
+        })
+        .next()
+}
 
-    return Err(SearchError::InvalidResponse);
+fn parse_service(service: &Element) -> Option<String> {
+    let service_type = service.get_child("serviceType")?;
+    let service_type = service_type.get_text().map(|s| s.into_owned()).unwrap_or("".into());
+    if [
+        "urn:schemas-upnp-org:service:WANPPPConnection:1",
+        "urn:schemas-upnp-org:service:WANIPConnection:1",
+    ]
+    .contains(&service_type.as_str())
+    {
+        let control_url = service.get_child("controlURL");
+        if let Some(control_url) = control_url {
+            Some(control_url.get_text().map(|s| s.into_owned()).unwrap_or("".into()))
+        } else {
+            None
+        }
+    } else {
+        None
+    }
 }
 
 pub struct RequestReponse {
