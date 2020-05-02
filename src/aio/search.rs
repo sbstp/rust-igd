@@ -160,7 +160,10 @@ impl Future for SearchFuture {
 
                 match addr {
                     SocketAddr::V4(a) => {
-                        let g = Gateway::new(*a, url);
+                        let g = Gateway {
+                            addr: *a,
+                            contorl_url: url,
+                        };
                         return Poll::Ready(Ok(g));
                     }
                     _ => warn!("unsupported IPv6 gateway response from addr: {}", addr),

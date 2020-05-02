@@ -18,14 +18,6 @@ pub struct Gateway {
 }
 
 impl Gateway {
-    /// Create a new Gateway
-    pub fn new(addr: SocketAddrV4, control_url: String) -> Gateway {
-        Gateway {
-            addr: addr,
-            control_url: control_url,
-        }
-    }
-
     async fn perform_request(&self, header: &str, body: &str, ok: &str) -> Result<RequestReponse, RequestError> {
         let url = format!("{}", self);
         let text = soap::send_async(&url, soap::Action::new(header), body).await?;
