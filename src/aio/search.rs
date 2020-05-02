@@ -154,15 +154,15 @@ impl Future for SearchFuture {
             };
 
             // Handle any responses
-            if let Ok(url) = Self::handle_control_resp(*addr, resp) {
-                debug!("received control url from: {} (url: {})", addr, url);
+            if let Ok(control_url) = Self::handle_control_resp(*addr, resp) {
+                debug!("received control url from: {} (url: {})", addr, control_url);
                 *state = SearchState::Done(url.clone());
 
                 match addr {
                     SocketAddr::V4(a) => {
                         let g = Gateway {
                             addr: *a,
-                            contorl_url: url,
+                            control_url,
                         };
                         return Poll::Ready(Ok(g));
                     }
