@@ -32,22 +32,22 @@ pub fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
         let (read, _) = socket.recv_from(&mut buf)?;
         let text = str::from_utf8(&buf[..read])?;
 
-        let location = parsing::parse_search_result(text)?;
+        let (addr, root_url) = parsing::parse_search_result(text)?;
 
-        let control_url = match get_control_url(&location) {
+        let control_url = match get_control_url(&addr, &root_url) {
             Ok(o) => o,
             Err(..) => continue,
         };
 
         return Ok(Gateway {
-            addr: location.0,
+            addr,
             control_url: control_url,
         });
     }
 }
 
-fn get_control_url(location: &(SocketAddrV4, String)) -> Result<String, SearchError> {
-    let url = format!("http://{}:{}{}", location.0.ip(), location.0.port(), location.1);
+fn get_control_url(addr: &SocketAddrV4, root_url: &String) -> Result<String, SearchError> {
+    let url = format!("http://{}:{}{}", addr.ip(), addr.port(), root_url);
     let response = attohttpc::get(&url).send()?;
     parsing::parse_control_url(&response.bytes()?[..])
 }
