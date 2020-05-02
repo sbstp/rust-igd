@@ -12,6 +12,8 @@ use crate::PortMappingProtocol;
 pub struct Gateway {
     /// Socket address of the gateway
     pub addr: SocketAddrV4,
+    /// Root url of the device
+    pub root_url: String,
     /// Control url of the device
     pub control_url: String,
 }
