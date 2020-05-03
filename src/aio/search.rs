@@ -39,7 +39,7 @@ pub struct SearchFuture {
 }
 
 enum SearchState {
-    Connecting(Pin<Box<dyn Future<Output = Result<Bytes, SearchError>> + Send>>),
+    Connecting(String, Pin<Box<dyn Future<Output = Result<Bytes, SearchError>> + Send>>),
     Done(String),
     Error,
 }
@@ -122,10 +122,10 @@ impl Future for SearchFuture {
                     debug!("received broadcast response from: {}", from);
 
                     // Issue control request
-                    match Self::request_control_url(addr, path) {
+                    match Self::request_control_url(addr, path.clone()) {
                         // Store pending requests
                         Ok(f) => {
-                            self.pending.insert(addr, SearchState::Connecting(f));
+                            self.pending.insert(addr, SearchState::Connecting(path, f));
                         }
                         Err(e) => return Poll::Ready(Err(e)),
                     }
@@ -141,14 +141,14 @@ impl Future for SearchFuture {
         // Poll on any outstanding control requests
         for (addr, state) in &mut self.pending {
             // Poll if we're in the connecting state
-            let resp = {
-                let c = match state {
-                    SearchState::Connecting(c) => c,
+            let (root_url, resp) = {
+                let (root_url, c) = match state {
+                    SearchState::Connecting(root_url, c) => (root_url, c),
                     _ => continue,
                 };
 
                 match c.as_mut().poll(cx)? {
-                    Poll::Ready(resp) => resp,
+                    Poll::Ready(resp) => (root_url.clone(), resp),
                     _ => continue,
                 }
             };
@@ -162,6 +162,7 @@ impl Future for SearchFuture {
                     SocketAddr::V4(a) => {
                         let g = Gateway {
                             addr: *a,
+                            root_url,
                             control_url,
                         };
                         return Poll::Ready(Ok(g));
