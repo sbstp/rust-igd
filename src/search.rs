@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::net::{SocketAddrV4, UdpSocket};
 use std::str;
 
@@ -39,11 +40,17 @@ pub fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
             Err(..) => continue,
         };
 
+        let control_schema = match get_schemas(&addr, &control_schema_url) {
+            Ok(o) => o,
+            Err(..) => continue,
+        };
+
         return Ok(Gateway {
             addr,
             root_url,
             control_url,
             control_schema_url,
+            control_schema,
         });
     }
 }
@@ -52,4 +59,10 @@ fn get_control_urls(addr: &SocketAddrV4, root_url: &String) -> Result<(String, S
     let url = format!("http://{}:{}{}", addr.ip(), addr.port(), root_url);
     let response = attohttpc::get(&url).send()?;
     parsing::parse_control_urls(&response.bytes()?[..])
+}
+
+fn get_schemas(addr: &SocketAddrV4, control_schema_url: &String) -> Result<HashMap<String, Vec<String>>, SearchError> {
+    let url = format!("http://{}:{}{}", addr.ip(), addr.port(), control_schema_url);
+    let response = attohttpc::get(&url).send()?;
+    parsing::parse_schemas(&response.bytes()?[..])
 }
