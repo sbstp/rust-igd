@@ -48,6 +48,10 @@ enum RequestState {
 enum SearchState {
     Start,
     AwaitingConnections,
+    AwaitingSchemas(
+        Gateway,
+        Pin<Box<dyn Future<Output = Result<Bytes, SearchError>> + Send>>,
+    ),
     End,
 }
 
@@ -114,13 +118,37 @@ impl SearchFuture {
 
         Ok(urls)
     }
+
+    fn request_schemas(
+        addr: SocketAddr,
+        control_schema_url: String,
+    ) -> Result<Pin<Box<dyn Future<Output = Result<Bytes, SearchError>> + Send>>, SearchError> {
+        let client = Client::new();
+        let uri = match format!("http://{}{}", addr, control_schema_url).parse() {
+            Ok(uri) => uri,
+            Err(err) => return Err(SearchError::from(err)),
+        };
+
+        Ok(Box::pin(
+            client
+                .get(uri)
+                .and_then(|resp| hyper::body::to_bytes(resp.into_body()))
+                .map_err(|e| SearchError::from(e)),
+        ))
+    }
+
+    fn handle_schema_resp(resp: Bytes) -> Result<HashMap<String, Vec<String>>, SearchError> {
+        debug!("handling schema response");
+        let c = std::io::Cursor::new(&resp);
+        parsing::parse_schemas(c)
+    }
 }
 
 impl Future for SearchFuture {
     type Output = Result<Gateway, SearchError>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<Gateway, SearchError>> {
-        loop {
+        'state_check: loop {
             match &mut self.state {
                 SearchState::Start => self.state = SearchState::AwaitingConnections,
 
@@ -169,6 +197,10 @@ impl Future for SearchFuture {
                         // Handle any responses
                         if let Ok((control_schema_url, control_url)) = Self::handle_control_resp(*addr, resp) {
                             debug!("received control url from: {} (url: {})", addr, control_url);
+                            let c = match Self::request_schemas(*addr, control_schema_url.clone()) {
+                                Ok(c) => c,
+                                Err(e) => return Poll::Ready(Err(e)),
+                            };
                             *state = RequestState::Done(control_url.clone());
 
                             match addr {
@@ -178,9 +210,10 @@ impl Future for SearchFuture {
                                         root_url,
                                         control_url,
                                         control_schema_url,
+                                        control_schema: HashMap::new(),
                                     };
-                                    self.state = SearchState::End;
-                                    return Poll::Ready(Ok(g));
+                                    self.state = SearchState::AwaitingSchemas(g, c);
+                                    continue 'state_check;
                                 }
                                 _ => warn!("unsupported IPv6 gateway response from addr: {}", addr),
                             }
@@ -190,6 +223,27 @@ impl Future for SearchFuture {
                     }
 
                     return Poll::Pending;
+                }
+
+                SearchState::AwaitingSchemas(g, c) => {
+                    let resp = {
+                        match c.as_mut().poll(cx)? {
+                            Poll::Ready(resp) => resp,
+                            Poll::Pending => return Poll::Pending,
+                        }
+                    };
+
+                    let control_schema = match Self::handle_schema_resp(resp) {
+                        Ok(control_schema) => control_schema,
+                        Err(e) => return Poll::Ready(Err(e)),
+                    };
+
+                    let g = Gateway {
+                        control_schema,
+                        ..g.clone()
+                    };
+                    self.state = SearchState::End;
+                    return Poll::Ready(Ok(g));
                 }
 
                 SearchState::End => panic!("Calling poll on a finished Future"),

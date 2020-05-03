@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::net::{Ipv4Addr, SocketAddrV4};
@@ -19,6 +20,8 @@ pub struct Gateway {
     pub control_url: String,
     /// Url to get schema data from
     pub control_schema_url: String,
+    /// Control schema for all actions
+    pub control_schema: HashMap<String, Vec<String>>,
 }
 
 impl Gateway {
