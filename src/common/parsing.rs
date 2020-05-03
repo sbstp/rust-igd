@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io;
 use std::net::{Ipv4Addr, SocketAddrV4};
 
@@ -107,6 +108,73 @@ fn parse_service(service: &Element) -> Option<(String, String)> {
         } else {
             None
         }
+    } else {
+        None
+    }
+}
+
+pub fn parse_schemas<R>(resp: R) -> Result<HashMap<String, Vec<String>>, SearchError>
+where
+    R: io::Read,
+{
+    let root = Element::parse(resp)?;
+
+    let mut schema = root.children.iter().filter_map(|child| {
+        let child = child.as_element()?;
+        if child.name == "actionList" {
+            parse_action_list(child)
+        } else {
+            None
+        }
+    });
+
+    schema.next().ok_or(SearchError::InvalidResponse)
+}
+
+fn parse_action_list(action_list: &Element) -> Option<HashMap<String, Vec<String>>> {
+    Some(
+        action_list
+            .children
+            .iter()
+            .filter_map(|child| {
+                let child = child.as_element()?;
+                if child.name == "action" {
+                    parse_action(child)
+                } else {
+                    None
+                }
+            })
+            .collect(),
+    )
+}
+
+fn parse_action(action: &Element) -> Option<(String, Vec<String>)> {
+    Some((
+        action.get_child("name")?.get_text()?.into_owned(),
+        parse_argument_list(action.get_child("argumentList")?)?,
+    ))
+}
+
+fn parse_argument_list(argument_list: &Element) -> Option<Vec<String>> {
+    Some(
+        argument_list
+            .children
+            .iter()
+            .filter_map(|child| {
+                let child = child.as_element()?;
+                if child.name == "argument" {
+                    parse_argument(child)
+                } else {
+                    None
+                }
+            })
+            .collect(),
+    )
+}
+
+fn parse_argument(action: &Element) -> Option<String> {
+    if action.get_child("direction")?.get_text()?.into_owned().as_str() == "in" {
+        Some(action.get_child("name")?.get_text()?.into_owned())
     } else {
         None
     }
