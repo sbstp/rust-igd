@@ -35,10 +35,10 @@ pub async fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchErr
 
 pub struct SearchFuture {
     socket: UdpSocket,
-    pending: HashMap<SocketAddr, SearchState>,
+    pending: HashMap<SocketAddr, RequestState>,
 }
 
-enum SearchState {
+enum RequestState {
     Connecting(String, Pin<Box<dyn Future<Output = Result<Bytes, SearchError>> + Send>>),
     Done(String),
     Error,
@@ -125,7 +125,7 @@ impl Future for SearchFuture {
                     match Self::request_control_url(addr, path.clone()) {
                         // Store pending requests
                         Ok(f) => {
-                            self.pending.insert(addr, SearchState::Connecting(path, f));
+                            self.pending.insert(addr, RequestState::Connecting(path, f));
                         }
                         Err(e) => return Poll::Ready(Err(e)),
                     }
@@ -143,7 +143,7 @@ impl Future for SearchFuture {
             // Poll if we're in the connecting state
             let (root_url, resp) = {
                 let (root_url, c) = match state {
-                    SearchState::Connecting(root_url, c) => (root_url, c),
+                    RequestState::Connecting(root_url, c) => (root_url, c),
                     _ => continue,
                 };
 
@@ -156,7 +156,7 @@ impl Future for SearchFuture {
             // Handle any responses
             if let Ok(control_url) = Self::handle_control_resp(*addr, resp) {
                 debug!("received control url from: {} (url: {})", addr, control_url);
-                *state = SearchState::Done(url.clone());
+                *state = RequestState::Done(url.clone());
 
                 match addr {
                     SocketAddr::V4(a) => {
@@ -170,7 +170,7 @@ impl Future for SearchFuture {
                     _ => warn!("unsupported IPv6 gateway response from addr: {}", addr),
                 }
             } else {
-                *state = SearchState::Error;
+                *state = RequestState::Error;
             }
         }
 
