@@ -22,6 +22,17 @@ pub const DELETE_PORT_MAPPING_HEADER: &'static str =
 pub const GET_GENERIC_PORT_MAPPING_ENTRY: &'static str =
     r#""urn:schemas-upnp-org:service:WANIPConnection:1#GetGenericPortMappingEntry""#;
 
+const MESSAGE_HEAD: &'static str = r#"<?xml version="1.0"?>
+<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+<s:Body>"#;
+
+const MESSAGE_TAIL: &'static str = r#"</s:Body>
+</s:Envelope>"#;
+
+fn format_message(body: String) -> String {
+    format!("{}{}{}", MESSAGE_HEAD, body, MESSAGE_TAIL)
+}
+
 pub fn format_get_external_ip_message() -> String {
     format!(
         r#"<?xml version="1.0"?>
@@ -41,10 +52,8 @@ pub fn format_add_any_port_mapping_message(
     lease_duration: u32,
     description: &str,
 ) -> String {
-    format!("<?xml version=\"1.0\"?>
-<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">
-<s:Body>
-    <u:AddAnyPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">
+    format_message(format!(
+        r#"<u:AddAnyPortMapping xmlns:u="urn:schemas-upnp-org:service:WANIPConnection:1">
         <NewProtocol>{}</NewProtocol>
         <NewExternalPort>{}</NewExternalPort>
         <NewInternalClient>{}</NewInternalClient>
@@ -53,16 +62,14 @@ pub fn format_add_any_port_mapping_message(
         <NewPortMappingDescription>{}</NewPortMappingDescription>
         <NewEnabled>1</NewEnabled>
         <NewRemoteHost></NewRemoteHost>
-    </u:AddAnyPortMapping>
-</s:Body>
-</s:Envelope>",
+        </u:AddAnyPortMapping>"#,
         protocol,
         external_port,
         local_addr.ip(),
         local_addr.port(),
         lease_duration,
         description,
-    )
+    ))
 }
 
 pub fn format_add_port_mapping_message(
@@ -72,10 +79,8 @@ pub fn format_add_port_mapping_message(
     lease_duration: u32,
     description: &str,
 ) -> String {
-    format!("<?xml version=\"1.0\"?>
-<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">
-<s:Body>
-    <u:AddPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">
+    format_message(format!(
+        r#"<u:AddPortMapping xmlns:u="urn:schemas-upnp-org:service:WANIPConnection:1">
         <NewProtocol>{}</NewProtocol>
         <NewExternalPort>{}</NewExternalPort>
         <NewInternalClient>{}</NewInternalClient>
@@ -84,41 +89,33 @@ pub fn format_add_port_mapping_message(
         <NewPortMappingDescription>{}</NewPortMappingDescription>
         <NewEnabled>1</NewEnabled>
         <NewRemoteHost></NewRemoteHost>
-    </u:AddPortMapping>
-</s:Body>
-</s:Envelope>",
+        </u:AddPortMapping>"#,
         protocol,
         external_port,
         local_addr.ip(),
         local_addr.port(),
         lease_duration,
         description,
-    )
+    ))
 }
 
 pub fn format_delete_port_message(protocol: PortMappingProtocol, external_port: u16) -> String {
-    format!("<?xml version=\"1.0\"?>
-<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">
-<s:Body>
-    <u:DeletePortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">
+    format_message(format!(
+        r#"<u:DeletePortMapping xmlns:u="urn:schemas-upnp-org:service:WANIPConnection:1">
         <NewProtocol>{}</NewProtocol>
         <NewExternalPort>{}</NewExternalPort>
         <NewRemoteHost></NewRemoteHost>
-    </u:DeletePortMapping>
-</s:Body>
-</s:Envelope>",
+        </u:DeletePortMapping>"#,
         protocol,
         external_port
-    )
+    ))
 }
 
 pub fn formate_get_generic_port_mapping_entry_message(port_mapping_index: u32) -> String {
-    format!("<?xml version=\"1.0\"?>
-    <s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">
-        <s:Body>
-            <u:GetGenericPortMappingEntry xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">
-                <NewPortMappingIndex>{}</NewPortMappingIndex>
-            </u:GetGenericPortMappingEntry>
-        </s:Body>
-    </s:Envelope>", port_mapping_index)
+    format_message(format!(
+        r#"<u:GetGenericPortMappingEntry xmlns:u="urn:schemas-upnp-org:service:WANIPConnection:1">
+        <NewPortMappingIndex>{}</NewPortMappingIndex>
+        </u:GetGenericPortMappingEntry>"#,
+        port_mapping_index
+    ))
 }
