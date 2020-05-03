@@ -106,21 +106,6 @@ impl std::error::Error for RequestError {
             RequestError::Utf8Error(ref e) => Some(e),
         }
     }
-
-    fn description(&self) -> &str {
-        match *self {
-            RequestError::AttoHttpError(..) => "Http error",
-            RequestError::InvalidResponse(..) => "Invalid response",
-            RequestError::IoError(..) => "IO error",
-            RequestError::ErrorCode(_, ref e) => &e[..],
-            #[cfg(feature = "aio")]
-            RequestError::HyperError(_) => "Hyper Error",
-            #[cfg(feature = "aio")]
-            RequestError::HttpError(_) => "Http Error",
-            #[cfg(feature = "aio")]
-            RequestError::Utf8Error(_) => "UTF8 Error",
-        }
-    }
 }
 
 /// Errors returned by `Gateway::get_external_ip`
@@ -218,13 +203,6 @@ impl std::error::Error for GetExternalIpError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
     }
-
-    fn description(&self) -> &str {
-        match *self {
-            GetExternalIpError::ActionNotAuthorized => "The client is not authorized to remove the port",
-            GetExternalIpError::RequestError(..) => "Request error",
-        }
-    }
 }
 
 impl fmt::Display for RemovePortError {
@@ -240,14 +218,6 @@ impl fmt::Display for RemovePortError {
 impl std::error::Error for RemovePortError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
-    }
-
-    fn description(&self) -> &str {
-        match *self {
-            RemovePortError::ActionNotAuthorized => "The client is not authorized to remove the port",
-            RemovePortError::NoSuchPortMapping => "The port was not mapped",
-            RemovePortError::RequestError(..) => "Request error",
-        }
     }
 }
 
@@ -287,26 +257,6 @@ impl std::error::Error for AddAnyPortError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
     }
-
-    fn description(&self) -> &str {
-        match *self {
-            AddAnyPortError::ActionNotAuthorized => {
-                "The client is not authorized to remove the port"
-            }
-            AddAnyPortError::InternalPortZeroInvalid => "Can not add a mapping for local port 0.",
-            AddAnyPortError::NoPortsAvailable => "The gateway does not have any free ports",
-            AddAnyPortError::OnlyPermanentLeasesSupported => {
-                "The gateway only supports permanent leases (ie. a `lease_duration` of 0),"
-            }
-            AddAnyPortError::ExternalPortInUse => {
-                "The gateway can only map internal ports to same-numbered external ports and this external port is in use."
-            }
-            AddAnyPortError::DescriptionTooLong => {
-                "The description was too long for the gateway to handle."
-            }
-            AddAnyPortError::RequestError(..) => "Request error",
-        }
-    }
 }
 
 impl fmt::Display for AddPortError {
@@ -339,25 +289,6 @@ impl fmt::Display for AddPortError {
 impl std::error::Error for AddPortError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
-    }
-
-    fn description(&self) -> &str {
-        match *self {
-            AddPortError::ActionNotAuthorized => "The client is not authorized to map this port.",
-            AddPortError::InternalPortZeroInvalid => "Can not add a mapping for local port 0",
-            AddPortError::ExternalPortZeroInvalid => {
-                "External port number 0 (any port) is considered invalid by the gateway."
-            }
-            AddPortError::PortInUse => "The requested mapping conflicts with a mapping assigned to another client.",
-            AddPortError::SamePortValuesRequired => {
-                "The gateway requires that the requested internal and external ports are the same."
-            }
-            AddPortError::OnlyPermanentLeasesSupported => {
-                "The gateway only supports permanent leases (ie. a `lease_duration` of 0),"
-            }
-            AddPortError::DescriptionTooLong => "The description was too long for the gateway to handle.",
-            AddPortError::RequestError(..) => "Request error",
-        }
     }
 }
 
@@ -456,20 +387,6 @@ impl error::Error for SearchError {
             SearchError::InvalidUri(ref e) => Some(e),
         }
     }
-
-    fn description(&self) -> &str {
-        match *self {
-            SearchError::HttpError(..) => "HTTP error",
-            SearchError::InvalidResponse => "Invalid response",
-            SearchError::IoError(..) => "IO error",
-            SearchError::Utf8Error(..) => "UTF-8 error",
-            SearchError::XmlError(..) => "XML error",
-            #[cfg(feature = "aio")]
-            SearchError::HyperError(..) => "Hyper Error",
-            #[cfg(feature = "aio")]
-            SearchError::InvalidUri(_) => "Invalid URI Error",
-        }
-    }
 }
 
 /// Errors than can occur while getting a port mapping
@@ -553,17 +470,6 @@ impl error::Error for Error {
             Error::RemovePortError(ref e) => Some(e),
             Error::RequestError(ref e) => Some(e),
             Error::SearchError(ref e) => Some(e),
-        }
-    }
-
-    fn description(&self) -> &str {
-        match *self {
-            Error::AddAnyPortError(ref e) => e.description(),
-            Error::AddPortError(ref e) => e.description(),
-            Error::GetExternalIpError(ref e) => e.description(),
-            Error::RemovePortError(ref e) => e.description(),
-            Error::RequestError(ref e) => e.description(),
-            Error::SearchError(ref e) => e.description(),
         }
     }
 }
