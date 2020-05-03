@@ -67,9 +67,9 @@ impl SearchFuture {
         let text = str::from_utf8(&data).map_err(|e| SearchError::from(e))?;
 
         // Parse socket address and path
-        let (addr, path) = parsing::parse_search_result(text)?;
+        let (addr, root_url) = parsing::parse_search_result(text)?;
 
-        Ok((SocketAddr::V4(addr), path))
+        Ok((SocketAddr::V4(addr), root_url))
     }
 
     // Issue a control URL request over HTTP using the provided
@@ -117,15 +117,15 @@ impl Future for SearchFuture {
         let resp = self.socket.poll_recv_from(cx, &mut buff);
         if let Poll::Ready(Ok((n, from))) = resp {
             // Try handle response messages
-            if let Ok((addr, path)) = Self::handle_broadcast_resp(from, &buff[0..n]) {
+            if let Ok((addr, root_url)) = Self::handle_broadcast_resp(from, &buff[0..n]) {
                 if !self.pending.contains_key(&addr) {
                     debug!("received broadcast response from: {}", from);
 
                     // Issue control request
-                    match Self::request_control_url(addr, path.clone()) {
+                    match Self::request_control_url(addr, root_url.clone()) {
                         // Store pending requests
                         Ok(f) => {
-                            self.pending.insert(addr, RequestState::Connecting(path, f));
+                            self.pending.insert(addr, RequestState::Connecting(root_url, f));
                         }
                         Err(e) => return Poll::Ready(Err(e)),
                     }
