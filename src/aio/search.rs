@@ -103,16 +103,16 @@ impl SearchFuture {
     }
 
     // Process a control response to extract the control URL
-    fn handle_control_resp(addr: SocketAddr, resp: Bytes) -> Result<String, SearchError> {
+    fn handle_control_resp(addr: SocketAddr, resp: Bytes) -> Result<(String, String), SearchError> {
         debug!("handling control response from: {}", addr);
 
         // Create a cursor over the response data
         let c = std::io::Cursor::new(&resp);
 
         // Parse control URL out of body
-        let url = parsing::parse_control_url(c)?;
+        let urls = parsing::parse_control_urls(c)?;
 
-        Ok(url)
+        Ok(urls)
     }
 }
 
@@ -167,9 +167,9 @@ impl Future for SearchFuture {
                         };
 
                         // Handle any responses
-                        if let Ok(control_url) = Self::handle_control_resp(*addr, resp) {
+                        if let Ok((control_schema_url, control_url)) = Self::handle_control_resp(*addr, resp) {
                             debug!("received control url from: {} (url: {})", addr, control_url);
-                            *state = RequestState::Done(url.clone());
+                            *state = RequestState::Done(control_url.clone());
 
                             match addr {
                                 SocketAddr::V4(a) => {
@@ -177,6 +177,7 @@ impl Future for SearchFuture {
                                         addr: *a,
                                         root_url,
                                         control_url,
+                                        control_schema_url,
                                     };
                                     self.state = SearchState::End;
                                     return Poll::Ready(Ok(g));

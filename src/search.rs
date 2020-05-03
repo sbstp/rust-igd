@@ -34,7 +34,7 @@ pub fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
 
         let (addr, root_url) = parsing::parse_search_result(text)?;
 
-        let control_url = match get_control_url(&addr, &root_url) {
+        let (control_schema_url, control_url) = match get_control_urls(&addr, &root_url) {
             Ok(o) => o,
             Err(..) => continue,
         };
@@ -43,12 +43,13 @@ pub fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
             addr,
             root_url,
             control_url,
+            control_schema_url,
         });
     }
 }
 
-fn get_control_url(addr: &SocketAddrV4, root_url: &String) -> Result<String, SearchError> {
+fn get_control_urls(addr: &SocketAddrV4, root_url: &String) -> Result<(String, String), SearchError> {
     let url = format!("http://{}:{}{}", addr.ip(), addr.port(), root_url);
     let response = attohttpc::get(&url).send()?;
-    parsing::parse_control_url(&response.bytes()?[..])
+    parsing::parse_control_urls(&response.bytes()?[..])
 }

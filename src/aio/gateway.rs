@@ -17,6 +17,8 @@ pub struct Gateway {
     pub root_url: String,
     /// Control url of the device
     pub control_url: String,
+    /// Url to get schema data from
+    pub control_schema_url: String,
 }
 
 impl Gateway {

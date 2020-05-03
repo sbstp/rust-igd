@@ -33,13 +33,13 @@ pub fn parse_search_result(text: &str) -> Result<(SocketAddrV4, String), SearchE
     Err(InvalidResponse)
 }
 
-pub fn parse_control_url<R>(resp: R) -> Result<String, SearchError>
+pub fn parse_control_urls<R>(resp: R) -> Result<(String, String), SearchError>
 where
     R: io::Read,
 {
     let root = Element::parse(resp)?;
 
-    let mut url = root.children.iter().filter_map(|child| {
+    let mut urls = root.children.iter().filter_map(|child| {
         let child = child.as_element()?;
         if child.name == "device" {
             Some(parse_device(child)?)
@@ -48,10 +48,10 @@ where
         }
     });
 
-    url.next().ok_or(SearchError::InvalidResponse)
+    urls.next().ok_or(SearchError::InvalidResponse)
 }
 
-fn parse_device(device: &Element) -> Option<String> {
+fn parse_device(device: &Element) -> Option<(String, String)> {
     let services = device
         .get_child("serviceList")
         .map(|service_list| {
@@ -73,7 +73,7 @@ fn parse_device(device: &Element) -> Option<String> {
     services.or(devices)
 }
 
-fn parse_device_list(device_list: &Element) -> Option<String> {
+fn parse_device_list(device_list: &Element) -> Option<(String, String)> {
     device_list
         .children
         .iter()
@@ -88,7 +88,7 @@ fn parse_device_list(device_list: &Element) -> Option<String> {
         .next()
 }
 
-fn parse_service(service: &Element) -> Option<String> {
+fn parse_service(service: &Element) -> Option<(String, String)> {
     let service_type = service.get_child("serviceType")?;
     let service_type = service_type.get_text().map(|s| s.into_owned()).unwrap_or("".into());
     if [
@@ -97,9 +97,13 @@ fn parse_service(service: &Element) -> Option<String> {
     ]
     .contains(&service_type.as_str())
     {
+        let scpd_url = service.get_child("SCPDURL");
         let control_url = service.get_child("controlURL");
-        if let Some(control_url) = control_url {
-            Some(control_url.get_text().map(|s| s.into_owned()).unwrap_or("".into()))
+        if let (Some(scpd_url), Some(control_url)) = (scpd_url, control_url) {
+            Some((
+                scpd_url.get_text().map(|s| s.into_owned()).unwrap_or("".into()),
+                control_url.get_text().map(|s| s.into_owned()).unwrap_or("".into()),
+            ))
         } else {
             None
         }
@@ -424,7 +428,9 @@ fn test_parse_device1() {
    </device>
 </root>"#;
 
-    assert_eq!(parse_control_url(text.as_bytes()).unwrap(), "/ctl/IPConn");
+    let (control_schema_url, control_url) = parse_control_urls(text.as_bytes()).unwrap();
+    assert_eq!(control_url, "/ctl/IPConn");
+    assert_eq!(control_schema_url, "/WANIPCn.xml");
 }
 
 #[test]
@@ -528,10 +534,11 @@ fn test_parse_device2() {
         </device>
     </root>
     "#;
-    let result = parse_control_url(text.as_bytes());
+    let result = parse_control_urls(text.as_bytes());
     assert!(result.is_ok());
-    let control_url = result.unwrap();
+    let (control_schema_url, control_url) = result.unwrap();
     assert_eq!(control_url, "/igdupnp/control/WANIPConn1");
+    assert_eq!(control_schema_url, "/igdconnSCPD.xml");
 }
 
 #[test]
@@ -616,5 +623,7 @@ fn test_parse_device3() {
 </device>
 </root>"#;
 
-    assert_eq!(parse_control_url(text.as_bytes()).unwrap(), "/upnp/control/WANIPConn1");
+    let (control_schema_url, control_url) = parse_control_urls(text.as_bytes()).unwrap();
+    assert_eq!(control_url, "/upnp/control/WANIPConn1");
+    assert_eq!(control_schema_url, "/332b484d/wanipconnSCPD.xml");
 }
