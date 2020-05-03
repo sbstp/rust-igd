@@ -125,70 +125,70 @@ impl Future for SearchFuture {
                 SearchState::Start => self.state = SearchState::AwaitingConnections,
 
                 SearchState::AwaitingConnections => {
-        // Poll for (and handle) incoming messages
-        let mut buff = [0u8; MAX_RESPONSE_SIZE];
-        let resp = self.socket.poll_recv_from(cx, &mut buff);
-        if let Poll::Ready(Ok((n, from))) = resp {
-            // Try handle response messages
-            if let Ok((addr, root_url)) = Self::handle_broadcast_resp(from, &buff[0..n]) {
-                if !self.pending.contains_key(&addr) {
-                    debug!("received broadcast response from: {}", from);
+                    // Poll for (and handle) incoming messages
+                    let mut buff = [0u8; MAX_RESPONSE_SIZE];
+                    let resp = self.socket.poll_recv_from(cx, &mut buff);
+                    if let Poll::Ready(Ok((n, from))) = resp {
+                        // Try handle response messages
+                        if let Ok((addr, root_url)) = Self::handle_broadcast_resp(from, &buff[0..n]) {
+                            if !self.pending.contains_key(&addr) {
+                                debug!("received broadcast response from: {}", from);
 
-                    // Issue control request
-                    match Self::request_control_url(addr, root_url.clone()) {
-                        // Store pending requests
-                        Ok(f) => {
-                            self.pending.insert(addr, RequestState::Connecting(root_url, f));
+                                // Issue control request
+                                match Self::request_control_url(addr, root_url.clone()) {
+                                    // Store pending requests
+                                    Ok(f) => {
+                                        self.pending.insert(addr, RequestState::Connecting(root_url, f));
+                                    }
+                                    Err(e) => return Poll::Ready(Err(e)),
+                                }
+                            } else {
+                                debug!("received duplicate broadcast response from: {}, dropping", from);
+                            }
                         }
-                        Err(e) => return Poll::Ready(Err(e)),
                     }
-                } else {
-                    debug!("received duplicate broadcast response from: {}, dropping", from);
-                }
-            }
-        }
-        if let Poll::Ready(Err(err)) = resp {
-            return Poll::Ready(Err(err.into()));
-        }
+                    if let Poll::Ready(Err(err)) = resp {
+                        return Poll::Ready(Err(err.into()));
+                    }
 
-        // Poll on any outstanding control requests
-        for (addr, state) in &mut self.pending {
-            // Poll if we're in the connecting state
-            let (root_url, resp) = {
-                let (root_url, c) = match state {
-                    RequestState::Connecting(root_url, c) => (root_url, c),
-                    _ => continue,
-                };
+                    // Poll on any outstanding control requests
+                    for (addr, state) in &mut self.pending {
+                        // Poll if we're in the connecting state
+                        let (root_url, resp) = {
+                            let (root_url, c) = match state {
+                                RequestState::Connecting(root_url, c) => (root_url, c),
+                                _ => continue,
+                            };
 
-                match c.as_mut().poll(cx)? {
-                    Poll::Ready(resp) => (root_url.clone(), resp),
-                    _ => continue,
-                }
-            };
-
-            // Handle any responses
-            if let Ok(control_url) = Self::handle_control_resp(*addr, resp) {
-                debug!("received control url from: {} (url: {})", addr, control_url);
-                *state = RequestState::Done(url.clone());
-
-                match addr {
-                    SocketAddr::V4(a) => {
-                        let g = Gateway {
-                            addr: *a,
-                            root_url,
-                            control_url,
+                            match c.as_mut().poll(cx)? {
+                                Poll::Ready(resp) => (root_url.clone(), resp),
+                                _ => continue,
+                            }
                         };
-                        self.state = SearchState::End;
-                        return Poll::Ready(Ok(g));
-                    }
-                    _ => warn!("unsupported IPv6 gateway response from addr: {}", addr),
-                }
-            } else {
-                *state = RequestState::Error;
-            }
-        }
 
-        return Poll::Pending;
+                        // Handle any responses
+                        if let Ok(control_url) = Self::handle_control_resp(*addr, resp) {
+                            debug!("received control url from: {} (url: {})", addr, control_url);
+                            *state = RequestState::Done(url.clone());
+
+                            match addr {
+                                SocketAddr::V4(a) => {
+                                    let g = Gateway {
+                                        addr: *a,
+                                        root_url,
+                                        control_url,
+                                    };
+                                    self.state = SearchState::End;
+                                    return Poll::Ready(Ok(g));
+                                }
+                                _ => warn!("unsupported IPv6 gateway response from addr: {}", addr),
+                            }
+                        } else {
+                            *state = RequestState::Error;
+                        }
+                    }
+
+                    return Poll::Pending;
                 }
 
                 SearchState::End => panic!("Calling poll on a finished Future"),
