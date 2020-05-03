@@ -36,12 +36,19 @@ pub async fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchErr
 pub struct SearchFuture {
     socket: UdpSocket,
     pending: HashMap<SocketAddr, RequestState>,
+    state: SearchState,
 }
 
 enum RequestState {
     Connecting(String, Pin<Box<dyn Future<Output = Result<Bytes, SearchError>> + Send>>),
     Done(String),
     Error,
+}
+
+enum SearchState {
+    Start,
+    AwaitingConnections,
+    End,
 }
 
 impl SearchFuture {
@@ -56,6 +63,7 @@ impl SearchFuture {
         Ok(SearchFuture {
             socket,
             pending: HashMap::new(),
+            state: SearchState::Start,
         })
     }
 
@@ -112,6 +120,11 @@ impl Future for SearchFuture {
     type Output = Result<Gateway, SearchError>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<Gateway, SearchError>> {
+        loop {
+            match &mut self.state {
+                SearchState::Start => self.state = SearchState::AwaitingConnections,
+
+                SearchState::AwaitingConnections => {
         // Poll for (and handle) incoming messages
         let mut buff = [0u8; MAX_RESPONSE_SIZE];
         let resp = self.socket.poll_recv_from(cx, &mut buff);
@@ -165,6 +178,7 @@ impl Future for SearchFuture {
                             root_url,
                             control_url,
                         };
+                        self.state = SearchState::End;
                         return Poll::Ready(Ok(g));
                     }
                     _ => warn!("unsupported IPv6 gateway response from addr: {}", addr),
@@ -174,6 +188,11 @@ impl Future for SearchFuture {
             }
         }
 
-        Poll::Pending
+        return Poll::Pending;
+                }
+
+                SearchState::End => panic!("Calling poll on a finished Future"),
+            }
+        }
     }
 }
