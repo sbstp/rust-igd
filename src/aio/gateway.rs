@@ -92,35 +92,34 @@ impl Gateway {
             return Err(AddAnyPortError::InternalPortZeroInvalid);
         }
 
-        let external_port = common::random_port();
+        let schema = self.control_schema.get("AddAnyPortMapping");
+        if let Some(schema) = schema {
+            let external_port = common::random_port();
 
-        let gateway = self.clone();
-        let description = description.to_owned();
+            let description = description.to_owned();
 
-        // First, attempt to call the AddAnyPortMapping method.
-        let resp = self
-            .perform_request(
-                messages::ADD_ANY_PORT_MAPPING_HEADER,
-                &messages::format_add_any_port_mapping_message(
-                    protocol,
-                    external_port,
-                    local_addr,
-                    lease_duration,
-                    &description,
-                ),
-                "AddAnyPortMappingResponse",
-            )
-            .await;
-        match parsing::parse_add_any_port_mapping_response(resp) {
-            Ok(port) => Ok(port),
-            Err(None) => {
-                // The router does not have the AddAnyPortMapping method.
-                // Fall back to using AddPortMapping with a random port.
-                gateway
-                    .retry_add_random_port_mapping(protocol, local_addr, lease_duration, &description)
-                    .await
-            }
-            Err(Some(err)) => Err(err),
+            let resp = self
+                .perform_request(
+                    messages::ADD_ANY_PORT_MAPPING_HEADER,
+                    &messages::format_add_any_port_mapping_message(
+                        schema,
+                        protocol,
+                        external_port,
+                        local_addr,
+                        lease_duration,
+                        &description,
+                    ),
+                    "AddAnyPortMappingResponse",
+                )
+                .await;
+            parsing::parse_add_any_port_mapping_response(resp)
+        } else {
+            // The router does not have the AddAnyPortMapping method.
+            // Fall back to using AddPortMapping with a random port.
+            let gateway = self.clone();
+            gateway
+                .retry_add_random_port_mapping(protocol, local_addr, lease_duration, &description)
+                .await
         }
     }
 
@@ -199,6 +198,7 @@ impl Gateway {
         self.perform_request(
             messages::ADD_PORT_MAPPING_HEADER,
             &messages::format_add_port_mapping_message(
+                self.control_schema.get("AddPortMapping").unwrap(),
                 protocol,
                 external_port,
                 local_addr,
@@ -244,7 +244,11 @@ impl Gateway {
         let res = self
             .perform_request(
                 messages::DELETE_PORT_MAPPING_HEADER,
-                &messages::format_delete_port_message(protocol, external_port),
+                &messages::format_delete_port_message(
+                    self.control_schema.get("DeletePortMapping").unwrap(),
+                    protocol,
+                    external_port,
+                ),
                 "DeletePortMappingResponse",
             )
             .await;

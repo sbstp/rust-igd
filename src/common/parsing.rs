@@ -241,7 +241,7 @@ pub fn parse_get_external_ip_response(result: RequestResult) -> Result<Ipv4Addr,
     }
 }
 
-pub fn parse_add_any_port_mapping_response(result: RequestResult) -> Result<u16, Option<AddAnyPortError>> {
+pub fn parse_add_any_port_mapping_response(result: RequestResult) -> Result<u16, AddAnyPortError> {
     match result {
         Ok(resp) => {
             match resp
@@ -251,17 +251,14 @@ pub fn parse_add_any_port_mapping_response(result: RequestResult) -> Result<u16,
                 .and_then(|t| t.parse::<u16>().ok())
             {
                 Some(port) => Ok(port),
-                None => Err(Some(AddAnyPortError::RequestError(RequestError::InvalidResponse(
-                    resp.text,
-                )))),
+                None => Err(AddAnyPortError::RequestError(RequestError::InvalidResponse(resp.text))),
             }
         }
         Err(err) => Err(match err {
-            RequestError::ErrorCode(401, _) => None,
-            RequestError::ErrorCode(605, _) => Some(AddAnyPortError::DescriptionTooLong),
-            RequestError::ErrorCode(606, _) => Some(AddAnyPortError::ActionNotAuthorized),
-            RequestError::ErrorCode(728, _) => Some(AddAnyPortError::NoPortsAvailable),
-            e => Some(AddAnyPortError::RequestError(e)),
+            RequestError::ErrorCode(605, _) => AddAnyPortError::DescriptionTooLong,
+            RequestError::ErrorCode(606, _) => AddAnyPortError::ActionNotAuthorized,
+            RequestError::ErrorCode(728, _) => AddAnyPortError::NoPortsAvailable,
+            e => AddAnyPortError::RequestError(e),
         }),
     }
 }

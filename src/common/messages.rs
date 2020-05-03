@@ -46,68 +46,95 @@ pub fn format_get_external_ip_message() -> String {
 }
 
 pub fn format_add_any_port_mapping_message(
+    schema: &Vec<String>,
     protocol: PortMappingProtocol,
     external_port: u16,
     local_addr: SocketAddrV4,
     lease_duration: u32,
     description: &str,
 ) -> String {
+    let args = schema
+        .iter()
+        .map(|argument| {
+            let value = match argument.as_str() {
+                "NewEnabled" => 1.to_string(),
+                "NewExternalPort" => external_port.to_string(),
+                "NewInternalClient" => local_addr.ip().to_string(),
+                "NewInternalPort" => local_addr.port().to_string(),
+                "NewLeaseDuration" => lease_duration.to_string(),
+                "NewPortMappingDescription" => description.to_string(),
+                "NewProtocol" => protocol.to_string(),
+                "NewRemoteHost" => "".to_string(),
+                _ => panic!("Nope"),
+            };
+            format!("<{argument}>{value}</{argument}>", argument = argument, value = value)
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
     format_message(format!(
         r#"<u:AddAnyPortMapping xmlns:u="urn:schemas-upnp-org:service:WANIPConnection:1">
-        <NewProtocol>{}</NewProtocol>
-        <NewExternalPort>{}</NewExternalPort>
-        <NewInternalClient>{}</NewInternalClient>
-        <NewInternalPort>{}</NewInternalPort>
-        <NewLeaseDuration>{}</NewLeaseDuration>
-        <NewPortMappingDescription>{}</NewPortMappingDescription>
-        <NewEnabled>1</NewEnabled>
-        <NewRemoteHost></NewRemoteHost>
+        {}
         </u:AddAnyPortMapping>"#,
-        protocol,
-        external_port,
-        local_addr.ip(),
-        local_addr.port(),
-        lease_duration,
-        description,
+        args,
     ))
 }
 
 pub fn format_add_port_mapping_message(
+    schema: &Vec<String>,
     protocol: PortMappingProtocol,
     external_port: u16,
     local_addr: SocketAddrV4,
     lease_duration: u32,
     description: &str,
 ) -> String {
+    let args = schema
+        .iter()
+        .map(|argument| {
+            let value = match argument.as_str() {
+                "NewEnabled" => 1.to_string(),
+                "NewExternalPort" => external_port.to_string(),
+                "NewInternalClient" => local_addr.ip().to_string(),
+                "NewInternalPort" => local_addr.port().to_string(),
+                "NewLeaseDuration" => lease_duration.to_string(),
+                "NewPortMappingDescription" => description.to_string(),
+                "NewProtocol" => protocol.to_string(),
+                "NewRemoteHost" => "".to_string(),
+                _ => panic!("Nope"),
+            };
+            format!("<{argument}>{value}</{argument}>", argument = argument, value = value)
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
     format_message(format!(
         r#"<u:AddPortMapping xmlns:u="urn:schemas-upnp-org:service:WANIPConnection:1">
-        <NewProtocol>{}</NewProtocol>
-        <NewExternalPort>{}</NewExternalPort>
-        <NewInternalClient>{}</NewInternalClient>
-        <NewInternalPort>{}</NewInternalPort>
-        <NewLeaseDuration>{}</NewLeaseDuration>
-        <NewPortMappingDescription>{}</NewPortMappingDescription>
-        <NewEnabled>1</NewEnabled>
-        <NewRemoteHost></NewRemoteHost>
+        {}
         </u:AddPortMapping>"#,
-        protocol,
-        external_port,
-        local_addr.ip(),
-        local_addr.port(),
-        lease_duration,
-        description,
+        args,
     ))
 }
 
-pub fn format_delete_port_message(protocol: PortMappingProtocol, external_port: u16) -> String {
+pub fn format_delete_port_message(schema: &Vec<String>, protocol: PortMappingProtocol, external_port: u16) -> String {
+    let args = schema
+        .iter()
+        .map(|argument| {
+            let value = match argument.as_str() {
+                "NewExternalPort" => external_port.to_string(),
+                "NewProtocol" => protocol.to_string(),
+                "NewRemoteHost" => "".to_string(),
+                _ => panic!("Nope"),
+            };
+            format!("<{argument}>{value}</{argument}>", argument = argument, value = value)
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
     format_message(format!(
         r#"<u:DeletePortMapping xmlns:u="urn:schemas-upnp-org:service:WANIPConnection:1">
-        <NewProtocol>{}</NewProtocol>
-        <NewExternalPort>{}</NewExternalPort>
-        <NewRemoteHost></NewRemoteHost>
+        {}
         </u:DeletePortMapping>"#,
-        protocol,
-        external_port
+        args,
     ))
 }
 
