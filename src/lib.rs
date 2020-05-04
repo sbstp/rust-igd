@@ -5,7 +5,6 @@
 //! You can then communicate with the device via this object.
 
 extern crate attohttpc;
-#[cfg(feature = "aio")]
 #[macro_use]
 extern crate log;
 #[cfg(feature = "aio")]
