@@ -55,7 +55,7 @@ pub fn format_add_any_port_mapping_message(
 ) -> String {
     let args = schema
         .iter()
-        .map(|argument| {
+        .filter_map(|argument| {
             let value = match argument.as_str() {
                 "NewEnabled" => 1.to_string(),
                 "NewExternalPort" => external_port.to_string(),
@@ -65,9 +65,16 @@ pub fn format_add_any_port_mapping_message(
                 "NewPortMappingDescription" => description.to_string(),
                 "NewProtocol" => protocol.to_string(),
                 "NewRemoteHost" => "".to_string(),
-                _ => panic!("Nope"),
+                unknown => {
+                    warn!("Unknown argument: {}", unknown);
+                    return None;
+                }
             };
-            format!("<{argument}>{value}</{argument}>", argument = argument, value = value)
+            Some(format!(
+                "<{argument}>{value}</{argument}>",
+                argument = argument,
+                value = value
+            ))
         })
         .collect::<Vec<_>>()
         .join("\n");
@@ -90,7 +97,7 @@ pub fn format_add_port_mapping_message(
 ) -> String {
     let args = schema
         .iter()
-        .map(|argument| {
+        .filter_map(|argument| {
             let value = match argument.as_str() {
                 "NewEnabled" => 1.to_string(),
                 "NewExternalPort" => external_port.to_string(),
@@ -100,9 +107,16 @@ pub fn format_add_port_mapping_message(
                 "NewPortMappingDescription" => description.to_string(),
                 "NewProtocol" => protocol.to_string(),
                 "NewRemoteHost" => "".to_string(),
-                _ => panic!("Nope"),
+                unknown => {
+                    warn!("Unknown argument: {}", unknown);
+                    return None;
+                }
             };
-            format!("<{argument}>{value}</{argument}>", argument = argument, value = value)
+            Some(format!(
+                "<{argument}>{value}</{argument}>",
+                argument = argument,
+                value = value
+            ))
         })
         .collect::<Vec<_>>()
         .join("\n");
@@ -118,14 +132,21 @@ pub fn format_add_port_mapping_message(
 pub fn format_delete_port_message(schema: &Vec<String>, protocol: PortMappingProtocol, external_port: u16) -> String {
     let args = schema
         .iter()
-        .map(|argument| {
+        .filter_map(|argument| {
             let value = match argument.as_str() {
                 "NewExternalPort" => external_port.to_string(),
                 "NewProtocol" => protocol.to_string(),
                 "NewRemoteHost" => "".to_string(),
-                _ => panic!("Nope"),
+                unknown => {
+                    warn!("Unknown argument: {}", unknown);
+                    return None;
+                }
             };
-            format!("<{argument}>{value}</{argument}>", argument = argument, value = value)
+            Some(format!(
+                "<{argument}>{value}</{argument}>",
+                argument = argument,
+                value = value
+            ))
         })
         .collect::<Vec<_>>()
         .join("\n");
