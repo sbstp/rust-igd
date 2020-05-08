@@ -1,18 +1,10 @@
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use std::pin::Pin;
-use std::str;
-use std::task::{Context, Poll};
 
 use futures::prelude::*;
-use futures::Future;
-
 use hyper::Client;
-
 use tokio::net::UdpSocket;
 use tokio::time::timeout;
-
-use hyper::body::Bytes;
 
 use crate::aio::Gateway;
 use crate::common::{messages, parsing, SearchOptions};
@@ -23,231 +15,107 @@ const MAX_RESPONSE_SIZE: usize = 1500;
 /// Search for a gateway with the provided options
 pub async fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
     // Create socket for future calls
-    let socket = UdpSocket::bind(&options.bind_addr).await?;
+    let mut socket = UdpSocket::bind(&options.bind_addr).await?;
 
-    let search_future = SearchFuture::search(socket, options.broadcast_address).await?;
-    // Create future and issue request
-    match options.timeout {
-        Some(t) => timeout(t, search_future).await?,
-        None => search_future.await,
-    }
-}
+    send_search_request(&mut socket, options.broadcast_address).await?;
 
-pub struct SearchFuture {
-    socket: UdpSocket,
-    pending: HashMap<SocketAddr, RequestState>,
-    state: SearchState,
-}
+    let search_response = receive_search_response(&mut socket);
 
-enum RequestState {
-    Connecting(String, Pin<Box<dyn Future<Output = Result<Bytes, SearchError>> + Send>>),
-    Done(String),
-    Error,
-}
+    // Receive search response, optionally with a timeout
+    let (response_body, from) = match options.timeout {
+        Some(t) => timeout(t, search_response).await?,
+        None => search_response.await,
+    }?;
 
-enum SearchState {
-    Start,
-    AwaitingConnections,
-    AwaitingSchemas(
-        Gateway,
-        Pin<Box<dyn Future<Output = Result<Bytes, SearchError>> + Send>>,
-    ),
-    End,
-}
+    let (addr, root_url) = handle_broadcast_resp(&from, &response_body)?;
 
-impl SearchFuture {
-    // Create a new search
-    async fn search(mut socket: UdpSocket, addr: SocketAddr) -> Result<SearchFuture, SearchError> {
-        debug!(
-            "sending broadcast request to: {} on interface: {:?}",
-            addr,
-            socket.local_addr()
-        );
-        socket.send_to(messages::SEARCH_REQUEST.as_bytes(), &addr).await?;
-        Ok(SearchFuture {
-            socket,
-            pending: HashMap::new(),
-            state: SearchState::Start,
-        })
-    }
+    let (control_schema_url, control_url) = get_control_urls(&addr, &root_url).await?;
+    let control_schema = get_control_schemas(&addr, &control_schema_url).await?;
 
-    // Handle a UDP response message
-    fn handle_broadcast_resp(from: SocketAddr, data: &[u8]) -> Result<(SocketAddr, String), SearchError> {
-        debug!("handling broadcast response from: {}", from);
-
-        // Convert response to text
-        let text = str::from_utf8(&data).map_err(|e| SearchError::from(e))?;
-
-        // Parse socket address and path
-        let (addr, root_url) = parsing::parse_search_result(text)?;
-
-        Ok((SocketAddr::V4(addr), root_url))
-    }
-
-    // Issue a control URL request over HTTP using the provided
-    fn request_control_url(
-        addr: SocketAddr,
-        path: String,
-    ) -> Result<Pin<Box<dyn Future<Output = Result<Bytes, SearchError>> + Send>>, SearchError> {
-        let client = Client::new();
-
-        let uri = match format!("http://{}{}", addr, path).parse() {
-            Ok(uri) => uri,
-            Err(err) => return Err(SearchError::from(err)),
-        };
-
-        debug!("requesting control url from: {}", uri);
-
-        Ok(Box::pin(
-            client
-                .get(uri)
-                .and_then(|resp| hyper::body::to_bytes(resp.into_body()))
-                .map_err(|e| SearchError::from(e)),
-        ))
-    }
-
-    // Process a control response to extract the control URL
-    fn handle_control_resp(addr: SocketAddr, resp: Bytes) -> Result<(String, String), SearchError> {
-        debug!("handling control response from: {}", addr);
-
-        // Create a cursor over the response data
-        let c = std::io::Cursor::new(&resp);
-
-        // Parse control URL out of body
-        let urls = parsing::parse_control_urls(c)?;
-
-        Ok(urls)
-    }
-
-    fn request_schemas(
-        addr: SocketAddr,
-        control_schema_url: String,
-    ) -> Result<Pin<Box<dyn Future<Output = Result<Bytes, SearchError>> + Send>>, SearchError> {
-        let client = Client::new();
-        let uri = match format!("http://{}{}", addr, control_schema_url).parse() {
-            Ok(uri) => uri,
-            Err(err) => return Err(SearchError::from(err)),
-        };
-
-        Ok(Box::pin(
-            client
-                .get(uri)
-                .and_then(|resp| hyper::body::to_bytes(resp.into_body()))
-                .map_err(|e| SearchError::from(e)),
-        ))
-    }
-
-    fn handle_schema_resp(resp: Bytes) -> Result<HashMap<String, Vec<String>>, SearchError> {
-        debug!("handling schema response");
-        let c = std::io::Cursor::new(&resp);
-        parsing::parse_schemas(c)
-    }
-}
-
-impl Future for SearchFuture {
-    type Output = Result<Gateway, SearchError>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<Gateway, SearchError>> {
-        'state_check: loop {
-            match &mut self.state {
-                SearchState::Start => self.state = SearchState::AwaitingConnections,
-
-                SearchState::AwaitingConnections => {
-                    // Poll for (and handle) incoming messages
-                    let mut buff = [0u8; MAX_RESPONSE_SIZE];
-                    let resp = self.socket.poll_recv_from(cx, &mut buff);
-                    if let Poll::Ready(Ok((n, from))) = resp {
-                        // Try handle response messages
-                        if let Ok((addr, root_url)) = Self::handle_broadcast_resp(from, &buff[0..n]) {
-                            if !self.pending.contains_key(&addr) {
-                                debug!("received broadcast response from: {}", from);
-
-                                // Issue control request
-                                match Self::request_control_url(addr, root_url.clone()) {
-                                    // Store pending requests
-                                    Ok(f) => {
-                                        self.pending.insert(addr, RequestState::Connecting(root_url, f));
-                                    }
-                                    Err(e) => return Poll::Ready(Err(e)),
-                                }
-                            } else {
-                                debug!("received duplicate broadcast response from: {}, dropping", from);
-                            }
-                        }
-                    }
-                    if let Poll::Ready(Err(err)) = resp {
-                        return Poll::Ready(Err(err.into()));
-                    }
-
-                    // Poll on any outstanding control requests
-                    for (addr, state) in &mut self.pending {
-                        // Poll if we're in the connecting state
-                        let (root_url, resp) = {
-                            let (root_url, c) = match state {
-                                RequestState::Connecting(root_url, c) => (root_url, c),
-                                _ => continue,
-                            };
-
-                            match c.as_mut().poll(cx)? {
-                                Poll::Ready(resp) => (root_url.clone(), resp),
-                                _ => continue,
-                            }
-                        };
-
-                        // Handle any responses
-                        if let Ok((control_schema_url, control_url)) = Self::handle_control_resp(*addr, resp) {
-                            debug!("received control url from: {} (url: {})", addr, control_url);
-                            let c = match Self::request_schemas(*addr, control_schema_url.clone()) {
-                                Ok(c) => c,
-                                Err(e) => return Poll::Ready(Err(e)),
-                            };
-                            *state = RequestState::Done(control_url.clone());
-
-                            match addr {
-                                SocketAddr::V4(a) => {
-                                    let g = Gateway {
-                                        addr: *a,
-                                        root_url,
-                                        control_url,
-                                        control_schema_url,
-                                        control_schema: HashMap::new(),
-                                    };
-                                    self.state = SearchState::AwaitingSchemas(g, c);
-                                    continue 'state_check;
-                                }
-                                _ => warn!("unsupported IPv6 gateway response from addr: {}", addr),
-                            }
-                        } else {
-                            *state = RequestState::Error;
-                        }
-                    }
-
-                    return Poll::Pending;
-                }
-
-                SearchState::AwaitingSchemas(g, c) => {
-                    let resp = {
-                        match c.as_mut().poll(cx)? {
-                            Poll::Ready(resp) => resp,
-                            Poll::Pending => return Poll::Pending,
-                        }
-                    };
-
-                    let control_schema = match Self::handle_schema_resp(resp) {
-                        Ok(control_schema) => control_schema,
-                        Err(e) => return Poll::Ready(Err(e)),
-                    };
-
-                    let g = Gateway {
-                        control_schema,
-                        ..g.clone()
-                    };
-                    self.state = SearchState::End;
-                    return Poll::Ready(Ok(g));
-                }
-
-                SearchState::End => panic!("Calling poll on a finished Future"),
-            }
+    let addr = match addr {
+        SocketAddr::V4(a) => Ok(a),
+        _ => {
+            warn!("unsupported IPv6 gateway response from addr: {}", addr);
+            Err(SearchError::InvalidResponse)
         }
-    }
+    }?;
+
+    Ok(Gateway {
+        addr,
+        root_url,
+        control_url,
+        control_schema_url,
+        control_schema,
+    })
+}
+
+// Create a new search
+async fn send_search_request(socket: &mut UdpSocket, addr: SocketAddr) -> Result<(), SearchError> {
+    debug!(
+        "sending broadcast request to: {} on interface: {:?}",
+        addr,
+        socket.local_addr()
+    );
+    socket
+        .send_to(messages::SEARCH_REQUEST.as_bytes(), &addr)
+        .map_ok(|_| ())
+        .map_err(|e| SearchError::from(e))
+        .await
+}
+
+async fn receive_search_response(socket: &mut UdpSocket) -> Result<(Vec<u8>, SocketAddr), SearchError> {
+    let mut buff = [0u8; MAX_RESPONSE_SIZE];
+    let (n, from) = socket.recv_from(&mut buff).map_err(|e| SearchError::from(e)).await?;
+    debug!("received broadcast response from: {}", from);
+    Ok((buff[..n].to_vec(), from))
+}
+
+// Handle a UDP response message
+fn handle_broadcast_resp(from: &SocketAddr, data: &[u8]) -> Result<(SocketAddr, String), SearchError> {
+    debug!("handling broadcast response from: {}", from);
+
+    // Convert response to text
+    let text = std::str::from_utf8(&data).map_err(|e| SearchError::from(e))?;
+
+    // Parse socket address and path
+    let (addr, root_url) = parsing::parse_search_result(text)?;
+
+    Ok((SocketAddr::V4(addr), root_url))
+}
+
+async fn get_control_urls(addr: &SocketAddr, path: &String) -> Result<(String, String), SearchError> {
+    let uri = match format!("http://{}{}", addr, path).parse() {
+        Ok(uri) => uri,
+        Err(err) => return Err(SearchError::from(err)),
+    };
+
+    debug!("requesting control url from: {}", uri);
+    let client = Client::new();
+    let resp = hyper::body::to_bytes(client.get(uri).await?.into_body())
+        .map_err(|e| SearchError::from(e))
+        .await?;
+
+    debug!("handling control response from: {}", addr);
+    let c = std::io::Cursor::new(&resp);
+    parsing::parse_control_urls(c)
+}
+
+async fn get_control_schemas(
+    addr: &SocketAddr,
+    control_schema_url: &String,
+) -> Result<HashMap<String, Vec<String>>, SearchError> {
+    let uri = match format!("http://{}{}", addr, control_schema_url).parse() {
+        Ok(uri) => uri,
+        Err(err) => return Err(SearchError::from(err)),
+    };
+
+    debug!("requesting control schema from: {}", uri);
+    let client = Client::new();
+    let resp = hyper::body::to_bytes(client.get(uri).await?.into_body())
+        .map_err(|e| SearchError::from(e))
+        .await?;
+
+    debug!("handling schema response from: {}", addr);
+    let c = std::io::Cursor::new(&resp);
+    parsing::parse_schemas(c)
 }
