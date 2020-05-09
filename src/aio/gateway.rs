@@ -198,7 +198,9 @@ impl Gateway {
         self.perform_request(
             messages::ADD_PORT_MAPPING_HEADER,
             &messages::format_add_port_mapping_message(
-                self.control_schema.get("AddPortMapping").unwrap(),
+                self.control_schema
+                    .get("AddPortMapping")
+                    .ok_or(RequestError::UnsupportedAction("AddPortMapping".to_string()))?,
                 protocol,
                 external_port,
                 local_addr,
@@ -245,7 +247,11 @@ impl Gateway {
             .perform_request(
                 messages::DELETE_PORT_MAPPING_HEADER,
                 &messages::format_delete_port_message(
-                    self.control_schema.get("DeletePortMapping").unwrap(),
+                    self.control_schema
+                        .get("DeletePortMapping")
+                        .ok_or(RemovePortError::RequestError(RequestError::UnsupportedAction(
+                            "DeletePortMapping".to_string(),
+                        )))?,
                     protocol,
                     external_port,
                 ),

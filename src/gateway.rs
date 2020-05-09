@@ -173,7 +173,9 @@ impl Gateway {
         self.perform_request(
             messages::ADD_PORT_MAPPING_HEADER,
             &messages::format_add_port_mapping_message(
-                self.control_schema.get("AddPortMapping").unwrap(),
+                self.control_schema
+                    .get("AddPortMapping")
+                    .ok_or(RequestError::UnsupportedAction("AddPortMapping".to_string()))?,
                 protocol,
                 external_port,
                 local_addr,
@@ -211,15 +213,21 @@ impl Gateway {
 
     /// Remove a port mapping.
     pub fn remove_port(&self, protocol: PortMappingProtocol, external_port: u16) -> Result<(), RemovePortError> {
-        parsing::parse_delete_port_mapping_response(self.perform_request(
-            messages::DELETE_PORT_MAPPING_HEADER,
-            &messages::format_delete_port_message(
-                self.control_schema.get("DeletePortMapping").unwrap(),
-                protocol,
-                external_port,
+        parsing::parse_delete_port_mapping_response(
+            self.perform_request(
+                messages::DELETE_PORT_MAPPING_HEADER,
+                &messages::format_delete_port_message(
+                    self.control_schema
+                        .get("DeletePortMapping")
+                        .ok_or(RemovePortError::RequestError(RequestError::UnsupportedAction(
+                            "DeletePortMapping".to_string(),
+                        )))?,
+                    protocol,
+                    external_port,
+                ),
+                "DeletePortMappingResponse",
             ),
-            "DeletePortMappingResponse",
-        ))
+        )
     }
 
     /// Get one port mapping entry
