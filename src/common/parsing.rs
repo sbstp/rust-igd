@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io;
 use std::net::{Ipv4Addr, SocketAddrV4};
 
@@ -33,62 +34,150 @@ pub fn parse_search_result(text: &str) -> Result<(SocketAddrV4, String), SearchE
     Err(InvalidResponse)
 }
 
-pub fn parse_control_url<R>(resp: R) -> Result<String, SearchError>
+pub fn parse_control_urls<R>(resp: R) -> Result<(String, String), SearchError>
 where
     R: io::Read,
 {
     let root = Element::parse(resp)?;
 
-    let device = root.get_child("device").ok_or(SearchError::InvalidResponse)?;
-    if let Ok(control_url) = parse_control_url_scan_device(&device) {
-        return Ok(control_url);
-    }
+    let mut urls = root.children.iter().filter_map(|child| {
+        let child = child.as_element()?;
+        if child.name == "device" {
+            Some(parse_device(child)?)
+        } else {
+            None
+        }
+    });
 
-    return Err(SearchError::InvalidResponse);
+    urls.next().ok_or(SearchError::InvalidResponse)
 }
 
-fn parse_control_url_scan_device(device: &Element) -> Result<String, SearchError> {
-    if let Some(service_list) = device.get_child("serviceList") {
-        let child_elements = service_list.children.iter().filter_map(|n| match n {
-            xmltree::XMLNode::Element(e) => Some(e),
-            _ => None,
-        });
-        for element in child_elements {
-            if element.name != "service" {
-                continue;
-            };
-            let service_type = match element.get_child("serviceType") {
-                Some(e) => e,
-                _ => continue,
-            };
-            let service_type_text = service_type.get_text().map(|s| s.into_owned()).unwrap_or("".into());
-            if service_type_text != "urn:schemas-upnp-org:service:WANPPPConnection:1"
-                && service_type_text != "urn:schemas-upnp-org:service:WANIPConnection:1"
-            {
-                continue;
-            }
-            if let Some(control_url) = element.get_child("controlURL") {
-                if let Some(text) = control_url.get_text() {
-                    return Ok(text.into_owned());
-                }
-            }
-        }
-    }
+fn parse_device(device: &Element) -> Option<(String, String)> {
+    let services = device
+        .get_child("serviceList")
+        .map(|service_list| {
+            service_list
+                .children
+                .iter()
+                .filter_map(|child| {
+                    let child = child.as_element()?;
+                    if child.name == "service" {
+                        parse_service(child)
+                    } else {
+                        None
+                    }
+                })
+                .next()
+        })
+        .flatten();
+    let devices = device.get_child("deviceList").map(parse_device_list).flatten();
+    services.or(devices)
+}
 
-    let device_list = device.get_child("deviceList").ok_or(SearchError::InvalidResponse)?;
-    let child_elements = device_list.children.iter().filter_map(|n| match n {
-        xmltree::XMLNode::Element(e) => Some(e),
-        _ => None,
+fn parse_device_list(device_list: &Element) -> Option<(String, String)> {
+    device_list
+        .children
+        .iter()
+        .filter_map(|child| {
+            let child = child.as_element()?;
+            if child.name == "device" {
+                parse_device(child)
+            } else {
+                None
+            }
+        })
+        .next()
+}
+
+fn parse_service(service: &Element) -> Option<(String, String)> {
+    let service_type = service.get_child("serviceType")?;
+    let service_type = service_type.get_text().map(|s| s.into_owned()).unwrap_or("".into());
+    if [
+        "urn:schemas-upnp-org:service:WANPPPConnection:1",
+        "urn:schemas-upnp-org:service:WANIPConnection:1",
+    ]
+    .contains(&service_type.as_str())
+    {
+        let scpd_url = service.get_child("SCPDURL");
+        let control_url = service.get_child("controlURL");
+        if let (Some(scpd_url), Some(control_url)) = (scpd_url, control_url) {
+            Some((
+                scpd_url.get_text().map(|s| s.into_owned()).unwrap_or("".into()),
+                control_url.get_text().map(|s| s.into_owned()).unwrap_or("".into()),
+            ))
+        } else {
+            None
+        }
+    } else {
+        None
+    }
+}
+
+pub fn parse_schemas<R>(resp: R) -> Result<HashMap<String, Vec<String>>, SearchError>
+where
+    R: io::Read,
+{
+    let root = Element::parse(resp)?;
+
+    let mut schema = root.children.iter().filter_map(|child| {
+        let child = child.as_element()?;
+        if child.name == "actionList" {
+            parse_action_list(child)
+        } else {
+            None
+        }
     });
-    for sub_device in child_elements {
-        if sub_device.name == "device" {
-            if let Ok(control_url) = parse_control_url_scan_device(&sub_device) {
-                return Ok(control_url);
-            }
-        }
-    }
 
-    return Err(SearchError::InvalidResponse);
+    schema.next().ok_or(SearchError::InvalidResponse)
+}
+
+fn parse_action_list(action_list: &Element) -> Option<HashMap<String, Vec<String>>> {
+    Some(
+        action_list
+            .children
+            .iter()
+            .filter_map(|child| {
+                let child = child.as_element()?;
+                if child.name == "action" {
+                    parse_action(child)
+                } else {
+                    None
+                }
+            })
+            .collect(),
+    )
+}
+
+fn parse_action(action: &Element) -> Option<(String, Vec<String>)> {
+    Some((
+        action.get_child("name")?.get_text()?.into_owned(),
+        parse_argument_list(action.get_child("argumentList")?)?,
+    ))
+}
+
+fn parse_argument_list(argument_list: &Element) -> Option<Vec<String>> {
+    Some(
+        argument_list
+            .children
+            .iter()
+            .filter_map(|child| {
+                let child = child.as_element()?;
+                if child.name == "argument" {
+                    parse_argument(child)
+                } else {
+                    None
+                }
+            })
+            .collect(),
+    )
+}
+
+fn parse_argument(action: &Element) -> Option<String> {
+    if action.get_child("direction")?.get_text()?.into_owned().as_str() == "in" {
+        Some(action.get_child("name")?.get_text()?.into_owned())
+    } else {
+        None
+    }
 }
 
 pub struct RequestReponse {
@@ -152,7 +241,7 @@ pub fn parse_get_external_ip_response(result: RequestResult) -> Result<Ipv4Addr,
     }
 }
 
-pub fn parse_add_any_port_mapping_response(result: RequestResult) -> Result<u16, Option<AddAnyPortError>> {
+pub fn parse_add_any_port_mapping_response(result: RequestResult) -> Result<u16, AddAnyPortError> {
     match result {
         Ok(resp) => {
             match resp
@@ -162,17 +251,14 @@ pub fn parse_add_any_port_mapping_response(result: RequestResult) -> Result<u16,
                 .and_then(|t| t.parse::<u16>().ok())
             {
                 Some(port) => Ok(port),
-                None => Err(Some(AddAnyPortError::RequestError(RequestError::InvalidResponse(
-                    resp.text,
-                )))),
+                None => Err(AddAnyPortError::RequestError(RequestError::InvalidResponse(resp.text))),
             }
         }
         Err(err) => Err(match err {
-            RequestError::ErrorCode(401, _) => None,
-            RequestError::ErrorCode(605, _) => Some(AddAnyPortError::DescriptionTooLong),
-            RequestError::ErrorCode(606, _) => Some(AddAnyPortError::ActionNotAuthorized),
-            RequestError::ErrorCode(728, _) => Some(AddAnyPortError::NoPortsAvailable),
-            e => Some(AddAnyPortError::RequestError(e)),
+            RequestError::ErrorCode(605, _) => AddAnyPortError::DescriptionTooLong,
+            RequestError::ErrorCode(606, _) => AddAnyPortError::ActionNotAuthorized,
+            RequestError::ErrorCode(728, _) => AddAnyPortError::NoPortsAvailable,
+            e => AddAnyPortError::RequestError(e),
         }),
     }
 }
@@ -407,7 +493,9 @@ fn test_parse_device1() {
    </device>
 </root>"#;
 
-    assert_eq!(parse_control_url(text.as_bytes()).unwrap(), "/ctl/IPConn");
+    let (control_schema_url, control_url) = parse_control_urls(text.as_bytes()).unwrap();
+    assert_eq!(control_url, "/ctl/IPConn");
+    assert_eq!(control_schema_url, "/WANIPCn.xml");
 }
 
 #[test]
@@ -511,10 +599,11 @@ fn test_parse_device2() {
         </device>
     </root>
     "#;
-    let result = parse_control_url(text.as_bytes());
+    let result = parse_control_urls(text.as_bytes());
     assert!(result.is_ok());
-    let control_url = result.unwrap();
+    let (control_schema_url, control_url) = result.unwrap();
     assert_eq!(control_url, "/igdupnp/control/WANIPConn1");
+    assert_eq!(control_schema_url, "/igdconnSCPD.xml");
 }
 
 #[test]
@@ -599,5 +688,7 @@ fn test_parse_device3() {
 </device>
 </root>"#;
 
-    assert_eq!(parse_control_url(text.as_bytes()).unwrap(), "/upnp/control/WANIPConn1");
+    let (control_schema_url, control_url) = parse_control_urls(text.as_bytes()).unwrap();
+    assert_eq!(control_url, "/upnp/control/WANIPConn1");
+    assert_eq!(control_schema_url, "/332b484d/wanipconnSCPD.xml");
 }

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt;
 use std::net::{Ipv4Addr, SocketAddrV4};
 
@@ -8,12 +9,18 @@ use crate::errors::{self, AddAnyPortError, AddPortError, GetExternalIpError, Rem
 use crate::PortMappingProtocol;
 
 /// This structure represents a gateway found by the search functions.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug)]
 pub struct Gateway {
     /// Socket address of the gateway
     pub addr: SocketAddrV4,
+    /// Root url of the device
+    pub root_url: String,
     /// Control url of the device
     pub control_url: String,
+    /// Url to get schema data from
+    pub control_schema_url: String,
+    /// Control schema for all actions
+    pub control_schema: HashMap<String, Vec<String>>,
 }
 
 impl Gateway {
@@ -84,24 +91,24 @@ impl Gateway {
             return Err(AddAnyPortError::InternalPortZeroInvalid);
         }
 
-        let external_port = common::random_port();
+        let schema = self.control_schema.get("AddAnyPortMapping");
+        if let Some(schema) = schema {
+            let external_port = common::random_port();
 
-        let resp = parsing::parse_add_any_port_mapping_response(self.perform_request(
-            messages::ADD_ANY_PORT_MAPPING_HEADER,
-            &messages::format_add_any_port_mapping_message(
-                protocol,
-                external_port,
-                local_addr,
-                lease_duration,
-                description,
-            ),
-            "AddAnyPortMappingResponse",
-        ));
-
-        match resp {
-            Ok(port) => Ok(port),
-            Err(None) => self.retry_add_random_port_mapping(protocol, local_addr, lease_duration, description),
-            Err(Some(err)) => Err(err),
+            parsing::parse_add_any_port_mapping_response(self.perform_request(
+                messages::ADD_ANY_PORT_MAPPING_HEADER,
+                &messages::format_add_any_port_mapping_message(
+                    schema,
+                    protocol,
+                    external_port,
+                    local_addr,
+                    lease_duration,
+                    description,
+                ),
+                "AddAnyPortMappingResponse",
+            ))
+        } else {
+            self.retry_add_random_port_mapping(protocol, local_addr, lease_duration, description)
         }
     }
 
@@ -166,6 +173,9 @@ impl Gateway {
         self.perform_request(
             messages::ADD_PORT_MAPPING_HEADER,
             &messages::format_add_port_mapping_message(
+                self.control_schema
+                    .get("AddPortMapping")
+                    .ok_or(RequestError::UnsupportedAction("AddPortMapping".to_string()))?,
                 protocol,
                 external_port,
                 local_addr,
@@ -203,11 +213,21 @@ impl Gateway {
 
     /// Remove a port mapping.
     pub fn remove_port(&self, protocol: PortMappingProtocol, external_port: u16) -> Result<(), RemovePortError> {
-        parsing::parse_delete_port_mapping_response(self.perform_request(
-            messages::DELETE_PORT_MAPPING_HEADER,
-            &messages::format_delete_port_message(protocol, external_port),
-            "DeletePortMappingResponse",
-        ))
+        parsing::parse_delete_port_mapping_response(
+            self.perform_request(
+                messages::DELETE_PORT_MAPPING_HEADER,
+                &messages::format_delete_port_message(
+                    self.control_schema
+                        .get("DeletePortMapping")
+                        .ok_or(RemovePortError::RequestError(RequestError::UnsupportedAction(
+                            "DeletePortMapping".to_string(),
+                        )))?,
+                    protocol,
+                    external_port,
+                ),
+                "DeletePortMappingResponse",
+            ),
+        )
     }
 
     /// Get one port mapping entry

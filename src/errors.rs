@@ -21,6 +21,8 @@ pub enum RequestError {
     InvalidResponse(String),
     /// The gateway returned an unhandled error code and description.
     ErrorCode(u16, String),
+    /// Action is not supported by the gateway
+    UnsupportedAction(String),
     /// When using the aio feature.
     #[cfg(feature = "aio")]
     HyperError(hyper::Error),
@@ -81,6 +83,7 @@ impl fmt::Display for RequestError {
             RequestError::InvalidResponse(ref e) => write!(f, "Invalid response from gateway: {}", e),
             RequestError::IoError(ref e) => write!(f, "IO error. {}", e),
             RequestError::ErrorCode(n, ref e) => write!(f, "Gateway response error {}: {}", n, e),
+            RequestError::UnsupportedAction(ref e) => write!(f, "Gateway does not support action: {}", e),
             #[cfg(feature = "aio")]
             RequestError::HyperError(ref e) => write!(f, "Hyper Error: {}", e),
             #[cfg(feature = "aio")]
@@ -98,6 +101,7 @@ impl std::error::Error for RequestError {
             RequestError::InvalidResponse(..) => None,
             RequestError::IoError(ref e) => Some(e),
             RequestError::ErrorCode(..) => None,
+            RequestError::UnsupportedAction(..) => None,
             #[cfg(feature = "aio")]
             RequestError::HyperError(ref e) => Some(e),
             #[cfg(feature = "aio")]

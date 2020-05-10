@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::net::{SocketAddrV4, UdpSocket};
 use std::str;
 
@@ -32,18 +33,36 @@ pub fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
         let (read, _) = socket.recv_from(&mut buf)?;
         let text = str::from_utf8(&buf[..read])?;
 
-        let location = parsing::parse_search_result(text)?;
-        if let Ok(control_url) = get_control_url(&location) {
-            return Ok(Gateway {
-                addr: location.0,
-                control_url: control_url,
-            });
-        }
+        let (addr, root_url) = parsing::parse_search_result(text)?;
+
+        let (control_schema_url, control_url) = match get_control_urls(&addr, &root_url) {
+            Ok(o) => o,
+            Err(..) => continue,
+        };
+
+        let control_schema = match get_schemas(&addr, &control_schema_url) {
+            Ok(o) => o,
+            Err(..) => continue,
+        };
+
+        return Ok(Gateway {
+            addr,
+            root_url,
+            control_url,
+            control_schema_url,
+            control_schema,
+        });
     }
 }
 
-fn get_control_url(location: &(SocketAddrV4, String)) -> Result<String, SearchError> {
-    let url = format!("http://{}:{}{}", location.0.ip(), location.0.port(), location.1);
+fn get_control_urls(addr: &SocketAddrV4, root_url: &String) -> Result<(String, String), SearchError> {
+    let url = format!("http://{}:{}{}", addr.ip(), addr.port(), root_url);
     let response = attohttpc::get(&url).send()?;
-    parsing::parse_control_url(&response.bytes()?[..])
+    parsing::parse_control_urls(&response.bytes()?[..])
+}
+
+fn get_schemas(addr: &SocketAddrV4, control_schema_url: &String) -> Result<HashMap<String, Vec<String>>, SearchError> {
+    let url = format!("http://{}:{}{}", addr.ip(), addr.port(), control_schema_url);
+    let response = attohttpc::get(&url).send()?;
+    parsing::parse_schemas(&response.bytes()?[..])
 }
