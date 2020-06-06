@@ -95,6 +95,7 @@ fn parse_service(service: &Element) -> Option<(String, String)> {
     if [
         "urn:schemas-upnp-org:service:WANPPPConnection:1",
         "urn:schemas-upnp-org:service:WANIPConnection:1",
+        "urn:schemas-upnp-org:service:WANIPConnection:2",
     ]
     .contains(&service_type.as_str())
     {
