@@ -17,7 +17,7 @@ all-features = true
 [dependencies]
 xmltree = "0.10"
 rand = "0.8"
-attohttpc = { version = "0.10", default-features = false }
+attohttpc = { version = "0.16", default-features = false }
 url = "2"
 log = "0.4"
 futures = { version = "0.3", optional = true }
