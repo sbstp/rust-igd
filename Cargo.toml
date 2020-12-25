@@ -32,7 +32,7 @@ features = [ "client", "http1", "http2", "runtime" ]
 optional = true
 
 [dev-dependencies]
-simplelog = "0.7"
+simplelog = "0.9"
 tokio = { version = "1", features = ["full"] }
 
 [features]
