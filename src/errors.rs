@@ -9,6 +9,8 @@ use std::string::FromUtf8Error;
 use attohttpc;
 #[cfg(feature = "aio")]
 use hyper;
+
+#[cfg(feature = "aio")]
 use tokio::time::error::Elapsed;
 
 /// Errors that can occur when sending the request to the gateway.
