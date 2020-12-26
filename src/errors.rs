@@ -10,6 +10,9 @@ use attohttpc;
 #[cfg(feature = "aio")]
 use hyper;
 
+#[cfg(feature = "aio")]
+use tokio::time::error::Elapsed;
+
 /// Errors that can occur when sending the request to the gateway.
 #[derive(Debug)]
 pub enum RequestError {
@@ -70,8 +73,8 @@ impl From<FromUtf8Error> for RequestError {
 }
 
 #[cfg(feature = "aio")]
-impl From<tokio::time::Error> for RequestError {
-    fn from(_err: tokio::time::Error) -> RequestError {
+impl From<Elapsed> for RequestError {
+    fn from(_err: Elapsed) -> RequestError {
         RequestError::IoError(io::Error::new(io::ErrorKind::TimedOut, "timer failed"))
     }
 }
@@ -355,8 +358,8 @@ impl From<hyper::http::uri::InvalidUri> for SearchError {
     }
 }
 #[cfg(feature = "aio")]
-impl From<tokio::time::Elapsed> for SearchError {
-    fn from(_err: tokio::time::Elapsed) -> SearchError {
+impl From<Elapsed> for SearchError {
+    fn from(_err: Elapsed) -> SearchError {
         SearchError::IoError(io::Error::new(io::ErrorKind::TimedOut, "search timed out"))
     }
 }

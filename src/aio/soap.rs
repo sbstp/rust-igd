@@ -1,5 +1,7 @@
-use hyper::header::{CONTENT_LENGTH, CONTENT_TYPE};
-use hyper::{client::Client, Body, Request};
+use hyper::{
+    header::{CONTENT_LENGTH, CONTENT_TYPE},
+    Body, Client, Request,
+};
 
 use crate::errors::RequestError;
 
