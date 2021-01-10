@@ -18,7 +18,7 @@ pub fn parse_search_result(text: &str) -> Result<(SocketAddrV4, String), SearchE
     for line in text.lines() {
         let line = line.trim();
         if line.to_ascii_lowercase().starts_with("location:") {
-            if let Some(colon) = line.find(":") {
+            if let Some(colon) = line.find(':') {
                 let url_text = &line[colon + 1..].trim();
                 let url = Url::parse(url_text).map_err(|_| InvalidResponse)?;
                 let addr: Ipv4Addr = url
@@ -91,7 +91,10 @@ fn parse_device_list(device_list: &Element) -> Option<(String, String)> {
 
 fn parse_service(service: &Element) -> Option<(String, String)> {
     let service_type = service.get_child("serviceType")?;
-    let service_type = service_type.get_text().map(|s| s.into_owned()).unwrap_or("".into());
+    let service_type = service_type
+        .get_text()
+        .map(|s| s.into_owned())
+        .unwrap_or_else(|| "".into());
     if [
         "urn:schemas-upnp-org:service:WANPPPConnection:1",
         "urn:schemas-upnp-org:service:WANIPConnection:1",
@@ -103,8 +106,11 @@ fn parse_service(service: &Element) -> Option<(String, String)> {
         let control_url = service.get_child("controlURL");
         if let (Some(scpd_url), Some(control_url)) = (scpd_url, control_url) {
             Some((
-                scpd_url.get_text().map(|s| s.into_owned()).unwrap_or("".into()),
-                control_url.get_text().map(|s| s.into_owned()).unwrap_or("".into()),
+                scpd_url.get_text().map(|s| s.into_owned()).unwrap_or_else(|| "".into()),
+                control_url
+                    .get_text()
+                    .map(|s| s.into_owned())
+                    .unwrap_or_else(|| "".into()),
             ))
         } else {
             None
@@ -198,7 +204,7 @@ pub fn parse_response(text: String, ok: &str) -> RequestResult {
         None => return Err(RequestError::InvalidResponse(text)),
     };
     if let Some(ok) = body.take_child(ok) {
-        return Ok(RequestReponse { text: text, xml: ok });
+        return Ok(RequestReponse { text, xml: ok });
     }
     let upnp_error = match body
         .get_child("Fault")
@@ -341,7 +347,7 @@ pub fn parse_get_generic_port_mapping_entry(
     let remote_host = extract_field("NewRemoteHost")?
         .get_text()
         .map(|c| c.into_owned())
-        .unwrap_or("".into());
+        .unwrap_or_else(|| "".into());
     let external_port = extract_field("NewExternalPort")?
         .get_text()
         .and_then(|t| t.parse::<u16>().ok())
@@ -379,7 +385,7 @@ pub fn parse_get_generic_port_mapping_entry(
     let port_mapping_description = extract_field("NewPortMappingDescription")?
         .get_text()
         .map(|c| c.into_owned())
-        .unwrap_or("".into());
+        .unwrap_or_else(|| "".into());
     let lease_duration = extract_field("NewLeaseDuration")?
         .get_text()
         .and_then(|t| t.parse::<u32>().ok())

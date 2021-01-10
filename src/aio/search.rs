@@ -59,13 +59,13 @@ async fn send_search_request(socket: &mut UdpSocket, addr: SocketAddr) -> Result
     socket
         .send_to(messages::SEARCH_REQUEST.as_bytes(), &addr)
         .map_ok(|_| ())
-        .map_err(|e| SearchError::from(e))
+        .map_err(SearchError::from)
         .await
 }
 
 async fn receive_search_response(socket: &mut UdpSocket) -> Result<(Vec<u8>, SocketAddr), SearchError> {
     let mut buff = [0u8; MAX_RESPONSE_SIZE];
-    let (n, from) = socket.recv_from(&mut buff).map_err(|e| SearchError::from(e)).await?;
+    let (n, from) = socket.recv_from(&mut buff).map_err(SearchError::from).await?;
     debug!("received broadcast response from: {}", from);
     Ok((buff[..n].to_vec(), from))
 }
@@ -75,7 +75,7 @@ fn handle_broadcast_resp(from: &SocketAddr, data: &[u8]) -> Result<(SocketAddr, 
     debug!("handling broadcast response from: {}", from);
 
     // Convert response to text
-    let text = std::str::from_utf8(&data).map_err(|e| SearchError::from(e))?;
+    let text = std::str::from_utf8(&data).map_err(SearchError::from)?;
 
     // Parse socket address and path
     let (addr, root_url) = parsing::parse_search_result(text)?;
@@ -83,7 +83,7 @@ fn handle_broadcast_resp(from: &SocketAddr, data: &[u8]) -> Result<(SocketAddr, 
     Ok((SocketAddr::V4(addr), root_url))
 }
 
-async fn get_control_urls(addr: &SocketAddr, path: &String) -> Result<(String, String), SearchError> {
+async fn get_control_urls(addr: &SocketAddr, path: &str) -> Result<(String, String), SearchError> {
     let uri = match format!("http://{}{}", addr, path).parse() {
         Ok(uri) => uri,
         Err(err) => return Err(SearchError::from(err)),
@@ -92,7 +92,7 @@ async fn get_control_urls(addr: &SocketAddr, path: &String) -> Result<(String, S
     debug!("requesting control url from: {}", uri);
     let client = Client::new();
     let resp = hyper::body::to_bytes(client.get(uri).await?.into_body())
-        .map_err(|e| SearchError::from(e))
+        .map_err(SearchError::from)
         .await?;
 
     debug!("handling control response from: {}", addr);
@@ -102,7 +102,7 @@ async fn get_control_urls(addr: &SocketAddr, path: &String) -> Result<(String, S
 
 async fn get_control_schemas(
     addr: &SocketAddr,
-    control_schema_url: &String,
+    control_schema_url: &str,
 ) -> Result<HashMap<String, Vec<String>>, SearchError> {
     let uri = match format!("http://{}{}", addr, control_schema_url).parse() {
         Ok(uri) => uri,
@@ -112,7 +112,7 @@ async fn get_control_schemas(
     debug!("requesting control schema from: {}", uri);
     let client = Client::new();
     let resp = hyper::body::to_bytes(client.get(uri).await?.into_body())
-        .map_err(|e| SearchError::from(e))
+        .map_err(SearchError::from)
         .await?;
 
     debug!("handling schema response from: {}", addr);

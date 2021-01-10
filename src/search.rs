@@ -55,13 +55,13 @@ pub fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
     }
 }
 
-fn get_control_urls(addr: &SocketAddrV4, root_url: &String) -> Result<(String, String), SearchError> {
+fn get_control_urls(addr: &SocketAddrV4, root_url: &str) -> Result<(String, String), SearchError> {
     let url = format!("http://{}:{}{}", addr.ip(), addr.port(), root_url);
     let response = attohttpc::get(&url).send()?;
     parsing::parse_control_urls(&response.bytes()?[..])
 }
 
-fn get_schemas(addr: &SocketAddrV4, control_schema_url: &String) -> Result<HashMap<String, Vec<String>>, SearchError> {
+fn get_schemas(addr: &SocketAddrV4, control_schema_url: &str) -> Result<HashMap<String, Vec<String>>, SearchError> {
     let url = format!("http://{}:{}{}", addr.ip(), addr.port(), control_schema_url);
     let response = attohttpc::get(&url).send()?;
     parsing::parse_schemas(&response.bytes()?[..])
