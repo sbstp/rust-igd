@@ -83,7 +83,7 @@ fn handle_broadcast_resp(from: &SocketAddr, data: &[u8]) -> Result<(SocketAddr, 
     Ok((SocketAddr::V4(addr), root_url))
 }
 
-async fn get_control_urls(addr: &SocketAddr, path: &String) -> Result<(String, String), SearchError> {
+async fn get_control_urls(addr: &SocketAddr, path: &str) -> Result<(String, String), SearchError> {
     let uri = match format!("http://{}{}", addr, path).parse() {
         Ok(uri) => uri,
         Err(err) => return Err(SearchError::from(err)),
@@ -102,7 +102,7 @@ async fn get_control_urls(addr: &SocketAddr, path: &String) -> Result<(String, S
 
 async fn get_control_schemas(
     addr: &SocketAddr,
-    control_schema_url: &String,
+    control_schema_url: &str,
 ) -> Result<HashMap<String, Vec<String>>, SearchError> {
     let uri = match format!("http://{}{}", addr, control_schema_url).parse() {
         Ok(uri) => uri,

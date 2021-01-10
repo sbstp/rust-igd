@@ -175,7 +175,7 @@ impl Gateway {
             &messages::format_add_port_mapping_message(
                 self.control_schema
                     .get("AddPortMapping")
-                    .ok_or(RequestError::UnsupportedAction("AddPortMapping".to_string()))?,
+                    .ok_or_else(|| RequestError::UnsupportedAction("AddPortMapping".to_string()))?,
                 protocol,
                 external_port,
                 local_addr,
@@ -208,26 +208,22 @@ impl Gateway {
         }
 
         self.add_port_mapping(protocol, external_port, local_addr, lease_duration, description)
-            .map_err(|err| parsing::convert_add_port_error(err))
+            .map_err(parsing::convert_add_port_error)
     }
 
     /// Remove a port mapping.
     pub fn remove_port(&self, protocol: PortMappingProtocol, external_port: u16) -> Result<(), RemovePortError> {
-        parsing::parse_delete_port_mapping_response(
-            self.perform_request(
-                messages::DELETE_PORT_MAPPING_HEADER,
-                &messages::format_delete_port_message(
-                    self.control_schema
-                        .get("DeletePortMapping")
-                        .ok_or(RemovePortError::RequestError(RequestError::UnsupportedAction(
-                            "DeletePortMapping".to_string(),
-                        )))?,
-                    protocol,
-                    external_port,
-                ),
-                "DeletePortMappingResponse",
+        parsing::parse_delete_port_mapping_response(self.perform_request(
+            messages::DELETE_PORT_MAPPING_HEADER,
+            &messages::format_delete_port_message(
+                self.control_schema.get("DeletePortMapping").ok_or_else(|| {
+                    RemovePortError::RequestError(RequestError::UnsupportedAction("DeletePortMapping".to_string()))
+                })?,
+                protocol,
+                external_port,
             ),
-        )
+            "DeletePortMappingResponse",
+        ))
     }
 
     /// Get one port mapping entry
