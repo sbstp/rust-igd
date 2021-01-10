@@ -2,8 +2,6 @@ use std::collections::HashMap;
 use std::fmt;
 use std::net::{Ipv4Addr, SocketAddrV4};
 
-use attohttpc;
-
 use crate::common::{self, messages, parsing, parsing::RequestResult};
 use crate::errors::{self, AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError};
 use crate::PortMappingProtocol;

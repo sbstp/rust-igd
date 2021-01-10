@@ -18,7 +18,7 @@ pub fn parse_search_result(text: &str) -> Result<(SocketAddrV4, String), SearchE
     for line in text.lines() {
         let line = line.trim();
         if line.to_ascii_lowercase().starts_with("location:") {
-            if let Some(colon) = line.find(":") {
+            if let Some(colon) = line.find(':') {
                 let url_text = &line[colon + 1..].trim();
                 let url = Url::parse(url_text).map_err(|_| InvalidResponse)?;
                 let addr: Ipv4Addr = url
@@ -204,7 +204,7 @@ pub fn parse_response(text: String, ok: &str) -> RequestResult {
         None => return Err(RequestError::InvalidResponse(text)),
     };
     if let Some(ok) = body.take_child(ok) {
-        return Ok(RequestReponse { text: text, xml: ok });
+        return Ok(RequestReponse { text, xml: ok });
     }
     let upnp_error = match body
         .get_child("Fault")

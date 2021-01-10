@@ -200,7 +200,7 @@ impl Gateway {
             &messages::format_add_port_mapping_message(
                 self.control_schema
                     .get("AddPortMapping")
-                    .ok_or(RequestError::UnsupportedAction("AddPortMapping".to_string()))?,
+                    .ok_or_else(|| RequestError::UnsupportedAction("AddPortMapping".to_string()))?,
                 protocol,
                 external_port,
                 local_addr,
@@ -249,7 +249,7 @@ impl Gateway {
                 &messages::format_delete_port_message(
                     self.control_schema
                         .get("DeletePortMapping")
-                        .ok_or(RemovePortError::RequestError(RequestError::UnsupportedAction(
+                        .ok_or_else(|| RemovePortError::RequestError(RequestError::UnsupportedAction(
                             "DeletePortMapping".to_string(),
                         )))?,
                     protocol,

@@ -1,14 +1,9 @@
-use std;
 use std::error;
 use std::fmt;
 use std::io;
 use std::str;
 #[cfg(feature = "aio")]
 use std::string::FromUtf8Error;
-
-use attohttpc;
-#[cfg(feature = "aio")]
-use hyper;
 
 #[cfg(feature = "aio")]
 use tokio::time::error::Elapsed;
