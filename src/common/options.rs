@@ -28,7 +28,7 @@ pub struct SearchOptions {
 impl Default for SearchOptions {
     fn default() -> Self {
         Self {
-            bind_addr: SocketAddr::V4(SocketAddr::new(IpAddr::new(0, 0, 0, 0), 0)),
+            bind_addr: (IpAddr::from([0, 0, 0, 0]), 0).into(),
             broadcast_address: "239.255.255.250:1900".parse().unwrap(),
             timeout: Some(Duration::from_secs(10)),
         }

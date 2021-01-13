@@ -238,7 +238,7 @@ pub fn parse_get_external_ip_response(result: RequestResult) -> Result<IpAddr, G
             .and_then(|e| e.get_text())
             .and_then(|t| t.parse::<IpAddr>().ok())
         {
-            Some(ipv4_addr) => Ok(ipv4_addr),
+            Some(ip_addr) => Ok(ip_addr),
             None => Err(GetExternalIpError::RequestError(RequestError::InvalidResponse(
                 resp.text,
             ))),
