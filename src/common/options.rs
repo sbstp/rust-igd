@@ -1,4 +1,4 @@
-use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
+use std::net::{IpAddr, SocketAddr};
 use std::time::Duration;
 
 /// Gateway search configuration
@@ -28,7 +28,7 @@ pub struct SearchOptions {
 impl Default for SearchOptions {
     fn default() -> Self {
         Self {
-            bind_addr: SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), 0)),
+            bind_addr: (IpAddr::from([0, 0, 0, 0]), 0).into(),
             broadcast_address: "239.255.255.250:1900".parse().unwrap(),
             timeout: Some(Duration::from_secs(10)),
         }

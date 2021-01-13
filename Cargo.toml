@@ -21,7 +21,6 @@ futures = {version = "0.3", optional = true}
 http = {version = "0.2", optional = true}
 log = "0.4"
 rand = "0.8"
-tokio = {version = "1", optional = true, features = ["net"]}
 url = "2"
 xmltree = "0.10"
 
@@ -36,8 +35,32 @@ simplelog = "0.9"
 tokio = {version = "1", features = ["full"]}
 
 [features]
-aio = ["futures", "tokio", "hyper", "bytes", "http"]
+aio = ["futures", "hyper", "bytes", "http"]
 default = []
+tokio1 = ["tokio1-crate"]
+tokio02 = ["tokio02-crate"]
+tokio03 = ["tokio03-crate"]
+
+[dependencies.tokio1-crate]
+package = "tokio"
+version = "^1.0"
+optional = true
+default-features = false
+features = ["net"]
+
+[dependencies.tokio02-crate]
+package = "tokio"
+version = "^0.2"
+optional = true
+default-features = false
+features = ["net"]
+
+[dependencies.tokio03-crate]
+package = "tokio"
+version = "^0.3.4"
+optional = true
+default-features = false
+features = ["net"]
 
 [[example]]
 name = "add_any_port"

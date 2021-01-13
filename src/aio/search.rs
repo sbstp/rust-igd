@@ -32,14 +32,6 @@ pub async fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchErr
     let (control_schema_url, control_url) = get_control_urls(&addr, &root_url).await?;
     let control_schema = get_control_schemas(&addr, &control_schema_url).await?;
 
-    let addr = match addr {
-        SocketAddr::V4(a) => Ok(a),
-        _ => {
-            warn!("unsupported IPv6 gateway response from addr: {}", addr);
-            Err(SearchError::InvalidResponse)
-        }
-    }?;
-
     Ok(Gateway {
         addr,
         root_url,
@@ -80,7 +72,7 @@ fn handle_broadcast_resp(from: &SocketAddr, data: &[u8]) -> Result<(SocketAddr, 
     // Parse socket address and path
     let (addr, root_url) = parsing::parse_search_result(text)?;
 
-    Ok((SocketAddr::V4(addr), root_url))
+    Ok((addr, root_url))
 }
 
 async fn get_control_urls(addr: &SocketAddr, path: &str) -> Result<(String, String), SearchError> {
