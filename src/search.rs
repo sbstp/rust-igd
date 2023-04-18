@@ -52,7 +52,7 @@ pub fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
             Ok(o) => o,
             Err(e) => {
                 debug!(
-                    "Error has occurred while getting schema urls. error: {}, addr: {}, control_schema_url: {}",
+                    "Error has occurred while getting schemas. error: {}, addr: {}, control_schema_url: {}",
                     e, addr, control_schema_url
                 );
                 continue;
