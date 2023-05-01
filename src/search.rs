@@ -1,3 +1,5 @@
+use attohttpc::Method;
+use attohttpc::RequestBuilder;
 use std::collections::HashMap;
 use std::net::{SocketAddrV4, UdpSocket};
 use std::str;
@@ -37,12 +39,24 @@ pub fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
 
         let (control_schema_url, control_url) = match get_control_urls(&addr, &root_url) {
             Ok(o) => o,
-            Err(..) => continue,
+            Err(e) => {
+                debug!(
+                    "Error has occurred while getting control urls. error: {}, addr: {}, root_url: {}",
+                    e, addr, root_url
+                );
+                continue;
+            }
         };
 
         let control_schema = match get_schemas(&addr, &control_schema_url) {
             Ok(o) => o,
-            Err(..) => continue,
+            Err(e) => {
+                debug!(
+                    "Error has occurred while getting schemas. error: {}, addr: {}, control_schema_url: {}",
+                    e, addr, control_schema_url
+                );
+                continue;
+            }
         };
 
         return Ok(Gateway {
@@ -57,12 +71,24 @@ pub fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
 
 fn get_control_urls(addr: &SocketAddrV4, root_url: &str) -> Result<(String, String), SearchError> {
     let url = format!("http://{}:{}{}", addr.ip(), addr.port(), root_url);
-    let response = attohttpc::get(&url).send()?;
-    parsing::parse_control_urls(&response.bytes()?[..])
+
+    match RequestBuilder::try_new(Method::GET, &url) {
+        Ok(request_builder) => {
+            let response = request_builder.send()?;
+            parsing::parse_control_urls(&response.bytes()?[..])
+        }
+        Err(error) => Err(SearchError::HttpError(error)),
+    }
 }
 
 fn get_schemas(addr: &SocketAddrV4, control_schema_url: &str) -> Result<HashMap<String, Vec<String>>, SearchError> {
     let url = format!("http://{}:{}{}", addr.ip(), addr.port(), control_schema_url);
-    let response = attohttpc::get(&url).send()?;
-    parsing::parse_schemas(&response.bytes()?[..])
+
+    match RequestBuilder::try_new(Method::GET, &url) {
+        Ok(request_builder) => {
+            let response = request_builder.send()?;
+            parsing::parse_schemas(&response.bytes()?[..])
+        }
+        Err(error) => Err(SearchError::HttpError(error)),
+    }
 }
