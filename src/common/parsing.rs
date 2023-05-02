@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::io;
-use std::net::{Ipv4Addr, SocketAddrV4};
+use std::net::{IpAddr, SocketAddr};
 
 use url::Url;
 use xmltree::{self, Element};
@@ -12,7 +12,7 @@ use crate::errors::{
 use crate::PortMappingProtocol;
 
 // Parse the result.
-pub fn parse_search_result(text: &str) -> Result<(SocketAddrV4, String), SearchError> {
+pub fn parse_search_result(text: &str) -> Result<(SocketAddr, String), SearchError> {
     use SearchError::InvalidResponse;
 
     for line in text.lines() {
@@ -21,13 +21,13 @@ pub fn parse_search_result(text: &str) -> Result<(SocketAddrV4, String), SearchE
             if let Some(colon) = line.find(':') {
                 let url_text = &line[colon + 1..].trim();
                 let url = Url::parse(url_text).map_err(|_| InvalidResponse)?;
-                let addr: Ipv4Addr = url
+                let addr: IpAddr = url
                     .host_str()
                     .ok_or(InvalidResponse)
                     .and_then(|s| s.parse().map_err(|_| InvalidResponse))?;
                 let port: u16 = url.port_or_known_default().ok_or(InvalidResponse)?;
 
-                return Ok((SocketAddrV4::new(addr, port), url.path().to_string()));
+                return Ok((SocketAddr::new(addr, port), url.path().to_string()));
             }
         }
     }
@@ -230,15 +230,15 @@ pub fn parse_response(text: String, ok: &str) -> RequestResult {
     }
 }
 
-pub fn parse_get_external_ip_response(result: RequestResult) -> Result<Ipv4Addr, GetExternalIpError> {
+pub fn parse_get_external_ip_response(result: RequestResult) -> Result<IpAddr, GetExternalIpError> {
     match result {
         Ok(resp) => match resp
             .xml
             .get_child("NewExternalIPAddress")
             .and_then(|e| e.get_text())
-            .and_then(|t| t.parse::<Ipv4Addr>().ok())
+            .and_then(|t| t.parse::<IpAddr>().ok())
         {
-            Some(ipv4_addr) => Ok(ipv4_addr),
+            Some(ip_addr) => Ok(ip_addr),
             None => Err(GetExternalIpError::RequestError(RequestError::InvalidResponse(
                 resp.text,
             ))),
@@ -411,7 +411,7 @@ fn test_parse_search_result_case_insensitivity() {
 #[test]
 fn test_parse_search_result_ok() {
     let result = parse_search_result("location:http://0.0.0.0:0/control_url").unwrap();
-    assert_eq!(result.0.ip(), &Ipv4Addr::new(0, 0, 0, 0));
+    assert_eq!(result.0.ip(), &IpAddr::new(0, 0, 0, 0));
     assert_eq!(result.0.port(), 0);
     assert_eq!(&result.1[..], "/control_url");
 }

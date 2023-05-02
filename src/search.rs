@@ -1,7 +1,7 @@
 use attohttpc::Method;
 use attohttpc::RequestBuilder;
 use std::collections::HashMap;
-use std::net::{SocketAddrV4, UdpSocket};
+use std::net::{SocketAddr, UdpSocket};
 use std::str;
 
 use crate::common::{messages, parsing, SearchOptions};
@@ -69,7 +69,7 @@ pub fn search_gateway(options: SearchOptions) -> Result<Gateway, SearchError> {
     }
 }
 
-fn get_control_urls(addr: &SocketAddrV4, root_url: &str) -> Result<(String, String), SearchError> {
+fn get_control_urls(addr: &SocketAddr, root_url: &str) -> Result<(String, String), SearchError> {
     let url = format!("http://{}:{}{}", addr.ip(), addr.port(), root_url);
 
     match RequestBuilder::try_new(Method::GET, &url) {
@@ -81,7 +81,7 @@ fn get_control_urls(addr: &SocketAddrV4, root_url: &str) -> Result<(String, Stri
     }
 }
 
-fn get_schemas(addr: &SocketAddrV4, control_schema_url: &str) -> Result<HashMap<String, Vec<String>>, SearchError> {
+fn get_schemas(addr: &SocketAddr, control_schema_url: &str) -> Result<HashMap<String, Vec<String>>, SearchError> {
     let url = format!("http://{}:{}{}", addr.ip(), addr.port(), control_schema_url);
 
     match RequestBuilder::try_new(Method::GET, &url) {

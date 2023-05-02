@@ -5,8 +5,11 @@ use std::str;
 #[cfg(feature = "aio")]
 use std::string::FromUtf8Error;
 
-#[cfg(feature = "aio")]
-use tokio::time::error::Elapsed;
+#[cfg(all(feature = "aio", any(feature = "tokio03", feature = "tokio1")))]
+use crate::tokio::time::error::Elapsed;
+
+#[cfg(all(feature = "aio", feature = "tokio02"))]
+use crate::tokio::time::Elapsed;
 
 /// Errors that can occur when sending the request to the gateway.
 #[derive(Debug)]

@@ -20,8 +20,13 @@ extern crate futures;
 extern crate http;
 #[cfg(feature = "aio")]
 extern crate hyper;
-#[cfg(feature = "aio")]
-extern crate tokio;
+
+#[cfg(all(feature = "aio", feature = "tokio02"))]
+extern crate tokio02_crate as tokio;
+#[cfg(all(feature = "aio", feature = "tokio03"))]
+extern crate tokio03_crate as tokio;
+#[cfg(all(feature = "aio", feature = "tokio1"))]
+extern crate tokio1_crate as tokio;
 
 // data structures
 pub use self::common::parsing::PortMappingEntry;

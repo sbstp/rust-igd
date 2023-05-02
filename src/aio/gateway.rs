@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::net::{Ipv4Addr, SocketAddrV4};
+use std::net::{IpAddr, SocketAddr};
 
 use super::soap;
 use crate::errors::{self, AddAnyPortError, AddPortError, GetExternalIpError, RemovePortError, RequestError};
@@ -13,7 +13,7 @@ use crate::PortMappingProtocol;
 #[derive(Clone, Debug)]
 pub struct Gateway {
     /// Socket address of the gateway
-    pub addr: SocketAddrV4,
+    pub addr: SocketAddr,
     /// Root url of the device
     pub root_url: String,
     /// Control url of the device
@@ -32,7 +32,7 @@ impl Gateway {
     }
 
     /// Get the external IP address of the gateway in a tokio compatible way
-    pub async fn get_external_ip(&self) -> Result<Ipv4Addr, GetExternalIpError> {
+    pub async fn get_external_ip(&self) -> Result<IpAddr, GetExternalIpError> {
         let result = self
             .perform_request(
                 messages::GET_EXTERNAL_IP_HEADER,
@@ -55,16 +55,16 @@ impl Gateway {
     pub async fn get_any_address(
         &self,
         protocol: PortMappingProtocol,
-        local_addr: SocketAddrV4,
+        local_addr: SocketAddr,
         lease_duration: u32,
         description: &str,
-    ) -> Result<SocketAddrV4, AddAnyPortError> {
+    ) -> Result<SocketAddr, AddAnyPortError> {
         let description = description.to_owned();
         let ip = self.get_external_ip().await?;
         let port = self
             .add_any_port(protocol, local_addr, lease_duration, &description)
             .await?;
-        Ok(SocketAddrV4::new(ip, port))
+        Ok(SocketAddr::new(ip, port))
     }
 
     /// Add a port mapping.with any external port.
@@ -78,7 +78,7 @@ impl Gateway {
     pub async fn add_any_port(
         &self,
         protocol: PortMappingProtocol,
-        local_addr: SocketAddrV4,
+        local_addr: SocketAddr,
         lease_duration: u32,
         description: &str,
     ) -> Result<u16, AddAnyPortError> {
@@ -126,7 +126,7 @@ impl Gateway {
     async fn retry_add_random_port_mapping(
         &self,
         protocol: PortMappingProtocol,
-        local_addr: SocketAddrV4,
+        local_addr: SocketAddr,
         lease_duration: u32,
         description: &str,
     ) -> Result<u16, AddAnyPortError> {
@@ -146,7 +146,7 @@ impl Gateway {
     async fn add_random_port_mapping(
         &self,
         protocol: PortMappingProtocol,
-        local_addr: SocketAddrV4,
+        local_addr: SocketAddr,
         lease_duration: u32,
         description: &str,
     ) -> Result<u16, AddAnyPortError> {
@@ -174,7 +174,7 @@ impl Gateway {
     async fn add_same_port_mapping(
         &self,
         protocol: PortMappingProtocol,
-        local_addr: SocketAddrV4,
+        local_addr: SocketAddr,
         lease_duration: u32,
         description: &str,
     ) -> Result<u16, AddAnyPortError> {
@@ -191,7 +191,7 @@ impl Gateway {
         &self,
         protocol: PortMappingProtocol,
         external_port: u16,
-        local_addr: SocketAddrV4,
+        local_addr: SocketAddr,
         lease_duration: u32,
         description: &str,
     ) -> Result<(), RequestError> {
@@ -221,7 +221,7 @@ impl Gateway {
         &self,
         protocol: PortMappingProtocol,
         external_port: u16,
-        local_addr: SocketAddrV4,
+        local_addr: SocketAddr,
         lease_duration: u32,
         description: &str,
     ) -> Result<(), AddPortError> {
